@@ -1293,6 +1293,21 @@
   }
   .era-tag, .cat-tag, .kp-badge { letter-spacing: 0.02em; }
   .stat-num { letter-spacing: -0.03em; }
+
+  /* ════════════ SISTEMA SOLAR (hero) ════════════ */
+  .solar-system { position: relative; width: min(440px, 84vw); margin: 0 auto 2rem; z-index: 2; }
+  .solar-svg { width: 100%; height: auto; display: block; overflow: visible; }
+  .solar-orbit-ring { fill: none; stroke: rgba(167,139,250,0.12); stroke-width: 1; }
+  .solar-orbit { transform-box: view-box; transform-origin: 230px 230px; animation-name: solar-spin; animation-timing-function: linear; animation-iteration-count: infinite; }
+  @keyframes solar-spin { to { transform: rotate(360deg); } }
+  .solar-sun { transform-box: view-box; transform-origin: 230px 230px; filter: drop-shadow(0 0 16px rgba(252,211,77,0.85)); animation: solar-pulse 4s ease-in-out infinite; }
+  @keyframes solar-pulse { 0%,100%{ filter: drop-shadow(0 0 14px rgba(252,211,77,0.7)); } 50%{ filter: drop-shadow(0 0 26px rgba(252,211,77,0.95)); } }
+  .solar-belt circle { fill: rgba(190,180,165,0.45); }
+  .solar-planet { cursor: pointer; transition: filter .2s, r .2s; }
+  .solar-planet:hover, .solar-planet.active { filter: drop-shadow(0 0 7px currentColor) brightness(1.25); }
+  .solar-readout { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; line-height: 1.5; color: var(--ink-muted); text-align: center; min-height: 3em; max-width: 520px; margin: 0 auto; padding: 0 1rem; transition: opacity .2s; }
+  .solar-readout b { color: var(--star-l); }
+  @media (prefers-reduced-motion: reduce) { .solar-orbit, .solar-sun { animation: none !important; } }
 </style>
 </head>
 <body>
@@ -1301,11 +1316,58 @@
   <div class="hero-bg"></div>
   <div class="stars"></div>
 
-  <div class="hero-emblem">
-    <div class="ring"></div>
-    <div class="ring"></div>
-    <div class="ring"></div>
-    <div class="core"></div>
+  <div class="solar-system" id="solarSystem">
+    <svg class="solar-svg" viewBox="0 0 460 460" role="img" aria-label="Sistema solar">
+      <defs>
+        <radialGradient id="sunGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#fff7e0"/><stop offset="45%" stop-color="#fcd34d"/>
+          <stop offset="100%" stop-color="#f59e0b"/>
+        </radialGradient>
+      </defs>
+      <circle class="solar-orbit-ring" cx="230" cy="230" r="46"/>
+      <circle class="solar-orbit-ring" cx="230" cy="230" r="62"/>
+      <circle class="solar-orbit-ring" cx="230" cy="230" r="80"/>
+      <circle class="solar-orbit-ring" cx="230" cy="230" r="97"/>
+      <circle class="solar-orbit-ring" cx="230" cy="230" r="140"/>
+      <circle class="solar-orbit-ring" cx="230" cy="230" r="172"/>
+      <circle class="solar-orbit-ring" cx="230" cy="230" r="194"/>
+      <circle class="solar-orbit-ring" cx="230" cy="230" r="212"/>
+      <g class="solar-belt"><circle cx="201.8" cy="107.6" r="1.34"/><circle cx="342.8" cy="282.2" r="1.11"/><circle cx="156.4" cy="327.7" r="1.03"/><circle cx="325.8" cy="289.3" r="0.96"/><circle cx="333.3" cy="285.7" r="0.65"/><circle cx="301.0" cy="328.1" r="1.02"/><circle cx="342.9" cy="272.8" r="1.10"/><circle cx="309.2" cy="312.5" r="0.73"/><circle cx="108.0" cy="198.5" r="0.54"/><circle cx="255.7" cy="109.5" r="1.02"/><circle cx="348.0" cy="227.3" r="1.04"/><circle cx="300.9" cy="140.4" r="1.10"/><circle cx="158.1" cy="130.4" r="1.33"/><circle cx="263.9" cy="349.9" r="0.76"/><circle cx="232.4" cy="353.2" r="0.83"/><circle cx="292.2" cy="129.2" r="0.54"/><circle cx="127.4" cy="184.7" r="0.95"/><circle cx="123.9" cy="274.8" r="1.05"/><circle cx="170.2" cy="334.3" r="1.26"/><circle cx="178.3" cy="119.8" r="0.87"/><circle cx="346.1" cy="263.9" r="0.87"/><circle cx="142.0" cy="155.3" r="0.61"/><circle cx="300.2" cy="333.3" r="0.99"/><circle cx="340.9" cy="213.3" r="1.24"/><circle cx="246.3" cy="353.7" r="0.95"/><circle cx="340.0" cy="172.9" r="1.38"/><circle cx="220.3" cy="105.7" r="1.39"/><circle cx="330.2" cy="163.0" r="1.24"/><circle cx="285.2" cy="328.3" r="0.56"/><circle cx="286.3" cy="327.1" r="1.18"/><circle cx="326.9" cy="164.7" r="0.76"/><circle cx="318.8" cy="298.9" r="1.00"/><circle cx="177.4" cy="129.8" r="1.34"/><circle cx="320.5" cy="152.6" r="1.02"/><circle cx="142.9" cy="159.0" r="0.67"/><circle cx="130.6" cy="171.9" r="1.16"/><circle cx="330.4" cy="175.4" r="0.52"/><circle cx="349.7" cy="245.8" r="0.68"/><circle cx="332.0" cy="300.0" r="0.57"/><circle cx="118.2" cy="280.7" r="1.40"/><circle cx="344.0" cy="181.8" r="1.09"/><circle cx="307.3" cy="328.3" r="0.78"/><circle cx="246.8" cy="345.6" r="1.36"/><circle cx="163.2" cy="135.1" r="0.78"/><circle cx="136.8" cy="156.4" r="0.65"/><circle cx="239.9" cy="115.8" r="1.36"/><circle cx="335.0" cy="178.7" r="1.03"/><circle cx="145.5" cy="148.6" r="1.39"/><circle cx="335.1" cy="283.7" r="1.09"/><circle cx="306.9" cy="313.0" r="0.95"/><circle cx="334.0" cy="175.4" r="1.31"/><circle cx="178.4" cy="116.6" r="0.97"/><circle cx="200.0" cy="339.3" r="0.56"/><circle cx="117.5" cy="237.8" r="1.10"/><circle cx="296.5" cy="138.3" r="0.70"/><circle cx="132.0" cy="300.5" r="1.09"/><circle cx="213.1" cy="113.9" r="0.66"/><circle cx="117.2" cy="242.0" r="0.80"/><circle cx="215.5" cy="344.4" r="0.74"/><circle cx="283.2" cy="124.1" r="1.34"/></g>
+      <circle class="solar-sun" cx="230" cy="230" r="17" fill="url(#sunGrad)"/>
+      <g class="solar-orbit" style="animation-duration:7s">
+        <circle class="solar-planet" data-i="0" cx="276" cy="230" r="2.6" fill="#9a948b" style="color:#9a948b"><title>Mercúrio</title></circle>
+        
+      </g>
+      <g class="solar-orbit" style="animation-duration:11s">
+        <circle class="solar-planet" data-i="1" cx="292" cy="230" r="4.4" fill="#e3bd72" style="color:#e3bd72"><title>Vênus</title></circle>
+        
+      </g>
+      <g class="solar-orbit" style="animation-duration:16s">
+        <circle class="solar-planet" data-i="2" cx="310" cy="230" r="4.9" fill="#3b82c4" style="color:#3b82c4"><title>Terra</title></circle>
+        <circle cx="318" cy="230" r="1.7" fill="#cfd6e0"/>
+      </g>
+      <g class="solar-orbit" style="animation-duration:22s">
+        <circle class="solar-planet" data-i="3" cx="327" cy="230" r="3.6" fill="#c75a37" style="color:#c75a37"><title>Marte</title></circle>
+        
+      </g>
+      <g class="solar-orbit" style="animation-duration:34s">
+        <circle class="solar-planet" data-i="4" cx="370" cy="230" r="13" fill="#cf9d76" style="color:#cf9d76"><title>Júpiter</title></circle>
+        <ellipse cx="370" cy="230" rx="13" ry="5.8500000000000005" fill="#a87a55" opacity="0.55"/>
+      </g>
+      <g class="solar-orbit" style="animation-duration:48s">
+        <circle class="solar-planet" data-i="5" cx="402" cy="230" r="10" fill="#d9bd83" style="color:#d9bd83"><title>Saturno</title></circle>
+        <ellipse cx="402" cy="230" rx="21" ry="6.2" fill="none" stroke="#d9bd83" stroke-width="1.4" opacity="0.85" transform="rotate(-18 402 230)"/>
+      </g>
+      <g class="solar-orbit" style="animation-duration:62s">
+        <circle class="solar-planet" data-i="6" cx="424" cy="230" r="6.4" fill="#93cfdb" style="color:#93cfdb"><title>Urano</title></circle>
+        
+      </g>
+      <g class="solar-orbit" style="animation-duration:76s">
+        <circle class="solar-planet" data-i="7" cx="442" cy="230" r="6.4" fill="#4760c9" style="color:#4760c9"><title>Netuno</title></circle>
+        
+      </g>
+    </svg>
+    <div class="solar-readout" id="solarReadout"><b>Sistema Solar</b> · 8 planetas — passe o mouse ou clique para explorar</div>
   </div>
 
   <div class="hero-eyebrow">Big History · Estudo Cronológico Universal</div>
@@ -2289,5 +2351,21 @@ renderBars('chart-biomass', [
 ], {max:62});
 </script>
 
+<script>
+(function(){
+  const P = [{"n":"Mercúrio","dist":"57,9 mi km","fact":"O menor planeta e o mais próximo do Sol; um ano dura apenas 88 dias terrestres."},{"n":"Vênus","dist":"108,2 mi km","fact":"O mundo mais quente (~465 °C) por efeito estufa descontrolado; gira ao contrário dos demais."},{"n":"Terra","dist":"149,6 mi km","fact":"O único planeta com vida conhecida e água líquida estável na superfície."},{"n":"Marte","dist":"227,9 mi km","fact":"O planeta vermelho, lar do Olympus Mons — o maior vulcão do sistema solar."},{"n":"Júpiter","dist":"778,5 mi km","fact":"O gigante gasoso: caberiam ~1.300 Terras nele; a Grande Mancha Vermelha é uma tempestade secular."},{"n":"Saturno","dist":"1,43 bi km","fact":"Célebre por seus anéis de gelo e rocha; é menos denso que a água."},{"n":"Urano","dist":"2,87 bi km","fact":"Gira deitado de lado; gigante de gelo de tom azul-esverdeado por causa do metano."},{"n":"Netuno","dist":"4,50 bi km","fact":"O planeta mais distante, com os ventos mais velozes já medidos (~2.100 km/h)."}];
+  const ro = document.getElementById('solarReadout');
+  const planets = document.querySelectorAll('.solar-planet');
+  function show(i){
+    const p = P[i]; if(!p||!ro) return;
+    planets.forEach(el=>el.classList.toggle('active', +el.dataset.i===i));
+    ro.innerHTML = '<b>'+p.n+'</b> · '+p.dist+' do Sol — '+p.fact;
+  }
+  planets.forEach(el=>{
+    el.addEventListener('mouseenter', ()=>show(+el.dataset.i));
+    el.addEventListener('click', ()=>show(+el.dataset.i));
+  });
+})();
+</script>
 </body>
 </html>
