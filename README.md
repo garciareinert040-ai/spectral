@@ -43,6 +43,14 @@ No Node, no database, no deployment, no CDN dependencies, no API keys.
 
 - Same design, categories, sources, tiers, search/filters, favorites and
   dark/light themes as the full app — ported to vanilla JS + hand-written CSS.
+  UI in Brazilian Portuguese (pt-BR).
+- **Grandes manchetes**: pinned top story of the week, month and year per
+  region, ranked by cross-source coverage (similar headlines from multiple
+  outlets cluster together; more sources — especially Tier 1 — score higher).
+  Pins persist in localStorage and only change when a bigger story emerges
+  within the same window or the window rolls over.
+- Brazilian sources have automatic Google News fallbacks: if a direct feed is
+  dead or empty, headlines still arrive via a domain-scoped pt-BR query.
 - **Refresh fetches feeds in your browser.** Browsers enforce CORS, so each
   feed is tried directly, then through public CORS relays
   (allorigins.win → corsproxy.io → codetabs.com). Only feed URLs pass through

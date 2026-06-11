@@ -23,12 +23,12 @@
   Sources & methodology: https://github.com/garciareinert040-ai/spectral/blob/HEAD/docs/SOURCES.md
   ═══════════════════════════════════════════════════════════════════════════
 -->
-<html lang="en" class="dark">
+<html lang="pt-BR" class="dark">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Spectral — Global News Dashboard</title>
-<meta name="description" content="Fact-first global news dashboard. Wire services, public broadcasters and specialist press — aggregated in your browser, no backend required." />
+<title>Spectral — Painel Global de Notícias</title>
+<meta name="description" content="Painel global de notícias com foco em fatos. Agências, emissoras públicas e imprensa especializada — agregadas no seu navegador, sem backend." />
 <link rel="icon" href='data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"%3E%3Cdefs%3E%3ClinearGradient id="g" x1="0" y1="0" x2="1" y2="1"%3E%3Cstop offset="0" stop-color="%23818cf8"/%3E%3Cstop offset="0.5" stop-color="%2322d3ee"/%3E%3Cstop offset="1" stop-color="%2334d399"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width="64" height="64" rx="14" fill="%230b0d12"/%3E%3Cpath d="M14 44 L32 12 L50 44" fill="none" stroke="url(%23g)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/%3E%3Cline x1="20" y1="50" x2="44" y2="50" stroke="url(%23g)" stroke-width="5" stroke-linecap="round"/%3E%3C/svg%3E' />
 <style>
 /* ── Design tokens ─────────────────────────────────────────────────────── */
@@ -367,6 +367,8 @@ main{min-height:60vh}
 .toast .x{margin-left:auto;padding:2px;color:var(--muted-fg)}
 .toast .x:hover{color:var(--fg)}
 .t-ok .icon{color:#34d399}.t-err .icon{color:#fb7185}.t-info .icon{color:#38bdf8}
+.banner .bx{margin-left:auto;flex:none;color:var(--muted-fg);padding:4px;border-radius:7px;transition:all .18s;align-self:flex-start}
+.banner .bx:hover{color:var(--fg);background:var(--accent)}
 /* ── Footer ────────────────────────────────────────────────────────────── */
 footer.app{margin-top:64px;border-top:1px solid var(--border);background:color-mix(in srgb,var(--card) 40%,transparent)}
 .foot-grid{display:grid;gap:40px;padding:48px 0}
@@ -424,21 +426,21 @@ footer.app{margin-top:64px;border-top:1px solid var(--border);background:color-m
       <svg class="icon" style="width:32px;height:32px"><use href="#i-brand"/></svg>
       <span>
         <span class="brand-name">Spectral</span>
-        <span class="brand-sub">Global News Desk · Standalone</span>
+        <span class="brand-sub">Central Global de Notícias · Edição local</span>
       </span>
     </a>
     <div class="header-right">
-      <div class="updated-chip"><span class="pulse"></span>Updated <span id="updated-mini">never</span></div>
+      <div class="updated-chip"><span class="pulse"></span>Atualizado: <span id="updated-mini">nunca</span></div>
       <button id="btn-refresh" class="btn btn-primary">
         <svg class="icon" id="refresh-icon"><use href="#i-refresh"/></svg>
-        <span id="refresh-label">Refresh</span>
+        <span id="refresh-label">Atualizar</span>
       </button>
-      <button id="btn-saved" class="btn btn-outline" style="position:relative" aria-label="Open saved articles">
+      <button id="btn-saved" class="btn btn-outline" style="position:relative" aria-label="Abrir artigos salvos">
         <svg class="icon"><use href="#i-bookmark"/></svg>
-        <span class="btn-label">Saved</span>
+        <span class="btn-label">Salvos</span>
         <span id="save-count" class="save-count hidden">0</span>
       </button>
-      <button id="btn-theme" class="icon-btn" aria-label="Toggle color theme">
+      <button id="btn-theme" class="icon-btn" aria-label="Alternar tema de cores">
         <svg class="icon" id="theme-icon"><use href="#i-sun"/></svg>
       </button>
     </div>
@@ -450,21 +452,21 @@ footer.app{margin-top:64px;border-top:1px solid var(--border);background:color-m
     <div class="grid-tex" aria-hidden="true"></div>
     <div class="container hero-in">
       <div class="hero-chips">
-        <span class="chip tone" style="--tone:#f59e0b"><svg class="icon sm"><use href="#i-star"/></svg><span id="tier1-chip">7</span>&nbsp;Tier-1 wire &amp; public-interest sources</span>
-        <span class="chip tone" style="--tone:#38bdf8"><svg class="icon sm"><use href="#i-globe"/></svg>World + Brazil coverage</span>
-        <span class="chip tone" id="mode-chip" style="--tone:#38bdf8"><svg class="icon sm"><use href="#i-db"/></svg><span id="mode-text">Local-first</span></span>
+        <span class="chip tone" style="--tone:#f59e0b"><svg class="icon sm"><use href="#i-star"/></svg><span id="tier1-chip">7</span>&nbsp;fontes Tier 1 — agências e mídia pública</span>
+        <span class="chip tone" style="--tone:#38bdf8"><svg class="icon sm"><use href="#i-globe"/></svg>Cobertura Mundo + Brasil</span>
+        <span class="chip tone" id="mode-chip" style="--tone:#38bdf8"><svg class="icon sm"><use href="#i-db"/></svg><span id="mode-text">Local</span></span>
       </div>
-      <h1>The signal,<br/>without the noise.</h1>
+      <h1>O sinal,<br/>sem o ruído.</h1>
       <p class="lede">
-        Spectral aggregates wire services, public broadcasters, peer-reviewed and specialist press
-        into one dashboard — categorized, credibility-tiered and refreshed on your command.
-        This edition runs entirely in your browser: no server, no account, no tracking.
+        O Spectral reúne agências de notícias, emissoras públicas e imprensa científica e
+        especializada em um único painel — categorizado, com selo de credibilidade e atualizado
+        quando você quiser. Esta edição roda inteiramente no seu navegador: sem servidor, sem conta, sem rastreamento.
       </p>
       <dl class="stats">
-        <div class="stat"><dt>articles stored</dt><dd id="stat-articles">—</dd></div>
-        <div class="stat"><dt>vetted sources</dt><dd id="stat-sources">—</dd></div>
-        <div class="stat"><dt>feeds monitored</dt><dd id="stat-feeds">—</dd></div>
-        <div class="stat"><dt>last updated</dt><dd id="stat-updated">never</dd></div>
+        <div class="stat"><dt>artigos armazenados</dt><dd id="stat-articles">—</dd></div>
+        <div class="stat"><dt>fontes verificadas</dt><dd id="stat-sources">—</dd></div>
+        <div class="stat"><dt>feeds monitorados</dt><dd id="stat-feeds">—</dd></div>
+        <div class="stat"><dt>última atualização</dt><dd id="stat-updated">nunca</dd></div>
       </dl>
     </div>
   </section>
@@ -472,50 +474,50 @@ footer.app{margin-top:64px;border-top:1px solid var(--border);background:color-m
   <div class="filterbar">
     <div class="container filter-rows">
       <div class="frow">
-        <div class="tabs" role="tablist" aria-label="Region">
-          <button class="tab" role="tab" data-region="world" aria-selected="true"><svg class="icon"><use href="#i-globe"/></svg>World News</button>
-          <button class="tab" role="tab" data-region="brazil" aria-selected="false"><svg class="icon"><use href="#i-pin"/></svg>Brazil</button>
+        <div class="tabs" role="tablist" aria-label="Região">
+          <button class="tab" role="tab" data-region="world" aria-selected="true"><svg class="icon"><use href="#i-globe"/></svg>Mundo</button>
+          <button class="tab" role="tab" data-region="brazil" aria-selected="false"><svg class="icon"><use href="#i-pin"/></svg>Brasil</button>
         </div>
         <div class="search-wrap">
           <svg class="icon"><use href="#i-search"/></svg>
-          <input id="f-q" class="input" type="search" placeholder="Search headlines and summaries…" aria-label="Search articles"/>
+          <input id="f-q" class="input" type="search" placeholder="Buscar manchetes e resumos…" aria-label="Buscar artigos"/>
         </div>
         <span class="result-count" id="result-count"></span>
       </div>
       <div class="frow">
-        <span class="select-wrap" style="width:200px"><select id="f-category" class="input" aria-label="Filter by category"></select></span>
-        <span class="select-wrap" style="width:200px"><select id="f-source" class="input" aria-label="Filter by source"></select></span>
+        <span class="select-wrap" style="width:200px"><select id="f-category" class="input" aria-label="Filtrar por categoria"></select></span>
+        <span class="select-wrap" style="width:200px"><select id="f-source" class="input" aria-label="Filtrar por fonte"></select></span>
         <span class="daterange">
           <svg class="icon"><use href="#i-cal"/></svg>
-          <input id="f-from" type="date" class="input" aria-label="Published after"/>
+          <input id="f-from" type="date" class="input" aria-label="Publicado a partir de"/>
           <span>–</span>
-          <input id="f-to" type="date" class="input" aria-label="Published before"/>
+          <input id="f-to" type="date" class="input" aria-label="Publicado até"/>
         </span>
         <button id="f-clear" class="btn btn-ghost hidden" style="color:var(--muted-fg);height:32px;font-size:12.5px">
-          <svg class="icon sm"><use href="#i-x"/></svg>Clear filters
+          <svg class="icon sm"><use href="#i-x"/></svg>Limpar filtros
         </button>
       </div>
     </div>
   </div>
 
   <div class="container">
-    <section id="featured-section" class="section hidden" aria-label="Featured stories">
-      <p class="section-label"><svg class="icon" style="color:#f59e0b"><use href="#i-spark"/></svg>Featured stories</p>
+    <section id="featured-section" class="section hidden" aria-label="Grandes manchetes">
+      <p class="section-label"><svg class="icon" style="color:#f59e0b"><use href="#i-spark"/></svg>Grandes manchetes — semana · mês · ano</p>
       <div id="featured" class="featured"></div>
     </section>
 
-    <section class="section" aria-label="News articles">
+    <section class="section" aria-label="Artigos de notícias">
       <div id="banner-slot"></div>
       <div id="grid" class="masonry"></div>
       <div id="empty" class="empty hidden">
         <svg class="icon"><use href="#i-news"/></svg>
-        <h3 id="empty-title">No articles yet</h3>
-        <p id="empty-text">Press Refresh to fetch the latest headlines from all sources.</p>
-        <button id="empty-action" class="btn btn-outline" style="margin-top:20px">Refresh now</button>
+        <h3 id="empty-title">Nenhum artigo ainda</h3>
+        <p id="empty-text">Toque em Atualizar para buscar as manchetes mais recentes de todas as fontes.</p>
+        <button id="empty-action" class="btn btn-outline" style="margin-top:20px">Atualizar agora</button>
       </div>
       <div class="loadmore">
         <button id="btn-more" class="btn btn-secondary hidden">
-          <svg class="icon"><use href="#i-chev"/></svg><span id="more-label">Load more</span>
+          <svg class="icon"><use href="#i-chev"/></svg><span id="more-label">Carregar mais</span>
         </button>
       </div>
     </section>
@@ -527,43 +529,43 @@ footer.app{margin-top:64px;border-top:1px solid var(--border);background:color-m
     <div>
       <h3>Spectral</h3>
       <p style="max-width:34ch;margin-top:12px">
-        A fact-first dashboard limited to wire services, public broadcasters, non-profit newsrooms
-        and specialist press. Editorial and opinion desks are excluded by design.
+        Um painel com foco em fatos, limitado a agências de notícias, emissoras públicas, redações
+        sem fins lucrativos e imprensa especializada. Seções editoriais e de opinião ficam de fora por princípio.
       </p>
-      <p style="margin-top:14px"><a href="https://github.com/garciareinert040-ai/spectral/blob/HEAD/docs/SOURCES.md" target="_blank" rel="noopener noreferrer">Read the sourcing methodology →</a></p>
+      <p style="margin-top:14px"><a href="https://github.com/garciareinert040-ai/spectral/blob/HEAD/docs/SOURCES.md" target="_blank" rel="noopener noreferrer">Leia a metodologia de seleção de fontes →</a></p>
     </div>
     <div>
-      <h4>Credibility tiers</h4>
-      <div class="tier-row"><svg class="icon tier1"><use href="#i-star"/></svg><div><b>Tier 1 — Gold standard</b><small id="foot-tier1"></small></div></div>
-      <div class="tier-row"><svg class="icon tier2"><use href="#i-check-badge"/></svg><div><b>Tier 2 — Specialist press</b><small id="foot-tier2"></small></div></div>
+      <h4>Níveis de credibilidade</h4>
+      <div class="tier-row"><svg class="icon tier1"><use href="#i-star"/></svg><div><b>Tier 1 — Padrão-ouro</b><small id="foot-tier1"></small></div></div>
+      <div class="tier-row"><svg class="icon tier2"><use href="#i-check-badge"/></svg><div><b>Tier 2 — Imprensa especializada</b><small id="foot-tier2"></small></div></div>
     </div>
     <div>
-      <h4>Notes</h4>
+      <h4>Notas</h4>
       <ul>
-        <li>Headlines and summaries remain © their publishers; every card links to the original article.</li>
-        <li>Feeds are fetched in your browser. Because of CORS, requests fall back through public relays (allorigins.win, corsproxy.io, codetabs.com) — only feed URLs pass through them.</li>
-        <li>Reuters, AP and AFP headlines arrive via the Google News RSS proxy; their direct APIs are enterprise-licensed.</li>
-        <li>Articles persist in IndexedDB on this device. Updates are manual — nothing syncs in the background.</li>
+        <li>Manchetes e resumos permanecem © de seus veículos; cada cartão leva ao artigo original.</li>
+        <li>Os feeds são buscados no seu navegador. Por causa do CORS, as requisições recorrem a relays públicos (allorigins.win, corsproxy.io, codetabs.com) — apenas as URLs dos feeds trafegam por eles.</li>
+        <li>Manchetes de Reuters, AP e AFP chegam via Google News RSS; as APIs diretas dessas agências são licenciadas só para empresas.</li>
+        <li>Os artigos ficam no IndexedDB deste dispositivo. As atualizações são manuais — nada sincroniza em segundo plano.</li>
       </ul>
     </div>
   </div>
   <div class="container foot-bottom">
-    <span>© <span id="year"></span> Spectral — Global News Dashboard · single-file edition</span>
-    <a href="https://github.com/garciareinert040-ai/spectral" target="_blank" rel="noopener noreferrer">Source code on GitHub</a>
+    <span>© <span id="year"></span> Spectral — Painel Global de Notícias · edição em arquivo único</span>
+    <a href="https://github.com/garciareinert040-ai/spectral" target="_blank" rel="noopener noreferrer">Código-fonte no GitHub</a>
   </div>
 </footer>
 
 <div id="overlay" class="overlay"></div>
-<aside id="sheet" class="sheet" role="dialog" aria-modal="true" aria-label="Saved articles">
+<aside id="sheet" class="sheet" role="dialog" aria-modal="true" aria-label="Artigos salvos">
   <div class="sheet-head">
-    <h2>Saved articles <small id="saved-n"></small></h2>
-    <p>Stored in this browser — available offline.</p>
-    <button id="sheet-close" class="icon-btn sheet-close" aria-label="Close saved articles"><svg class="icon"><use href="#i-x"/></svg></button>
+    <h2>Artigos salvos <small id="saved-n"></small></h2>
+    <p>Guardados neste navegador — disponíveis offline.</p>
+    <button id="sheet-close" class="icon-btn sheet-close" aria-label="Fechar artigos salvos"><svg class="icon"><use href="#i-x"/></svg></button>
   </div>
   <div id="saved-list" class="sheet-list"></div>
   <div id="sheet-foot" class="sheet-foot hidden">
     <button id="btn-clear-saved" class="btn btn-outline" style="width:100%;color:var(--muted-fg)">
-      <svg class="icon"><use href="#i-trash"/></svg>Clear all saved articles
+      <svg class="icon"><use href="#i-trash"/></svg>Limpar todos os salvos
     </button>
   </div>
 </aside>
@@ -576,48 +578,49 @@ footer.app{margin-top:64px;border-top:1px solid var(--border);background:color-m
 /* ═══════════════ 1 · Registry: categories & sources ═══════════════ */
 
 const CATEGORIES = [
-  { slug:"technology-ai",           name:"Technology & AI",         region:"world",  color:"#a78bfa" },
-  { slug:"politics-government",     name:"Politics & Government",   region:"world",  color:"#60a5fa" },
-  { slug:"business-markets",        name:"Business & Markets",      region:"world",  color:"#34d399" },
-  { slug:"science-health",          name:"Science & Health",        region:"world",  color:"#22d3ee" },
-  { slug:"climate-environment",     name:"Climate & Environment",   region:"world",  color:"#a3e635" },
-  { slug:"international-conflicts", name:"International Conflicts", region:"world",  color:"#fb7185" },
-  { slug:"space-astronomy",         name:"Space & Astronomy",       region:"world",  color:"#818cf8" },
-  { slug:"br-politics",             name:"Brazilian Politics",      region:"brazil", color:"#facc15" },
-  { slug:"br-economy",              name:"Economy & Inflation",     region:"brazil", color:"#4ade80" },
-  { slug:"br-justice",              name:"Crime & Justice",         region:"brazil", color:"#f87171" },
-  { slug:"br-education",            name:"Education",               region:"brazil", color:"#38bdf8" },
-  { slug:"br-regional",             name:"Regional News",           region:"brazil", color:"#fb923c" },
-  { slug:"br-tech",                 name:"Tech Innovation",         region:"brazil", color:"#e879f9" },
+  { slug:"technology-ai",           name:"Tecnologia & IA",         region:"world",  color:"#a78bfa" },
+  { slug:"politics-government",     name:"Política & Governo",   region:"world",  color:"#60a5fa" },
+  { slug:"business-markets",        name:"Negócios & Mercados",      region:"world",  color:"#34d399" },
+  { slug:"science-health",          name:"Ciência & Saúde",        region:"world",  color:"#22d3ee" },
+  { slug:"climate-environment",     name:"Clima & Meio Ambiente",   region:"world",  color:"#a3e635" },
+  { slug:"international-conflicts", name:"Conflitos Internacionais", region:"world",  color:"#fb7185" },
+  { slug:"space-astronomy",         name:"Espaço & Astronomia",       region:"world",  color:"#818cf8" },
+  { slug:"br-politics",             name:"Política Brasileira",      region:"brazil", color:"#facc15" },
+  { slug:"br-economy",              name:"Economia & Inflação",     region:"brazil", color:"#4ade80" },
+  { slug:"br-justice",              name:"Crime & Justiça",         region:"brazil", color:"#f87171" },
+  { slug:"br-education",            name:"Educação",               region:"brazil", color:"#38bdf8" },
+  { slug:"br-regional",             name:"Notícias Regionais",           region:"brazil", color:"#fb923c" },
+  { slug:"br-tech",                 name:"Inovação Tech",         region:"brazil", color:"#e879f9" },
 ];
 const CAT = Object.fromEntries(CATEGORIES.map(c => [c.slug, c]));
 
 const gnews = q => "https://news.google.com/rss/search?q=" + encodeURIComponent(q) + "&hl=en-US&gl=US&ceid=US:en";
+const gnewsBR = q => "https://news.google.com/rss/search?q=" + encodeURIComponent(q) + "&hl=pt-BR&gl=BR&ceid=BR:pt-419";
 
 /* feed.mode: "fixed" = topic feed, always defaultCategory · "classify" = run keyword classifier */
 const SOURCES = [
   { slug:"reuters", name:"Reuters", region:"world", tier:1, viaGoogleNews:true,
-    why:"Wire service bound by the Thomson Reuters Trust Principles; strict sourcing and attribution standards.",
+    why:"Agência regida pelos Princípios de Confiança Thomson Reuters; padrões rígidos de apuração e atribuição.",
     feeds:[
       { url:gnews("site:reuters.com world when:2d"), defaultCategory:"politics-government", mode:"classify" },
       { url:gnews("site:reuters.com (markets OR economy) when:2d"), defaultCategory:"business-markets", mode:"classify" },
       { url:gnews("site:reuters.com technology when:2d"), defaultCategory:"technology-ai", mode:"classify" },
     ]},
   { slug:"ap", name:"Associated Press", region:"world", tier:1, viaGoogleNews:true,
-    why:"Not-for-profit news cooperative; the de-facto reference for sourcing discipline and corrections.",
+    why:"Cooperativa de notícias sem fins lucrativos; referência mundial em disciplina de apuração e correções.",
     feeds:[
       { url:gnews("site:apnews.com world when:2d"), defaultCategory:"politics-government", mode:"classify" },
       { url:gnews("site:apnews.com (science OR health) when:2d"), defaultCategory:"science-health", mode:"classify" },
       { url:gnews("site:apnews.com politics when:2d"), defaultCategory:"politics-government", mode:"classify" },
     ]},
   { slug:"afp", name:"Agence France-Presse", region:"world", tier:1, viaGoogleNews:true,
-    why:"Global wire service with a statutory independence charter and a dedicated fact-checking desk.",
+    why:"Agência global com estatuto legal de independência e equipe dedicada de checagem de fatos.",
     feeds:[
       { url:gnews('"AFP" site:afp.com when:7d'), defaultCategory:"politics-government", mode:"classify" },
       { url:"https://factcheck.afp.com/rss.xml", defaultCategory:"politics-government", mode:"classify" },
     ]},
   { slug:"bbc", name:"BBC News", region:"world", tier:1,
-    why:"Public broadcaster operating under a royal charter requiring due impartiality and accuracy.",
+    why:"Emissora pública sob carta real que exige imparcialidade e precisão.",
     feeds:[
       { url:"https://feeds.bbci.co.uk/news/world/rss.xml", defaultCategory:"politics-government", mode:"classify" },
       { url:"https://feeds.bbci.co.uk/news/technology/rss.xml", defaultCategory:"technology-ai", mode:"fixed" },
@@ -625,7 +628,7 @@ const SOURCES = [
       { url:"https://feeds.bbci.co.uk/news/business/rss.xml", defaultCategory:"business-markets", mode:"fixed" },
     ]},
   { slug:"npr", name:"NPR", region:"world", tier:1,
-    why:"US public broadcaster with a published ethics handbook and rigorous editorial standards.",
+    why:"Emissora pública dos EUA com manual de ética publicado e padrões editoriais rigorosos.",
     feeds:[
       { url:"https://feeds.npr.org/1004/rss.xml", defaultCategory:"politics-government", mode:"classify" },
       { url:"https://feeds.npr.org/1014/rss.xml", defaultCategory:"politics-government", mode:"fixed" },
@@ -634,65 +637,65 @@ const SOURCES = [
       { url:"https://feeds.npr.org/1006/rss.xml", defaultCategory:"business-markets", mode:"fixed" },
     ]},
   { slug:"propublica", name:"ProPublica", region:"world", tier:1,
-    why:"Non-profit investigative newsroom; publishes underlying documents and data with its reporting.",
+    why:"Redação investigativa sem fins lucrativos; publica documentos e dados junto com as reportagens.",
     feeds:[{ url:"https://www.propublica.org/feeds/propublica/main", defaultCategory:"politics-government", mode:"classify" }]},
   { slug:"the-conversation", name:"The Conversation", region:"world", tier:1,
-    why:"Articles written by academics in their field, edited by journalists; disclosures on every piece.",
+    why:"Artigos escritos por acadêmicos de cada área, editados por jornalistas; declarações de interesse em cada texto.",
     feeds:[{ url:"https://theconversation.com/articles.atom", defaultCategory:"science-health", mode:"classify" }]},
   { slug:"ars-technica", name:"Ars Technica", region:"world", tier:2,
-    why:"Deep technical reporting on computing, AI and policy; analysis grounded in primary sources.",
+    why:"Reportagem técnica aprofundada sobre computação, IA e regulação; análise baseada em fontes primárias.",
     feeds:[{ url:"https://feeds.arstechnica.com/arstechnica/index", defaultCategory:"technology-ai", mode:"classify" }]},
   { slug:"ieee-spectrum", name:"IEEE Spectrum", region:"world", tier:2,
-    why:"Published by the world's largest engineering body; written and reviewed by practicing engineers.",
+    why:"Publicada pela maior associação de engenharia do mundo; escrita e revisada por engenheiros.",
     feeds:[{ url:"https://spectrum.ieee.org/feeds/feed.rss", defaultCategory:"technology-ai", mode:"fixed" }]},
   { slug:"wired", name:"Wired", region:"world", tier:2,
-    why:"Long-form technology journalism; included for reported features rather than opinion.",
+    why:"Jornalismo de tecnologia em profundidade; incluído pelas reportagens, não pela opinião.",
     feeds:[{ url:"https://www.wired.com/feed/rss", defaultCategory:"technology-ai", mode:"classify" }]},
   { slug:"scientific-american", name:"Scientific American", region:"world", tier:2,
-    why:"Oldest continuously published US magazine; coverage anchored to peer-reviewed research.",
-    feeds:[{ url:"http://rss.sciam.com/ScientificAmerican-Global", defaultCategory:"science-health", mode:"classify" }]},
+    why:"Revista mais antiga em publicação contínua nos EUA; cobertura ancorada em pesquisa revisada por pares.",
+    feeds:[{ url:"http://rss.sciam.com/ScientificAmerican-Global", defaultCategory:"science-health", mode:"classify", fallback:gnews("site:scientificamerican.com when:7d") }]},
   { slug:"nature", name:"Nature News", region:"world", tier:2,
-    why:"News arm of the leading peer-reviewed journal; primary-literature reporting.",
+    why:"Braço de notícias do principal periódico científico revisado por pares.",
     feeds:[{ url:"https://www.nature.com/nature.rss", defaultCategory:"science-health", mode:"classify" }]},
   { slug:"phys-org", name:"Phys.org", region:"world", tier:2,
-    why:"Research-news aggregator sourced directly from universities, journals and labs.",
+    why:"Agregador de notícias científicas direto de universidades, periódicos e laboratórios.",
     feeds:[{ url:"https://phys.org/rss-feed/", defaultCategory:"science-health", mode:"classify" }]},
   { slug:"science-daily", name:"ScienceDaily", region:"world", tier:2,
-    why:"Press-release-based research summaries with links to the underlying papers.",
+    why:"Resumos de pesquisas com links para os artigos científicos originais.",
     feeds:[{ url:"https://www.sciencedaily.com/rss/top.xml", defaultCategory:"science-health", mode:"classify" }]},
   { slug:"space-com", name:"Space.com", region:"world", tier:2,
-    why:"Dedicated spaceflight and astronomy desk; technical launch and mission coverage.",
+    why:"Equipe dedicada a voos espaciais e astronomia; cobertura técnica de lançamentos e missões.",
     feeds:[{ url:"https://www.space.com/feeds/all", defaultCategory:"space-astronomy", mode:"fixed" }]},
   { slug:"earthsky", name:"EarthSky", region:"world", tier:2,
-    why:"Astronomy and earth-science explainers reviewed by scientists.",
+    why:"Explicações de astronomia e ciências da Terra revisadas por cientistas.",
     feeds:[{ url:"https://earthsky.org/feed/", defaultCategory:"space-astronomy", mode:"fixed" }]},
   { slug:"nasa", name:"NASA News", region:"world", tier:2,
-    why:"Primary source: official mission, research and launch announcements.",
+    why:"Fonte primária: anúncios oficiais de missões, pesquisas e lançamentos.",
     feeds:[{ url:"https://www.nasa.gov/news-release/feed/", defaultCategory:"space-astronomy", mode:"fixed" }]},
   { slug:"carbon-brief", name:"Carbon Brief", region:"world", tier:2,
-    why:"Climate science and policy analysis with data, methods and sources published alongside articles.",
+    why:"Análise de ciência e política climática com dados, métodos e fontes publicados junto aos artigos.",
     feeds:[{ url:"https://www.carbonbrief.org/feed/", defaultCategory:"climate-environment", mode:"fixed" }]},
   { slug:"our-world-in-data", name:"Our World in Data", region:"world", tier:2,
-    why:"Oxford-based research publication; every claim traceable to open datasets.",
+    why:"Publicação de pesquisa sediada em Oxford; toda afirmação é rastreável a dados abertos.",
     feeds:[{ url:"https://ourworldindata.org/atom.xml", defaultCategory:"climate-environment", mode:"classify" }]},
   { slug:"agencia-publica", name:"Agência Pública", region:"brazil", tier:2,
-    why:"Non-profit investigative agency; reporting reproducible from cited documents.",
-    feeds:[{ url:"https://apublica.org/feed/", defaultCategory:"br-politics", mode:"classify" }]},
+    why:"Agência investigativa sem fins lucrativos; reportagens reproduzíveis a partir dos documentos citados.",
+    feeds:[{ url:"https://apublica.org/feed/", defaultCategory:"br-politics", mode:"classify", fallback:gnewsBR("site:apublica.org when:30d") }]},
   { slug:"nexo", name:"Nexo Jornal", region:"brazil", tier:2,
-    why:"Subscription-funded explanatory journalism; data-driven, no ad-driven incentives.",
-    feeds:[{ url:"https://www.nexojornal.com.br/rss.xml", defaultCategory:"br-politics", mode:"classify" }]},
+    why:"Jornalismo explicativo financiado por assinaturas; orientado a dados, sem incentivos de publicidade.",
+    feeds:[{ url:"https://www.nexojornal.com.br/rss.xml", defaultCategory:"br-politics", mode:"classify", fallback:gnewsBR("site:nexojornal.com.br when:14d") }]},
   { slug:"nucleo", name:"Núcleo Jornalismo", region:"brazil", tier:2,
-    why:"Independent newsroom focused on technology's impact on society; transparent methodology.",
-    feeds:[{ url:"https://nucleo.jor.br/rss/", defaultCategory:"br-tech", mode:"classify" }]},
+    why:"Redação independente focada no impacto da tecnologia na sociedade; metodologia transparente.",
+    feeds:[{ url:"https://nucleo.jor.br/rss/", defaultCategory:"br-tech", mode:"classify", fallback:gnewsBR("site:nucleo.jor.br when:30d") }]},
   { slug:"aos-fatos", name:"Aos Fatos", region:"brazil", tier:2,
-    why:"IFCN-signatory fact-checking organization; every verdict documented step by step.",
-    feeds:[{ url:"https://www.aosfatos.org/noticias/feed/", defaultCategory:"br-politics", mode:"classify" }]},
+    why:"Checagem de fatos signatária da IFCN; cada veredito documentado passo a passo.",
+    feeds:[{ url:"https://www.aosfatos.org/noticias/feed/", defaultCategory:"br-politics", mode:"classify", fallback:gnewsBR("site:aosfatos.org when:14d") }]},
   { slug:"canaltech", name:"Canaltech", region:"brazil", tier:2,
-    why:"Specialist technology desk; product and industry reporting, not political coverage.",
-    feeds:[{ url:"https://canaltech.com.br/rss/", defaultCategory:"br-tech", mode:"fixed" }]},
+    why:"Redação especializada em tecnologia; cobertura de produtos e indústria, não política.",
+    feeds:[{ url:"https://canaltech.com.br/rss/", defaultCategory:"br-tech", mode:"fixed", fallback:gnewsBR("site:canaltech.com.br when:2d") }]},
   { slug:"tecnoblog", name:"Tecnoblog", region:"brazil", tier:2,
-    why:"Independent Brazilian tech publication with two decades of beat reporting.",
-    feeds:[{ url:"https://tecnoblog.net/feed/", defaultCategory:"br-tech", mode:"fixed" }]},
+    why:"Publicação independente de tecnologia com duas décadas de cobertura especializada.",
+    feeds:[{ url:"https://tecnoblog.net/feed/", defaultCategory:"br-tech", mode:"fixed", fallback:gnewsBR("site:tecnoblog.net when:7d") }]},
 ];
 const SRC = Object.fromEntries(SOURCES.map(s => [s.slug, s]));
 const FEED_COUNT = SOURCES.reduce((n, s) => n + s.feeds.length, 0);
@@ -780,20 +783,20 @@ function truncate(s, max) {
 }
 
 function timeAgo(iso, now) {
-  if (!iso) return "never";
+  if (!iso) return "nunca";
   const t = Date.parse(iso);
-  if (Number.isNaN(t)) return "unknown";
+  if (Number.isNaN(t)) return "—";
   const sec = Math.max(0, Math.floor(((now ?? Date.now()) - t) / 1000));
-  if (sec < 45) return "just now";
+  if (sec < 45) return "agora mesmo";
   const min = Math.floor(sec / 60);
-  if (min < 60) return min + " min ago";
+  if (min < 60) return "há " + min + " min";
   const h = Math.floor(min / 60);
-  if (h < 24) return h + (h === 1 ? " hour ago" : " hours ago");
+  if (h < 24) return "há " + h + (h === 1 ? " hora" : " horas");
   const d = Math.floor(h / 24);
-  if (d < 14) return d + (d === 1 ? " day ago" : " days ago");
-  return new Date(t).toLocaleDateString(undefined, { month:"short", day:"numeric", year:"numeric" });
+  if (d < 14) return "há " + d + (d === 1 ? " dia" : " dias");
+  return new Date(t).toLocaleDateString("pt-BR", { month:"short", day:"numeric", year:"numeric" });
 }
-const fmtDate = iso => { const t = Date.parse(iso); return Number.isNaN(t) ? "" : new Date(t).toLocaleDateString(undefined, { month:"short", day:"numeric", year:"numeric" }); };
+const fmtDate = iso => { const t = Date.parse(iso); return Number.isNaN(t) ? "" : new Date(t).toLocaleDateString("pt-BR", { day:"numeric", month:"long", year:"numeric" }); };
 
 async function pool(limit, tasks) {
   const results = new Array(tasks.length);
@@ -805,7 +808,7 @@ async function pool(limit, tasks) {
 
 /* ═══════════════ 4 · Storage: IndexedDB + localStorage ═══════════════ */
 
-const LS = { theme:"spectral-standalone-theme", favs:"spectral-standalone-favs-v1", meta:"spectral-standalone-meta" };
+const LS = { theme:"spectral-standalone-theme", favs:"spectral-standalone-favs-v1", meta:"spectral-standalone-meta", big:"spectral-standalone-big-v1" };
 
 const idb = {
   db: null, available: false,
@@ -953,7 +956,7 @@ function parseFeed(xml, source, feed) {
     const link = itemLink(item);
     let title = stripHtml(childText(item, ["title"]));
     if (!link || !title) continue;
-    const viaGoogle = Boolean(source.viaGoogleNews) && isGoogleLink(link);
+    const viaGoogle = isGoogleLink(link);
     if (viaGoogle) { const i = title.lastIndexOf(" - "); if (i > 20) title = title.slice(0, i).trim(); }
     if (title.length < 8) continue;
 
@@ -983,17 +986,29 @@ function parseFeed(xml, source, feed) {
   return out;
 }
 
+/* Busca um feed; se falhar (ou vier vazio), tenta o fallback via Google News. */
+async function fetchSourceFeed(source, feed) {
+  try {
+    const arts = parseFeed(await fetchFeedText(feed.url), source, feed);
+    if (arts.length > 0) return arts;
+    throw new Error("feed vazio");
+  } catch (err) {
+    if (!feed.fallback) throw err;
+    return parseFeed(await fetchFeedText(feed.fallback), source, feed);
+  }
+}
+
 /* ═══════════════ 6 · Sample fallback (only when nothing else exists) ═══════════════ */
 
 const SAMPLE_SEEDS = [
-  ["How wire services verify a story before it moves","Placeholder article. In live mode this card would show a current Reuters headline. Wire services require two independent sources or a primary document before publishing.","reuters","politics-government","https://www.reuters.com"],
-  ["What 'on background' actually means in sourcing rules","Placeholder for Politics & Government. AP's stylebook defines on-record, background and off-record attribution — the backbone of accountable sourcing.","ap","politics-government","https://apnews.com"],
-  ["Reading central-bank statements: rates, paths and guidance","Placeholder for Business & Markets. Live cards summarize data-driven market coverage without editorializing.","bbc","business-markets","https://www.bbc.com/news/business"],
-  ["Peer review, preprints and why both matter for science news","Placeholder for Science & Health. Spectral's science sources link the underlying paper or dataset.","nature","science-health","https://www.nature.com/news"],
-  ["How attribution science links single events to climate trends","Placeholder for Climate & Environment. Carbon Brief publishes methods and data with each analysis.","carbon-brief","climate-environment","https://www.carbonbrief.org"],
-  ["Neutral conflict reporting: what wire desks do differently","Placeholder for International Conflicts. Coverage here is restricted to wire services that attribute casualty figures and flag unverified claims.","afp","international-conflicts","https://www.afp.com"],
-  ["From launch window to orbit: how missions are scheduled","Placeholder for Space & Astronomy. Live cards carry NASA releases and technical launch coverage.","nasa","space-astronomy","https://www.nasa.gov/news/"],
-  ["Benchmarks, parameters and what AI model cards disclose","Placeholder for Technology & AI. Specialist desks evaluate systems against published benchmarks, not press releases.","ieee-spectrum","technology-ai","https://spectrum.ieee.org"],
+  ["Como agências internacionais verificam uma notícia antes de publicá-la","Artigo de demonstração. Em modo ao vivo, este cartão exibiria uma manchete atual da Reuters. Agências exigem duas fontes independentes ou um documento primário antes de publicar.","reuters","politics-government","https://www.reuters.com"],
+  ["O que significa atribuição 'em off' nas regras de apuração","Demonstração de Política & Governo. O manual da AP define atribuição aberta, em background e em off — a base da apuração responsável.","ap","politics-government","https://apnews.com"],
+  ["Como ler comunicados de bancos centrais: juros, trajetórias e sinalização","Demonstração de Negócios & Mercados. Em modo ao vivo, cobertura de mercados orientada a dados, sem editorialização.","bbc","business-markets","https://www.bbc.com/news/business"],
+  ["Revisão por pares e preprints: por que os dois importam","Demonstração de Ciência & Saúde. As fontes científicas do Spectral linkam o artigo ou conjunto de dados original.","nature","science-health","https://www.nature.com/news"],
+  ["Como a ciência de atribuição conecta eventos extremos ao clima","Demonstração de Clima & Meio Ambiente. O Carbon Brief publica métodos e dados com cada análise.","carbon-brief","climate-environment","https://www.carbonbrief.org"],
+  ["Cobertura neutra de conflitos: o que as agências fazem diferente","Demonstração de Conflitos Internacionais. A cobertura aqui se restringe a agências que atribuem números de vítimas e sinalizam alegações não verificadas.","afp","international-conflicts","https://www.afp.com"],
+  ["Da janela de lançamento à órbita: como as missões são agendadas","Demonstração de Espaço & Astronomia. Em modo ao vivo, comunicados da NASA e cobertura técnica de lançamentos.","nasa","space-astronomy","https://www.nasa.gov/news/"],
+  ["Benchmarks, parâmetros e o que os model cards de IA divulgam","Demonstração de Tecnologia & IA. Redações especializadas avaliam sistemas por benchmarks publicados, não por press releases.","ieee-spectrum","technology-ai","https://spectrum.ieee.org"],
   ["Como agências de checagem documentam um veredito","Artigo de demonstração da seção Brasil. A Aos Fatos publica o passo a passo de cada checagem.","aos-fatos","br-politics","https://www.aosfatos.org"],
   ["IPCA, Selic e câmbio: o vocabulário básico da economia","Demonstração da categoria Economia & Inflação. Em modo ao vivo, análise orientada a dados do Nexo Jornal.","nexo","br-economy","https://www.nexojornal.com.br"],
   ["Jornalismo investigativo independente: como se financia","Demonstração da seção Brasil. A Agência Pública publica suas fontes de financiamento.","agencia-publica","br-regional","https://apublica.org"],
@@ -1029,6 +1044,8 @@ const state = {
   lastUpdated: (lsGet(LS.meta, {}) || {}).lastUpdated || null,
   favs: new Map((lsGet(LS.favs, []) || []).filter(a => a && a.hash && a.title).map(a => [a.hash, a])),
   index: new Map(),
+  big: null,
+  lastFailures: null,
 };
 let theme = lsGet(LS.theme, null) === "light" ? "light" : "dark";
 
@@ -1049,28 +1066,114 @@ function applyFilters(list) {
   return out.slice().sort(byDateDesc);
 }
 
-function pickFeatured(list) {
-  const pool = list.slice(0, 40);
-  const ranked = [
-    ...pool.filter(a => a.tier === 1 && a.imageUrl),
-    ...pool.filter(a => a.tier === 1 && !a.imageUrl),
-    ...pool.filter(a => a.tier !== 1 && a.imageUrl),
-    ...pool.filter(a => a.tier !== 1 && !a.imageUrl),
-  ];
-  const seen = new Set(), out = [];
-  for (const a of ranked) {
-    if (seen.has(a.source)) continue;
-    seen.add(a.source); out.push(a);
-    if (out.length === 3) break;
+/* ── Grandes manchetes: semana · mês · ano ─────────────────────────────────
+   A importância é estimada pela cobertura simultânea: títulos parecidos
+   publicados por fontes distintas formam um cluster, e quanto mais fontes
+   (especialmente Tier 1) cobrirem a mesma história, maior a pontuação.
+   O destaque de cada janela fica FIXADO no localStorage e só muda quando
+   surge uma história com mais cobertura na mesma janela — ou quando a
+   semana, o mês ou o ano viram. */
+
+const STOPWORDS = new Set([
+  "the","and","for","with","that","this","from","after","over","into","amid","says","said",
+  "will","have","been","are","was","what","when","why","how","new","more","about","their",
+  "como","para","com","que","uma","por","mais","dos","das","nas","nos","sobre","apos","diz",
+  "vai","ser","tem","sao","foi","pela","pelo","entre","contra","anos","deve","pode","fica",
+]);
+const deburr = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "");
+function titleTokens(t) {
+  return new Set(
+    deburr(t.toLowerCase()).replace(/[^a-z0-9\s]/g, " ").split(/\s+/)
+      .filter(w => w.length >= 4 && !STOPWORDS.has(w)),
+  );
+}
+
+function computeBigStory(articles, region, fromTs) {
+  const win = articles.filter(a => a.region === region && !a.isSample && Date.parse(a.publishedAt) >= fromTs);
+  if (win.length === 0) return null;
+
+  const clusters = [];
+  for (const a of win) {
+    const toks = titleTokens(a.title);
+    if (toks.size < 2) continue;
+    let placed = false;
+    for (const c of clusters) {
+      let n = 0;
+      for (const w of toks) if (c.tokens.has(w)) n++;
+      if (n >= 3 || n >= Math.min(toks.size, c.seed) * 0.6) {
+        c.items.push(a);
+        for (const w of toks) c.tokens.add(w);
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) clusters.push({ tokens: new Set(toks), seed: toks.size, items: [a] });
   }
-  return out.length === 3 ? out : ranked.slice(0, 3);
+
+  let best = null, bestScore = 0;
+  for (const c of clusters) {
+    const srcs = new Set(c.items.map(i => i.source));
+    if (srcs.size < 2) continue; // "grande" exige cobertura de 2+ fontes
+    const t1 = new Set(c.items.filter(i => i.tier === 1).map(i => i.source));
+    const score = srcs.size * 2 + t1.size * 2 + Math.min(c.items.length, 8);
+    if (score > bestScore) { bestScore = score; best = c; }
+  }
+  if (best) {
+    const rep = best.items.slice().sort((x, y) =>
+      ((y.tier === 1) - (x.tier === 1)) ||
+      (Boolean(y.imageUrl) - Boolean(x.imageUrl)) ||
+      byDateDesc(x, y))[0];
+    return { article: rep, score: bestScore, sources: [...new Set(best.items.map(i => i.sourceName))] };
+  }
+  // Sem cluster multi-fonte na janela: usa o Tier 1 mais recente como provisório.
+  const t1 = win.filter(a => a.tier === 1);
+  const rep = (t1.length > 0 ? t1 : win).slice().sort(byDateDesc)[0];
+  return { article: rep, score: 1, sources: [rep.sourceName] };
+}
+
+function windowsNow() {
+  const n = new Date();
+  const pad = v => String(v).padStart(2, "0");
+  const monday = new Date(n.getFullYear(), n.getMonth(), n.getDate() - ((n.getDay() + 6) % 7));
+  return {
+    week:  { key: "W" + monday.getFullYear() + pad(monday.getMonth() + 1) + pad(monday.getDate()),
+             from: monday.getTime(), label: "Semana", tone: "#f59e0b" },
+    month: { key: "M" + n.getFullYear() + pad(n.getMonth() + 1),
+             from: new Date(n.getFullYear(), n.getMonth(), 1).getTime(), label: "Mês", tone: "#a78bfa" },
+    year:  { key: "Y" + n.getFullYear(),
+             from: new Date(n.getFullYear(), 0, 1).getTime(), label: "Ano", tone: "#22d3ee" },
+  };
+}
+
+function updateBigStories() {
+  const wins = windowsNow();
+  const store = lsGet(LS.big, {}) || {};
+  for (const region of ["world", "brazil"]) {
+    store[region] = store[region] || {};
+    for (const k of Object.keys(wins)) {
+      const cand = computeBigStory(state.articles, region, wins[k].from);
+      if (!cand) continue;
+      const cur = store[region][k];
+      if (!cur || cur.key !== wins[k].key || cand.score > cur.score) {
+        store[region][k] = {
+          key: wins[k].key,
+          score: cand.score,
+          article: cand.article,
+          sources: cand.sources.slice(0, 8),
+          decidedAt: new Date().toISOString(),
+        };
+      }
+    }
+  }
+  lsSet(LS.big, store);
+  state.big = store;
 }
 
 /* ═══════════════ 8 · Rendering ═══════════════ */
 
 function tierSpan(a) {
   const s = SRC[a.source];
-  const label = a.tier === 1 ? "Tier 1 · Gold-standard neutrality" : "Tier 2 · Specialist, evidence-based press";
+  const label = a.tier === 1 ? "Tier 1 · Padrão-ouro de neutralidade" : "Tier 2 · Imprensa especializada baseada em evidências";
   return `<span style="display:inline-flex" title="${esc(label + (s ? " — " + s.why : ""))}"><svg class="icon sm ${a.tier === 1 ? "tier1" : "tier2"}"><use href="#${a.tier === 1 ? "i-star" : "i-check-badge"}"/></svg></span>`;
 }
 
@@ -1082,7 +1185,7 @@ function catChip(a) {
 
 function saveBtnHTML(a) {
   const on = state.favs.has(a.hash);
-  return `<button class="save-btn${on ? " on" : ""}" data-hash="${esc(a.hash)}" aria-pressed="${on}" aria-label="${on ? "Remove from saved" : "Save article"}"><svg class="icon"><use href="#${on ? "i-bookmark-f" : "i-bookmark"}"/></svg></button>`;
+  return `<button class="save-btn${on ? " on" : ""}" data-hash="${esc(a.hash)}" aria-pressed="${on}" aria-label="${on ? "Remover dos salvos" : "Salvar artigo"}"><svg class="icon"><use href="#${on ? "i-bookmark-f" : "i-bookmark"}"/></svg></button>`;
 }
 
 function cardHTML(a, i) {
@@ -1099,25 +1202,46 @@ function cardHTML(a, i) {
     <div class="card-foot">
       <span class="card-src">${tierSpan(a)}<b>${esc(a.sourceName)}</b></span>
       <span class="card-when">
-        <span title="Published ${esc(fmtDate(a.publishedAt))}" style="display:inline-flex;align-items:center;gap:4px"><svg class="icon sm"><use href="#i-clock"/></svg><span class="ta" data-t="${esc(a.publishedAt)}">${esc(timeAgo(a.publishedAt))}</span></span>
-        <a class="ext" href="${esc(href)}" target="_blank" rel="noopener noreferrer" aria-label="Open at ${esc(a.sourceName)}"><svg class="icon sm"><use href="#i-ext"/></svg></a>
+        <span title="Publicado em ${esc(fmtDate(a.publishedAt))}" style="display:inline-flex;align-items:center;gap:4px"><svg class="icon sm"><use href="#i-clock"/></svg><span class="ta" data-t="${esc(a.publishedAt)}">${esc(timeAgo(a.publishedAt))}</span></span>
+        <a class="ext" href="${esc(href)}" target="_blank" rel="noopener noreferrer" aria-label="Abrir em ${esc(a.sourceName)}"><svg class="icon sm"><use href="#i-ext"/></svg></a>
       </span>
     </div>
   </div></article>`;
 }
 
-function featTileHTML(a, large) {
+function bigTileHTML(pin, win, large) {
+  const a = pin.article;
   const cat = CAT[a.category] || { color: "#94a3b8" };
   const href = safeHref(a.url);
   const hasImg = Boolean(a.imageUrl);
+  const cov = pin.sources.length > 1
+    ? `<span title="${esc(pin.sources.join(" · "))}">· ${pin.sources.length} fontes</span>`
+    : "";
   return `<a class="feat-tile${large ? " large" : ""}${hasImg ? " has-img" : ""}" style="--cat:${cat.color}" href="${esc(href)}" target="_blank" rel="noopener noreferrer">
     ${hasImg ? `<img class="feat-img" src="${esc(a.imageUrl)}" alt="" loading="lazy"/><div class="feat-shade"></div>` : `<div class="feat-grad"></div>`}
     <div class="feat-body">
-      <div style="display:flex;flex-wrap:wrap;gap:7px;align-items:center">${catChip(a)}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:7px;align-items:center">
+        <span class="chip tone" style="--tone:${win.tone}"><svg class="icon sm"><use href="#i-star"/></svg>${win.label.toUpperCase()}</span>
+        ${catChip(a)}
+      </div>
       <h3 class="feat-title">${esc(a.title)}</h3>
-      <div class="feat-meta">${tierSpan(a)}<span style="font-weight:600">${esc(a.sourceName)}</span><span>·</span><span class="ta" data-t="${esc(a.publishedAt)}">${esc(timeAgo(a.publishedAt))}</span><span class="spacer"></span><svg class="icon sm"><use href="#i-ext"/></svg></div>
+      <div class="feat-meta">${tierSpan(a)}<span style="font-weight:600">${esc(a.sourceName)}</span><span>·</span><span class="ta" data-t="${esc(a.publishedAt)}">${esc(timeAgo(a.publishedAt))}</span>${cov}<span class="spacer"></span><svg class="icon sm"><use href="#i-ext"/></svg></div>
     </div>
   </a>`;
+}
+
+function renderBig() {
+  const sec = $("#featured-section"), box = $("#featured");
+  const pins = (state.big && state.big[state.region]) || {};
+  const order = ["week", "month", "year"].filter(k => pins[k]);
+  if (hasActiveFilters() || order.length === 0) {
+    sec.classList.add("hidden");
+    box.innerHTML = "";
+    return;
+  }
+  const wins = windowsNow();
+  sec.classList.remove("hidden");
+  box.innerHTML = order.map((k, i) => bigTileHTML(pins[k], wins[k], i === 0)).join("");
 }
 
 const skeletonHTML = withImg => `<div class="card" style="animation:none">
@@ -1138,8 +1262,16 @@ let emptyMode = "refresh";
 function renderBanner() {
   const slot = $("#banner-slot");
   if (usingSamples() && !state.refreshing) {
-    slot.innerHTML = `<div class="banner" style="--tone:#fb923c"><svg class="icon"><use href="#i-alert"/></svg><div><b>Showing bundled sample data</b><span>No live articles are stored yet${navigator.onLine === false ? " and you appear to be offline" : ""}. Press Refresh to fetch current headlines from all sources.</span></div></div>`;
-  } else slot.innerHTML = "";
+    slot.innerHTML = `<div class="banner" style="--tone:#fb923c"><svg class="icon"><use href="#i-alert"/></svg><div><b>Exibindo dados de exemplo</b><span>Nenhum artigo ao vivo foi armazenado ainda${navigator.onLine === false ? " e você parece estar offline" : ""}. Toque em Atualizar para buscar as manchetes atuais de todas as fontes.</span></div></div>`;
+    return;
+  }
+  if (state.lastFailures && state.lastFailures.length > 0 && !state.refreshing) {
+    slot.innerHTML = `<div class="banner" style="--tone:#fb923c"><svg class="icon"><use href="#i-alert"/></svg><div><b>Algumas fontes não responderam na última atualização</b><span>${esc(state.lastFailures.join(" · "))}. Serão tentadas de novo na próxima atualização (veja detalhes no console do navegador).</span></div><button class="bx" id="banner-close" aria-label="Fechar aviso"><svg class="icon sm"><use href="#i-x"/></svg></button></div>`;
+    const bx = $("#banner-close");
+    if (bx) bx.addEventListener("click", () => { state.lastFailures = null; renderBanner(); });
+    return;
+  }
+  slot.innerHTML = "";
 }
 
 function renderFeaturedAndGrid() {
@@ -1159,21 +1291,12 @@ function renderFeaturedAndGrid() {
   const list = applyFilters(currentDataset());
   state.index = new Map(list.map(a => [a.hash, a]));
 
-  const showFeatured = !hasActiveFilters() && list.length >= 3;
-  let rest = list;
-  if (showFeatured) {
-    const picks = pickFeatured(list);
-    feat.innerHTML = featTileHTML(picks[0], true) + featTileHTML(picks[1], false) + featTileHTML(picks[2], false);
-    featSec.classList.remove("hidden");
-    const used = new Set(picks.map(a => a.hash));
-    rest = list.filter(a => !used.has(a.hash));
-  } else {
-    featSec.classList.add("hidden");
-    feat.innerHTML = "";
-  }
+  // Manchetes fixadas da semana/mês/ano; a grade abaixo mostra TUDO do dia a dia.
+  renderBig();
+  const rest = list;
 
   renderBanner();
-  $("#result-count").textContent = list.length.toLocaleString() + (list.length === 1 ? " result" : " results");
+  $("#result-count").textContent = list.length.toLocaleString() + (list.length === 1 ? " resultado" : " resultados");
 
   if (list.length === 0) {
     grid.innerHTML = "";
@@ -1181,14 +1304,14 @@ function renderFeaturedAndGrid() {
     more.classList.add("hidden");
     if (currentDataset().length === 0) {
       emptyMode = "refresh";
-      $("#empty-title").textContent = "No articles yet";
-      $("#empty-text").textContent = "Press Refresh to fetch the latest headlines from all sources.";
-      $("#empty-action").textContent = "Refresh now";
+      $("#empty-title").textContent = "Nenhum artigo ainda";
+      $("#empty-text").textContent = "Toque em Atualizar para buscar as manchetes mais recentes de todas as fontes.";
+      $("#empty-action").textContent = "Atualizar agora";
     } else {
       emptyMode = "clear";
-      $("#empty-title").textContent = "No articles match";
-      $("#empty-text").textContent = "Try widening the date range, clearing filters, or refreshing to pull the latest headlines.";
-      $("#empty-action").textContent = "Clear all filters";
+      $("#empty-title").textContent = "Nada corresponde aos filtros";
+      $("#empty-text").textContent = "Tente ampliar o intervalo de datas, limpar os filtros ou atualizar para buscar as manchetes mais recentes.";
+      $("#empty-action").textContent = "Limpar todos os filtros";
     }
     return;
   }
@@ -1198,7 +1321,7 @@ function renderFeaturedAndGrid() {
   grid.innerHTML = visible.map(cardHTML).join("");
   const remaining = rest.length - visible.length;
   more.classList.toggle("hidden", remaining <= 0);
-  $("#more-label").textContent = `Load more (${remaining.toLocaleString()} remaining)`;
+  $("#more-label").textContent = `Carregar mais (${remaining.toLocaleString()} restantes)`;
 }
 
 function renderStats() {
@@ -1210,9 +1333,9 @@ function renderStats() {
 
 function renderMode() {
   const chip = $("#mode-chip"), text = $("#mode-text");
-  if (usingSamples()) { chip.style.setProperty("--tone", "#fb923c"); text.textContent = "Sample data · refresh for live"; }
-  else if (idb.available) { chip.style.setProperty("--tone", "#34d399"); text.textContent = "Local-first · IndexedDB"; }
-  else { chip.style.setProperty("--tone", "#38bdf8"); text.textContent = "In-memory session"; }
+  if (usingSamples()) { chip.style.setProperty("--tone", "#fb923c"); text.textContent = "Dados de exemplo · atualize para ver notícias"; }
+  else if (idb.available) { chip.style.setProperty("--tone", "#34d399"); text.textContent = "Local · IndexedDB"; }
+  else { chip.style.setProperty("--tone", "#38bdf8"); text.textContent = "Sessão em memória"; }
 }
 
 function renderSaveCount() {
@@ -1227,11 +1350,11 @@ function renderSaved() {
   $("#sheet-foot").classList.toggle("hidden", favs.length === 0);
   const list = $("#saved-list");
   if (favs.length === 0) {
-    list.innerHTML = `<div class="empty" style="border:none;padding:64px 16px"><svg class="icon"><use href="#i-bookmark"/></svg><h3>Nothing saved yet</h3><p>Tap the bookmark on any card to keep it here for later reading.</p></div>`;
+    list.innerHTML = `<div class="empty" style="border:none;padding:64px 16px"><svg class="icon"><use href="#i-bookmark"/></svg><h3>Nada salvo ainda</h3><p>Toque no marcador de qualquer cartão para guardá-lo aqui.</p></div>`;
     return;
   }
   list.innerHTML = favs.map(a => `<div class="saved-item">
-    <div class="row">${catChip(a)}<button class="del" data-hash="${esc(a.hash)}" aria-label="Remove from saved"><svg class="icon sm"><use href="#i-trash"/></svg></button></div>
+    <div class="row">${catChip(a)}<button class="del" data-hash="${esc(a.hash)}" aria-label="Remover dos salvos"><svg class="icon sm"><use href="#i-trash"/></svg></button></div>
     <h4><a href="${esc(safeHref(a.url))}" target="_blank" rel="noopener noreferrer">${esc(a.title)}</a></h4>
     <div class="meta">${tierSpan(a)}<span>${esc(a.sourceName)}</span><span>·</span><span class="ta" data-t="${esc(a.publishedAt)}">${esc(timeAgo(a.publishedAt))}</span></div>
   </div>`).join("");
@@ -1240,7 +1363,7 @@ function renderSaved() {
 function renderRefreshBtn() {
   $("#btn-refresh").disabled = state.refreshing;
   $("#refresh-icon").classList.toggle("spin", state.refreshing);
-  if (!state.refreshing) $("#refresh-label").textContent = "Refresh";
+  if (!state.refreshing) $("#refresh-label").textContent = "Atualizar";
 }
 
 function renderClearBtn() {
@@ -1256,13 +1379,13 @@ function applyTheme() {
   document.documentElement.classList.toggle("dark", theme === "dark");
   document.documentElement.style.colorScheme = theme;
   $("#theme-icon use").setAttribute("href", theme === "dark" ? "#i-sun" : "#i-moon");
-  $("#btn-theme").setAttribute("aria-label", theme === "dark" ? "Switch to light mode" : "Switch to dark mode");
+  $("#btn-theme").setAttribute("aria-label", theme === "dark" ? "Mudar para tema claro" : "Mudar para tema escuro");
 }
 
 function populateSelects() {
-  $("#f-category").innerHTML = `<option value="">All categories</option>` +
+  $("#f-category").innerHTML = `<option value="">Todas as categorias</option>` +
     CATEGORIES.filter(c => c.region === state.region).map(c => `<option value="${c.slug}">${esc(c.name)}</option>`).join("");
-  $("#f-source").innerHTML = `<option value="">All sources</option>` +
+  $("#f-source").innerHTML = `<option value="">Todas as fontes</option>` +
     SOURCES.filter(s => s.region === state.region).map(s => `<option value="${s.slug}">${s.tier === 1 ? "★ " : "✓ "}${esc(s.name)}</option>`).join("");
   $("#f-category").value = state.category;
   $("#f-source").value = state.source;
@@ -1274,7 +1397,7 @@ function toast(kind, title, detail) {
   const el = document.createElement("div");
   el.className = "toast t-" + kind;
   const icon = kind === "ok" ? "i-check" : kind === "err" ? "i-alert" : "i-info";
-  el.innerHTML = `<svg class="icon"><use href="#${icon}"/></svg><div style="min-width:0;flex:1"><b>${esc(title)}</b>${detail ? `<span>${esc(detail)}</span>` : ""}</div><button class="x" aria-label="Dismiss"><svg class="icon sm"><use href="#i-x"/></svg></button>`;
+  el.innerHTML = `<svg class="icon"><use href="#${icon}"/></svg><div style="min-width:0;flex:1"><b>${esc(title)}</b>${detail ? `<span>${esc(detail)}</span>` : ""}</div><button class="x" aria-label="Fechar"><svg class="icon sm"><use href="#i-x"/></svg></button>`;
   el.querySelector(".x").addEventListener("click", () => el.remove());
   const box = $("#toasts");
   box.appendChild(el);
@@ -1292,7 +1415,7 @@ function toggleFav(hash) {
   document.querySelectorAll(`.save-btn[data-hash="${CSS.escape(hash)}"]`).forEach(btn => {
     btn.classList.toggle("on", on);
     btn.setAttribute("aria-pressed", String(on));
-    btn.setAttribute("aria-label", on ? "Remove from saved" : "Save article");
+    btn.setAttribute("aria-label", on ? "Remover dos salvos" : "Salvar artigo");
     btn.querySelector("use").setAttribute("href", on ? "#i-bookmark-f" : "#i-bookmark");
   });
   renderSaved(); renderSaveCount();
@@ -1309,16 +1432,16 @@ async function refresh() {
   const failures = [];
   const lists = await pool(6, pairs.map(([s, f]) => async () => {
     try {
-      const txt = await fetchFeedText(f.url);
-      const arts = parseFeed(txt, s, f);
+      const arts = await fetchSourceFeed(s, f);
       fetched += arts.length;
       return arts;
     } catch (e) {
-      failures.push(s.name + ": " + ((e && e.message) || e));
+      failures.push(s.name);
+      console.warn("[spectral] feed falhou:", s.name, f.url, (e && e.message) || e);
       return [];
     } finally {
       done++;
-      $("#refresh-label").textContent = `Fetching ${done}/${pairs.length}…`;
+      $("#refresh-label").textContent = `Buscando ${done}/${pairs.length}…`;
     }
   }));
 
@@ -1333,6 +1456,8 @@ async function refresh() {
     state.lastUpdated = new Date().toISOString();
     lsSet(LS.meta, { lastUpdated: state.lastUpdated });
     await idb.saveAll(state.articles);
+    updateBigStories();
+    state.lastFailures = failures.length > 0 ? [...new Set(failures)] : null;
   }
 
   state.refreshing = false;
@@ -1340,11 +1465,11 @@ async function refresh() {
   renderAll();
 
   if (okFeeds === 0) {
-    toast("err", "Couldn't reach any feed", "Check your connection — or the CORS relays may be briefly unavailable. Try again in a minute.");
+    toast("err", "Não foi possível acessar nenhum feed", "Verifique sua conexão — os relays CORS também podem estar indisponíveis. Tente novamente em um minuto.");
   } else if (failures.length > 0) {
-    toast("info", `Fetched ${fetched.toLocaleString()} articles · ${added.toLocaleString()} new`, `${failures.length} of ${pairs.length} feeds failed — they'll be retried next refresh`);
+    toast("info", `${fetched.toLocaleString()} artigos obtidos · ${added.toLocaleString()} novos`, `${failures.length} de ${pairs.length} feeds falharam — serão tentados de novo na próxima atualização`);
   } else {
-    toast("ok", `Fetched ${fetched.toLocaleString()} articles · ${added.toLocaleString()} new`, `All ${pairs.length} feeds responded`);
+    toast("ok", `${fetched.toLocaleString()} artigos obtidos · ${added.toLocaleString()} novos`, `Todos os ${pairs.length} feeds responderam`);
   }
 }
 
@@ -1477,12 +1602,15 @@ async function init() {
 
   await idb.init();
   state.articles = (await idb.load()).sort(byDateDesc);
+  state.big = lsGet(LS.big, null);
+  // Reavalia as janelas ao abrir: semana/mês/ano podem ter virado desde o último uso.
+  if (state.articles.length > 0) updateBigStories();
   renderAll();
 
-  // First run with an empty store: fetch automatically so the app is
-  // immediately usable. Subsequent updates are manual only.
+  // Primeira execução com armazenamento vazio: uma busca automática para o app
+  // ser imediatamente utilizável. Depois disso, só atualização manual.
   if (state.articles.length === 0 && navigator.onLine !== false) {
-    toast("info", "First run", "Fetching the latest headlines from all 37 feeds…");
+    toast("info", "Primeira execução", `Buscando as manchetes mais recentes dos ${FEED_COUNT} feeds…`);
     setTimeout(() => { refresh(); }, 400);
   }
 }
