@@ -1,0 +1,1494 @@
+<!doctype html>
+<!--
+  ═══════════════════════════════════════════════════════════════════════════
+  Spectral — Global News Dashboard · Standalone single-file edition
+
+  Zero backend. Zero build step. Zero CDN dependencies.
+  Open this file in any modern browser (double-click works).
+
+  How it works
+  ────────────
+  • Press Refresh: the browser fetches 37 public RSS/Atom feeds from 25 vetted
+    sources. Browsers enforce CORS, so each feed is tried directly first, then
+    through a chain of public CORS relays (allorigins.win → corsproxy.io →
+    codetabs.com). Feed URLs pass through those relays — no other data does.
+  • Articles are parsed with the native DOMParser, categorized by a keyword
+    classifier (EN + PT), deduped by content hash, and stored in IndexedDB
+    (in-memory fallback if unavailable). The newest 1,200 are retained.
+  • Favorites & theme live in localStorage. Everything works offline after
+    the first successful refresh.
+  • If nothing is reachable and nothing is stored, clearly-labeled sample
+    cards render so the layout is never empty.
+
+  Sources & methodology: https://github.com/garciareinert040-ai/spectral/blob/HEAD/docs/SOURCES.md
+  ═══════════════════════════════════════════════════════════════════════════
+-->
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Spectral — Global News Dashboard</title>
+<meta name="description" content="Fact-first global news dashboard. Wire services, public broadcasters and specialist press — aggregated in your browser, no backend required." />
+<link rel="icon" href='data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"%3E%3Cdefs%3E%3ClinearGradient id="g" x1="0" y1="0" x2="1" y2="1"%3E%3Cstop offset="0" stop-color="%23818cf8"/%3E%3Cstop offset="0.5" stop-color="%2322d3ee"/%3E%3Cstop offset="1" stop-color="%2334d399"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width="64" height="64" rx="14" fill="%230b0d12"/%3E%3Cpath d="M14 44 L32 12 L50 44" fill="none" stroke="url(%23g)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/%3E%3Cline x1="20" y1="50" x2="44" y2="50" stroke="url(%23g)" stroke-width="5" stroke-linecap="round"/%3E%3C/svg%3E' />
+<style>
+/* ── Design tokens ─────────────────────────────────────────────────────── */
+:root{
+  --bg:hsl(40 20% 97%); --fg:hsl(222 30% 10%);
+  --card:hsl(40 25% 99%); --muted:hsl(40 12% 91%); --muted-fg:hsl(222 12% 42%);
+  --accent:hsl(40 14% 88%); --border:hsl(40 10% 85%); --input:hsl(40 10% 85%);
+  --primary:hsl(222 30% 12%); --primary-fg:hsl(40 20% 97%);
+  --pop:hsl(40 25% 99%); --ring:hsl(222 30% 30%);
+  --radius:12px;
+  --shadow:0 10px 30px -12px rgb(0 0 0/.18);
+  --font-sans:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --font-display:"Fraunces",Georgia,"Times New Roman",serif;
+  --font-mono:ui-monospace,"JetBrains Mono",SFMono-Regular,Menlo,monospace;
+}
+.dark{
+  --bg:hsl(224 28% 5%); --fg:hsl(220 25% 92%);
+  --card:hsl(224 24% 8%); --muted:hsl(223 20% 13%); --muted-fg:hsl(220 12% 60%);
+  --accent:hsl(223 20% 16%); --border:hsl(223 18% 16%); --input:hsl(223 18% 18%);
+  --primary:hsl(220 25% 92%); --primary-fg:hsl(224 28% 7%);
+  --pop:hsl(224 26% 7%); --ring:hsl(220 60% 70%);
+  --shadow:0 18px 44px -18px rgb(0 0 0/.75);
+}
+/* ── Base ──────────────────────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;border-color:var(--border)}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--bg);color:var(--fg);font-family:var(--font-sans);
+  font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;
+  transition:background .25s ease,color .25s ease;
+}
+::selection{background:hsl(245 80% 65%/.32)}
+a{color:inherit}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;padding:0}
+img{max-width:100%;display:block}
+.container{width:100%;max-width:1440px;margin:0 auto;padding:0 24px}
+@media(max-width:640px){.container{padding:0 16px}}
+.icon{width:16px;height:16px;flex:none;vertical-align:-3px}
+.icon.sm{width:13px;height:13px}
+.hidden{display:none!important}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+/* ── Buttons & controls ────────────────────────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  height:36px;padding:0 14px;border-radius:9px;font-size:13.5px;font-weight:600;
+  transition:background .18s,color .18s,border-color .18s,opacity .18s,transform .18s;
+  white-space:nowrap;
+}
+.btn:focus-visible,.input:focus-visible,.tab:focus-visible,.icon-btn:focus-visible{
+  outline:2px solid var(--ring);outline-offset:2px;
+}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn-primary{background:var(--primary);color:var(--primary-fg)}
+.btn-primary:not(:disabled):hover{opacity:.88}
+.btn-outline{border:1px solid var(--input);background:transparent}
+.btn-outline:hover{background:var(--accent)}
+.btn-secondary{background:var(--muted);color:var(--fg)}
+.btn-secondary:not(:disabled):hover{background:var(--accent)}
+.btn-ghost:hover{background:var(--accent)}
+.icon-btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:36px;height:36px;border-radius:9px;transition:background .18s,color .18s;
+}
+.icon-btn:hover{background:var(--accent)}
+.input{
+  height:36px;width:100%;padding:0 12px;border-radius:9px;border:1px solid var(--input);
+  background:transparent;color:var(--fg);font:inherit;font-size:13.5px;
+  transition:border-color .18s;
+}
+.input::placeholder{color:var(--muted-fg)}
+.input:focus{outline:2px solid var(--ring);outline-offset:0;border-color:transparent}
+input[type=date].input{color-scheme:light}
+.dark input[type=date].input{color-scheme:dark}
+.select-wrap{position:relative;display:inline-flex}
+.select-wrap select{appearance:none;padding-right:30px;cursor:pointer}
+.select-wrap select option{background:var(--pop);color:var(--fg)}
+.select-wrap::after{
+  content:"";position:absolute;right:11px;top:50%;width:7px;height:7px;
+  border-right:1.6px solid var(--muted-fg);border-bottom:1.6px solid var(--muted-fg);
+  transform:translateY(-70%) rotate(45deg);pointer-events:none;
+}
+/* ── Chips / badges ────────────────────────────────────────────────────── */
+.chip{
+  display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;
+  font-size:11px;font-weight:600;letter-spacing:.02em;border:1px solid var(--border);
+}
+.chip .dot{width:6px;height:6px;border-radius:999px;background:var(--cat,#94a3b8)}
+.chip.cat{
+  border-color:color-mix(in srgb,var(--cat) 32%,transparent);
+  background:color-mix(in srgb,var(--cat) 13%,transparent);
+  color:color-mix(in srgb,var(--cat) 72%,var(--fg));
+}
+.chip.tone{
+  border-color:color-mix(in srgb,var(--tone) 40%,transparent);
+  background:color-mix(in srgb,var(--tone) 12%,transparent);
+  color:color-mix(in srgb,var(--tone) 78%,var(--fg));
+}
+.chip.muted{background:var(--muted);color:var(--muted-fg);border-color:transparent;text-transform:uppercase}
+/* ── Header ────────────────────────────────────────────────────────────── */
+header.app{
+  position:sticky;top:0;z-index:40;border-bottom:1px solid var(--border);
+  background:color-mix(in srgb,var(--bg) 82%,transparent);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+}
+.header-in{display:flex;align-items:center;gap:10px;height:64px}
+.brand{display:flex;align-items:center;gap:12px;text-decoration:none}
+.brand-name{font-family:var(--font-display);font-size:21px;font-weight:700;letter-spacing:-.01em;line-height:1}
+.brand-sub{display:block;margin-top:4px;font-size:9.5px;font-weight:700;letter-spacing:.22em;color:var(--muted-fg);text-transform:uppercase}
+@media(max-width:640px){.brand-sub{display:none}}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.updated-chip{
+  display:none;align-items:center;gap:8px;padding:6px 12px;border:1px solid var(--border);
+  border-radius:999px;background:var(--card);font-size:12px;color:var(--muted-fg);
+}
+@media(min-width:840px){.updated-chip{display:flex}}
+.pulse{width:8px;height:8px;border-radius:999px;background:#34d399;animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.save-count{
+  position:absolute;top:-7px;right:-7px;min-width:18px;height:18px;padding:0 5px;
+  border-radius:999px;background:var(--primary);color:var(--primary-fg);
+  font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;
+}
+.btn-label{display:none}@media(min-width:640px){.btn-label{display:inline}}
+/* ── Hero ──────────────────────────────────────────────────────────────── */
+.hero{position:relative;overflow:hidden;border-bottom:1px solid var(--border)}
+.hero::before{
+  content:"";position:absolute;inset:0;
+  background:
+    radial-gradient(38rem 20rem at 12% -10%,hsl(245 80% 60%/.16),transparent 60%),
+    radial-gradient(30rem 18rem at 85% -15%,hsl(190 85% 55%/.12),transparent 60%),
+    radial-gradient(24rem 16rem at 55% 120%,hsl(150 70% 45%/.07),transparent 60%);
+}
+.grid-tex{
+  position:absolute;inset:0;
+  background-image:
+    linear-gradient(to right,color-mix(in srgb,var(--fg) 4.5%,transparent) 1px,transparent 1px),
+    linear-gradient(to bottom,color-mix(in srgb,var(--fg) 4.5%,transparent) 1px,transparent 1px);
+  background-size:44px 44px;
+  -webkit-mask-image:radial-gradient(60rem 26rem at 50% 0%,black 35%,transparent 80%);
+  mask-image:radial-gradient(60rem 26rem at 50% 0%,black 35%,transparent 80%);
+}
+.hero-in{position:relative;padding:56px 0 60px}
+@media(min-width:1024px){.hero-in{padding:76px 0 80px}}
+.hero-chips{display:flex;flex-wrap:wrap;gap:8px}
+.hero h1{
+  margin:24px 0 0;font-family:var(--font-display);font-weight:700;
+  font-size:clamp(34px,6vw,58px);line-height:1.08;letter-spacing:-.02em;max-width:18ch;
+  text-wrap:balance;
+}
+.hero p.lede{margin:20px 0 0;max-width:60ch;font-size:16px;line-height:1.65;color:var(--muted-fg)}
+.stats{
+  margin-top:40px;display:grid;grid-template-columns:repeat(2,1fr);gap:1px;
+  max-width:760px;border:1px solid var(--border);border-radius:14px;overflow:hidden;
+  background:var(--border);
+}
+@media(min-width:640px){.stats{grid-template-columns:repeat(4,1fr)}}
+.stat{background:color-mix(in srgb,var(--card) 92%,transparent);padding:16px 20px;backdrop-filter:blur(4px)}
+.stat dt{margin:0;font-size:9.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--muted-fg)}
+.stat dd{margin:5px 0 0;font-family:var(--font-display);font-size:22px;font-weight:600;letter-spacing:-.01em}
+/* ── Filter bar ────────────────────────────────────────────────────────── */
+.filterbar{
+  position:sticky;top:64px;z-index:30;border-bottom:1px solid var(--border);
+  background:color-mix(in srgb,var(--bg) 86%,transparent);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  padding:12px 0;
+}
+.filter-rows{display:flex;flex-direction:column;gap:10px}
+.frow{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.tabs{display:inline-flex;height:40px;padding:4px;border-radius:11px;background:var(--muted);gap:2px}
+.tab{
+  display:inline-flex;align-items:center;gap:7px;padding:0 14px;border-radius:8px;
+  font-size:13.5px;font-weight:600;color:var(--muted-fg);transition:all .18s;
+}
+.tab[aria-selected=true]{background:var(--bg);color:var(--fg);box-shadow:0 1px 4px rgb(0 0 0/.18)}
+.search-wrap{position:relative;flex:1;min-width:180px}
+.search-wrap .icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted-fg)}
+.search-wrap .input{padding-left:34px}
+.result-count{display:none;font-size:12px;color:var(--muted-fg);font-variant-numeric:tabular-nums}
+@media(min-width:1024px){.result-count{display:block}}
+.daterange{display:flex;align-items:center;gap:6px;color:var(--muted-fg);font-size:12px}
+.daterange .input{width:138px;font-size:12px}
+/* ── Sections / banners ────────────────────────────────────────────────── */
+main{min-height:60vh}
+.section{padding-top:34px}
+.section-label{
+  display:flex;align-items:center;gap:8px;margin:0 0 16px;font-size:12.5px;font-weight:700;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--muted-fg);
+}
+.banner{
+  display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border-radius:12px;
+  border:1px solid color-mix(in srgb,var(--tone) 32%,transparent);
+  background:color-mix(in srgb,var(--tone) 10%,transparent);
+  font-size:13.5px;margin-bottom:20px;
+}
+.banner .icon{margin-top:2px;color:var(--tone)}
+.banner b{display:block;font-weight:600}
+.banner span{color:var(--muted-fg)}
+/* ── Featured ──────────────────────────────────────────────────────────── */
+.featured{display:grid;gap:20px}
+@media(min-width:1024px){.featured{grid-template-columns:repeat(3,1fr)}.feat-tile.large{grid-row:span 2;min-height:460px}}
+.feat-tile{
+  position:relative;display:flex;flex-direction:column;justify-content:flex-end;
+  min-height:200px;border-radius:18px;border:1px solid var(--border);overflow:hidden;
+  background:var(--card);text-decoration:none;transition:transform .3s,border-color .3s,box-shadow .3s;
+}
+.feat-tile.large{min-height:300px}
+.feat-tile:hover{transform:translateY(-4px);border-color:color-mix(in srgb,var(--fg) 20%,transparent);box-shadow:var(--shadow)}
+.feat-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .7s}
+.feat-tile:hover .feat-img{transform:scale(1.05)}
+.feat-shade{position:absolute;inset:0;background:linear-gradient(to top,rgb(0 0 0/.85),rgb(0 0 0/.4) 50%,rgb(0 0 0/.1))}
+.feat-grad{
+  position:absolute;inset:0;
+  background:
+    linear-gradient(135deg,color-mix(in srgb,var(--cat) 30%,transparent),color-mix(in srgb,var(--cat) 8%,transparent) 55%,transparent),
+    linear-gradient(to right,color-mix(in srgb,var(--fg) 4.5%,transparent) 1px,transparent 1px),
+    linear-gradient(to bottom,color-mix(in srgb,var(--fg) 4.5%,transparent) 1px,transparent 1px);
+  background-size:auto,44px 44px,44px 44px;
+}
+.feat-body{position:relative;padding:20px}
+.feat-tile.large .feat-body{padding:24px}
+.feat-title{
+  margin:12px 0 0;font-family:var(--font-display);font-weight:600;line-height:1.25;
+  letter-spacing:-.01em;font-size:17px;text-wrap:balance;
+}
+.feat-tile.large .feat-title{font-size:clamp(20px,2vw,29px)}
+.feat-tile.has-img .feat-title{color:#fff}
+.feat-meta{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12px;color:var(--muted-fg)}
+.feat-tile.has-img .feat-meta{color:rgb(255 255 255/.78)}
+.feat-meta .spacer{margin-left:auto}
+/* ── Masonry grid & cards ──────────────────────────────────────────────── */
+.masonry{columns:1;column-gap:20px}
+@media(min-width:640px){.masonry{columns:2}}
+@media(min-width:1280px){.masonry{columns:3}}
+@media(min-width:1600px){.masonry{columns:4}}
+.masonry>*{break-inside:avoid;margin-bottom:20px;width:100%;display:inline-block;vertical-align:top}
+.card{
+  border:1px solid var(--border);border-radius:14px;background:var(--card);overflow:hidden;
+  transition:transform .3s,border-color .3s,box-shadow .3s;
+  animation:card-in .55s cubic-bezier(.21,.6,.35,1) both;
+}
+.card:hover{transform:translateY(-4px);border-color:color-mix(in srgb,var(--fg) 15%,transparent);box-shadow:var(--shadow)}
+@keyframes card-in{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.card,.toast{animation:none}}
+.card-img{position:relative;aspect-ratio:16/9;overflow:hidden;background:var(--muted)}
+.card-img img{width:100%;height:100%;object-fit:cover;transition:transform .5s}
+.card:hover .card-img img{transform:scale(1.04)}
+.card-bar{height:6px;background:linear-gradient(to right,color-mix(in srgb,var(--cat) 55%,transparent),color-mix(in srgb,var(--cat) 12%,transparent),transparent)}
+.card-body{padding:18px 20px 16px}
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.card-chips{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
+.save-btn{
+  flex:none;padding:6px;border-radius:8px;color:var(--muted-fg);opacity:.6;
+  transition:all .18s;
+}
+.card:hover .save-btn{opacity:1}
+.save-btn:hover{background:var(--accent);color:var(--fg)}
+.save-btn.on{color:#f59e0b;opacity:1}
+.card-title{margin:12px 0 0;font-family:var(--font-display);font-size:17.5px;font-weight:600;line-height:1.3;letter-spacing:-.01em}
+.card-title a{text-decoration:none}
+.card-title a:hover{text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--fg) 35%,transparent);text-underline-offset:4px}
+.card-sum{
+  margin:10px 0 0;font-size:13.5px;line-height:1.6;color:var(--muted-fg);
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+}
+.card-foot{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin-top:15px;padding-top:13px;border-top:1px solid var(--border);
+  font-size:11.5px;color:var(--muted-fg);
+}
+.card-src{display:flex;align-items:center;gap:6px;min-width:0}
+.card-src b{font-weight:600;color:color-mix(in srgb,var(--fg) 82%,transparent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-when{display:flex;align-items:center;gap:9px;flex:none}
+.tier1{color:#f59e0b}.tier2{color:#34d399}
+.ext{padding:4px;border-radius:7px;display:inline-flex;transition:background .18s,color .18s}
+.ext:hover{background:var(--accent);color:var(--fg)}
+/* ── Skeletons / empty state ───────────────────────────────────────────── */
+.skel{position:relative;overflow:hidden;background:var(--muted);border-radius:8px}
+.skel::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(100deg,transparent 30%,color-mix(in srgb,var(--fg) 6%,transparent) 50%,transparent 70%);
+  background-size:700px 100%;animation:shimmer 1.6s linear infinite;
+}
+@keyframes shimmer{0%{background-position:-700px 0}100%{background-position:700px 0}}
+.empty{
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+  padding:76px 24px;border:1px dashed var(--border);border-radius:18px;
+}
+.empty .icon{width:40px;height:40px;color:color-mix(in srgb,var(--muted-fg) 55%,transparent)}
+.empty h3{margin:18px 0 0;font-family:var(--font-display);font-size:20px}
+.empty p{margin:7px 0 0;max-width:42ch;font-size:13.5px;color:var(--muted-fg)}
+.loadmore{display:flex;justify-content:center;margin-top:32px}
+/* ── Saved sheet ───────────────────────────────────────────────────────── */
+.overlay{
+  position:fixed;inset:0;z-index:50;background:rgb(0 0 0/.6);
+  backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .28s;
+}
+.overlay.open{opacity:1;pointer-events:auto}
+.sheet{
+  position:fixed;top:0;right:0;bottom:0;z-index:51;width:min(92vw,420px);
+  background:var(--bg);border-left:1px solid var(--border);box-shadow:var(--shadow);
+  transform:translateX(105%);transition:transform .32s cubic-bezier(.32,.72,.35,1);
+  display:flex;flex-direction:column;
+}
+.sheet.open{transform:none}
+.sheet-head{padding:22px 24px 16px;border-bottom:1px solid var(--border)}
+.sheet-head h2{margin:0;font-family:var(--font-display);font-size:19px}
+.sheet-head h2 small{font-family:var(--font-sans);font-size:13px;font-weight:400;color:var(--muted-fg)}
+.sheet-head p{margin:6px 0 0;font-size:12.5px;color:var(--muted-fg)}
+.sheet-close{position:absolute;top:16px;right:16px}
+.sheet-list{flex:1;overflow-y:auto;padding:14px 18px;scrollbar-width:thin}
+.sheet-list::-webkit-scrollbar{width:8px}
+.sheet-list::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--fg) 15%,transparent);border-radius:99px}
+.saved-item{padding:12px;border-radius:11px;transition:background .18s}
+.saved-item:hover{background:color-mix(in srgb,var(--accent) 60%,transparent)}
+.saved-item+.saved-item{border-top:1px solid var(--border)}
+.saved-item .row{display:flex;align-items:center;gap:8px}
+.saved-item .del{margin-left:auto;padding:4px;border-radius:7px;color:var(--muted-fg);opacity:0;transition:all .18s}
+.saved-item:hover .del{opacity:1}
+.saved-item .del:hover{color:#fb7185}
+.saved-item h4{margin:9px 0 0;font-family:var(--font-display);font-size:14px;font-weight:600;line-height:1.35}
+.saved-item h4 a{text-decoration:none}
+.saved-item h4 a:hover{text-decoration:underline;text-underline-offset:3px}
+.saved-item .meta{display:flex;align-items:center;gap:6px;margin-top:7px;font-size:11.5px;color:var(--muted-fg)}
+.sheet-foot{padding:14px 18px;border-top:1px solid var(--border)}
+/* ── Toasts ────────────────────────────────────────────────────────────── */
+.toasts{position:fixed;bottom:16px;right:16px;z-index:60;display:flex;flex-direction:column;gap:8px;width:min(92vw,380px)}
+.toast{
+  display:flex;gap:12px;align-items:flex-start;padding:13px 14px;border-radius:12px;
+  border:1px solid var(--border);background:color-mix(in srgb,var(--pop) 96%,transparent);
+  box-shadow:var(--shadow);backdrop-filter:blur(8px);
+  animation:card-in .4s cubic-bezier(.21,.6,.35,1) both;font-size:13px;
+}
+.toast .icon{margin-top:1px}
+.toast b{display:block;font-weight:600;font-size:13.5px}
+.toast span{color:var(--muted-fg);font-size:12px}
+.toast .x{margin-left:auto;padding:2px;color:var(--muted-fg)}
+.toast .x:hover{color:var(--fg)}
+.t-ok .icon{color:#34d399}.t-err .icon{color:#fb7185}.t-info .icon{color:#38bdf8}
+/* ── Footer ────────────────────────────────────────────────────────────── */
+footer.app{margin-top:64px;border-top:1px solid var(--border);background:color-mix(in srgb,var(--card) 40%,transparent)}
+.foot-grid{display:grid;gap:40px;padding:48px 0}
+@media(min-width:840px){.foot-grid{grid-template-columns:repeat(3,1fr)}}
+.foot-grid h3{margin:0;font-family:var(--font-display);font-size:17px}
+.foot-grid h4{margin:0 0 14px;font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--muted-fg)}
+.foot-grid p,.foot-grid li{font-size:12.5px;line-height:1.65;color:var(--muted-fg)}
+.foot-grid ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px}
+.foot-grid a{text-underline-offset:4px}
+.tier-row{display:flex;gap:11px;font-size:13px}
+.tier-row+.tier-row{margin-top:14px}
+.tier-row .icon{margin-top:2px}
+.tier-row b{font-weight:600;display:block}
+.tier-row small{display:block;margin-top:2px;font-size:11.5px;line-height:1.6;color:var(--muted-fg)}
+.foot-bottom{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;padding:18px 0;border-top:1px solid var(--border);font-size:12px;color:var(--muted-fg)}
+.spin{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <defs>
+    <linearGradient id="brand-g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#818cf8"/><stop offset=".5" stop-color="#22d3ee"/><stop offset="1" stop-color="#34d399"/>
+    </linearGradient>
+  </defs>
+  <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.6 0 4.9 1.1 6.6 2.8L21 8"/><path d="M21 3v5h-5"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
+  <symbol id="i-bookmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></symbol>
+  <symbol id="i-bookmark-f" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M12 2.5l3.09 6.26L22 9.77l-5 4.87 1.18 6.86L12 18.27l-6.18 3.23L7 14.64l-5-4.87 6.91-1.01z"/></symbol>
+  <symbol id="i-check-badge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12l2.5 2.5 4.5-5"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14.5 14.5 0 0 1 0 18M12 3a14.5 14.5 0 0 0 0 18"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></symbol>
+  <symbol id="i-ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M8 7h9v9"/></symbol>
+  <symbol id="i-news" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14a2 2 0 0 0 2 2zM4 21h16"/><path d="M6 7h8M6 11h8M6 15h5"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.8l1.9 5.7 5.7 1.9-5.7 1.9L12 18l-1.9-5.7L4.4 10.4l5.7-1.9zM19 15l.9 2.6L22.5 18.5l-2.6.9L19 22l-.9-2.6-2.6-.9 2.6-.9z"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5"/><circle cx="12" cy="16.5" r=".4" fill="currentColor"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="7.8" r=".4" fill="currentColor"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.2l2.4 2.4 4.6-5.2"/></symbol>
+  <symbol id="i-db" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><ellipse cx="12" cy="5.5" rx="8" ry="2.8"/><path d="M4 5.5V18.5c0 1.5 3.6 2.8 8 2.8s8-1.3 8-2.8V5.5M4 12c0 1.5 3.6 2.8 8 2.8s8-1.3 8-2.8"/></symbol>
+  <symbol id="i-brand" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="currentColor" opacity=".06"/><path d="M14 44 L32 12 L50 44" fill="none" stroke="url(#brand-g)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><line x1="20" y1="50" x2="44" y2="50" stroke="url(#brand-g)" stroke-width="5" stroke-linecap="round"/></symbol>
+</svg>
+
+<header class="app">
+  <div class="container header-in">
+    <a class="brand" href="#" onclick="return false">
+      <svg class="icon" style="width:32px;height:32px"><use href="#i-brand"/></svg>
+      <span>
+        <span class="brand-name">Spectral</span>
+        <span class="brand-sub">Global News Desk · Standalone</span>
+      </span>
+    </a>
+    <div class="header-right">
+      <div class="updated-chip"><span class="pulse"></span>Updated <span id="updated-mini">never</span></div>
+      <button id="btn-refresh" class="btn btn-primary">
+        <svg class="icon" id="refresh-icon"><use href="#i-refresh"/></svg>
+        <span id="refresh-label">Refresh</span>
+      </button>
+      <button id="btn-saved" class="btn btn-outline" style="position:relative" aria-label="Open saved articles">
+        <svg class="icon"><use href="#i-bookmark"/></svg>
+        <span class="btn-label">Saved</span>
+        <span id="save-count" class="save-count hidden">0</span>
+      </button>
+      <button id="btn-theme" class="icon-btn" aria-label="Toggle color theme">
+        <svg class="icon" id="theme-icon"><use href="#i-sun"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="grid-tex" aria-hidden="true"></div>
+    <div class="container hero-in">
+      <div class="hero-chips">
+        <span class="chip tone" style="--tone:#f59e0b"><svg class="icon sm"><use href="#i-star"/></svg><span id="tier1-chip">7</span>&nbsp;Tier-1 wire &amp; public-interest sources</span>
+        <span class="chip tone" style="--tone:#38bdf8"><svg class="icon sm"><use href="#i-globe"/></svg>World + Brazil coverage</span>
+        <span class="chip tone" id="mode-chip" style="--tone:#38bdf8"><svg class="icon sm"><use href="#i-db"/></svg><span id="mode-text">Local-first</span></span>
+      </div>
+      <h1>The signal,<br/>without the noise.</h1>
+      <p class="lede">
+        Spectral aggregates wire services, public broadcasters, peer-reviewed and specialist press
+        into one dashboard — categorized, credibility-tiered and refreshed on your command.
+        This edition runs entirely in your browser: no server, no account, no tracking.
+      </p>
+      <dl class="stats">
+        <div class="stat"><dt>articles stored</dt><dd id="stat-articles">—</dd></div>
+        <div class="stat"><dt>vetted sources</dt><dd id="stat-sources">—</dd></div>
+        <div class="stat"><dt>feeds monitored</dt><dd id="stat-feeds">—</dd></div>
+        <div class="stat"><dt>last updated</dt><dd id="stat-updated">never</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <div class="filterbar">
+    <div class="container filter-rows">
+      <div class="frow">
+        <div class="tabs" role="tablist" aria-label="Region">
+          <button class="tab" role="tab" data-region="world" aria-selected="true"><svg class="icon"><use href="#i-globe"/></svg>World News</button>
+          <button class="tab" role="tab" data-region="brazil" aria-selected="false"><svg class="icon"><use href="#i-pin"/></svg>Brazil</button>
+        </div>
+        <div class="search-wrap">
+          <svg class="icon"><use href="#i-search"/></svg>
+          <input id="f-q" class="input" type="search" placeholder="Search headlines and summaries…" aria-label="Search articles"/>
+        </div>
+        <span class="result-count" id="result-count"></span>
+      </div>
+      <div class="frow">
+        <span class="select-wrap" style="width:200px"><select id="f-category" class="input" aria-label="Filter by category"></select></span>
+        <span class="select-wrap" style="width:200px"><select id="f-source" class="input" aria-label="Filter by source"></select></span>
+        <span class="daterange">
+          <svg class="icon"><use href="#i-cal"/></svg>
+          <input id="f-from" type="date" class="input" aria-label="Published after"/>
+          <span>–</span>
+          <input id="f-to" type="date" class="input" aria-label="Published before"/>
+        </span>
+        <button id="f-clear" class="btn btn-ghost hidden" style="color:var(--muted-fg);height:32px;font-size:12.5px">
+          <svg class="icon sm"><use href="#i-x"/></svg>Clear filters
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <section id="featured-section" class="section hidden" aria-label="Featured stories">
+      <p class="section-label"><svg class="icon" style="color:#f59e0b"><use href="#i-spark"/></svg>Featured stories</p>
+      <div id="featured" class="featured"></div>
+    </section>
+
+    <section class="section" aria-label="News articles">
+      <div id="banner-slot"></div>
+      <div id="grid" class="masonry"></div>
+      <div id="empty" class="empty hidden">
+        <svg class="icon"><use href="#i-news"/></svg>
+        <h3 id="empty-title">No articles yet</h3>
+        <p id="empty-text">Press Refresh to fetch the latest headlines from all sources.</p>
+        <button id="empty-action" class="btn btn-outline" style="margin-top:20px">Refresh now</button>
+      </div>
+      <div class="loadmore">
+        <button id="btn-more" class="btn btn-secondary hidden">
+          <svg class="icon"><use href="#i-chev"/></svg><span id="more-label">Load more</span>
+        </button>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer class="app">
+  <div class="container foot-grid">
+    <div>
+      <h3>Spectral</h3>
+      <p style="max-width:34ch;margin-top:12px">
+        A fact-first dashboard limited to wire services, public broadcasters, non-profit newsrooms
+        and specialist press. Editorial and opinion desks are excluded by design.
+      </p>
+      <p style="margin-top:14px"><a href="https://github.com/garciareinert040-ai/spectral/blob/HEAD/docs/SOURCES.md" target="_blank" rel="noopener noreferrer">Read the sourcing methodology →</a></p>
+    </div>
+    <div>
+      <h4>Credibility tiers</h4>
+      <div class="tier-row"><svg class="icon tier1"><use href="#i-star"/></svg><div><b>Tier 1 — Gold standard</b><small id="foot-tier1"></small></div></div>
+      <div class="tier-row"><svg class="icon tier2"><use href="#i-check-badge"/></svg><div><b>Tier 2 — Specialist press</b><small id="foot-tier2"></small></div></div>
+    </div>
+    <div>
+      <h4>Notes</h4>
+      <ul>
+        <li>Headlines and summaries remain © their publishers; every card links to the original article.</li>
+        <li>Feeds are fetched in your browser. Because of CORS, requests fall back through public relays (allorigins.win, corsproxy.io, codetabs.com) — only feed URLs pass through them.</li>
+        <li>Reuters, AP and AFP headlines arrive via the Google News RSS proxy; their direct APIs are enterprise-licensed.</li>
+        <li>Articles persist in IndexedDB on this device. Updates are manual — nothing syncs in the background.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="container foot-bottom">
+    <span>© <span id="year"></span> Spectral — Global News Dashboard · single-file edition</span>
+    <a href="https://github.com/garciareinert040-ai/spectral" target="_blank" rel="noopener noreferrer">Source code on GitHub</a>
+  </div>
+</footer>
+
+<div id="overlay" class="overlay"></div>
+<aside id="sheet" class="sheet" role="dialog" aria-modal="true" aria-label="Saved articles">
+  <div class="sheet-head">
+    <h2>Saved articles <small id="saved-n"></small></h2>
+    <p>Stored in this browser — available offline.</p>
+    <button id="sheet-close" class="icon-btn sheet-close" aria-label="Close saved articles"><svg class="icon"><use href="#i-x"/></svg></button>
+  </div>
+  <div id="saved-list" class="sheet-list"></div>
+  <div id="sheet-foot" class="sheet-foot hidden">
+    <button id="btn-clear-saved" class="btn btn-outline" style="width:100%;color:var(--muted-fg)">
+      <svg class="icon"><use href="#i-trash"/></svg>Clear all saved articles
+    </button>
+  </div>
+</aside>
+
+<div id="toasts" class="toasts"></div>
+<script>
+"use strict";
+(() => {
+
+/* ═══════════════ 1 · Registry: categories & sources ═══════════════ */
+
+const CATEGORIES = [
+  { slug:"technology-ai",           name:"Technology & AI",         region:"world",  color:"#a78bfa" },
+  { slug:"politics-government",     name:"Politics & Government",   region:"world",  color:"#60a5fa" },
+  { slug:"business-markets",        name:"Business & Markets",      region:"world",  color:"#34d399" },
+  { slug:"science-health",          name:"Science & Health",        region:"world",  color:"#22d3ee" },
+  { slug:"climate-environment",     name:"Climate & Environment",   region:"world",  color:"#a3e635" },
+  { slug:"international-conflicts", name:"International Conflicts", region:"world",  color:"#fb7185" },
+  { slug:"space-astronomy",         name:"Space & Astronomy",       region:"world",  color:"#818cf8" },
+  { slug:"br-politics",             name:"Brazilian Politics",      region:"brazil", color:"#facc15" },
+  { slug:"br-economy",              name:"Economy & Inflation",     region:"brazil", color:"#4ade80" },
+  { slug:"br-justice",              name:"Crime & Justice",         region:"brazil", color:"#f87171" },
+  { slug:"br-education",            name:"Education",               region:"brazil", color:"#38bdf8" },
+  { slug:"br-regional",             name:"Regional News",           region:"brazil", color:"#fb923c" },
+  { slug:"br-tech",                 name:"Tech Innovation",         region:"brazil", color:"#e879f9" },
+];
+const CAT = Object.fromEntries(CATEGORIES.map(c => [c.slug, c]));
+
+const gnews = q => "https://news.google.com/rss/search?q=" + encodeURIComponent(q) + "&hl=en-US&gl=US&ceid=US:en";
+
+/* feed.mode: "fixed" = topic feed, always defaultCategory · "classify" = run keyword classifier */
+const SOURCES = [
+  { slug:"reuters", name:"Reuters", region:"world", tier:1, viaGoogleNews:true,
+    why:"Wire service bound by the Thomson Reuters Trust Principles; strict sourcing and attribution standards.",
+    feeds:[
+      { url:gnews("site:reuters.com world when:2d"), defaultCategory:"politics-government", mode:"classify" },
+      { url:gnews("site:reuters.com (markets OR economy) when:2d"), defaultCategory:"business-markets", mode:"classify" },
+      { url:gnews("site:reuters.com technology when:2d"), defaultCategory:"technology-ai", mode:"classify" },
+    ]},
+  { slug:"ap", name:"Associated Press", region:"world", tier:1, viaGoogleNews:true,
+    why:"Not-for-profit news cooperative; the de-facto reference for sourcing discipline and corrections.",
+    feeds:[
+      { url:gnews("site:apnews.com world when:2d"), defaultCategory:"politics-government", mode:"classify" },
+      { url:gnews("site:apnews.com (science OR health) when:2d"), defaultCategory:"science-health", mode:"classify" },
+      { url:gnews("site:apnews.com politics when:2d"), defaultCategory:"politics-government", mode:"classify" },
+    ]},
+  { slug:"afp", name:"Agence France-Presse", region:"world", tier:1, viaGoogleNews:true,
+    why:"Global wire service with a statutory independence charter and a dedicated fact-checking desk.",
+    feeds:[
+      { url:gnews('"AFP" site:afp.com when:7d'), defaultCategory:"politics-government", mode:"classify" },
+      { url:"https://factcheck.afp.com/rss.xml", defaultCategory:"politics-government", mode:"classify" },
+    ]},
+  { slug:"bbc", name:"BBC News", region:"world", tier:1,
+    why:"Public broadcaster operating under a royal charter requiring due impartiality and accuracy.",
+    feeds:[
+      { url:"https://feeds.bbci.co.uk/news/world/rss.xml", defaultCategory:"politics-government", mode:"classify" },
+      { url:"https://feeds.bbci.co.uk/news/technology/rss.xml", defaultCategory:"technology-ai", mode:"fixed" },
+      { url:"https://feeds.bbci.co.uk/news/science_and_environment/rss.xml", defaultCategory:"science-health", mode:"classify" },
+      { url:"https://feeds.bbci.co.uk/news/business/rss.xml", defaultCategory:"business-markets", mode:"fixed" },
+    ]},
+  { slug:"npr", name:"NPR", region:"world", tier:1,
+    why:"US public broadcaster with a published ethics handbook and rigorous editorial standards.",
+    feeds:[
+      { url:"https://feeds.npr.org/1004/rss.xml", defaultCategory:"politics-government", mode:"classify" },
+      { url:"https://feeds.npr.org/1014/rss.xml", defaultCategory:"politics-government", mode:"fixed" },
+      { url:"https://feeds.npr.org/1019/rss.xml", defaultCategory:"technology-ai", mode:"fixed" },
+      { url:"https://feeds.npr.org/1007/rss.xml", defaultCategory:"science-health", mode:"classify" },
+      { url:"https://feeds.npr.org/1006/rss.xml", defaultCategory:"business-markets", mode:"fixed" },
+    ]},
+  { slug:"propublica", name:"ProPublica", region:"world", tier:1,
+    why:"Non-profit investigative newsroom; publishes underlying documents and data with its reporting.",
+    feeds:[{ url:"https://www.propublica.org/feeds/propublica/main", defaultCategory:"politics-government", mode:"classify" }]},
+  { slug:"the-conversation", name:"The Conversation", region:"world", tier:1,
+    why:"Articles written by academics in their field, edited by journalists; disclosures on every piece.",
+    feeds:[{ url:"https://theconversation.com/articles.atom", defaultCategory:"science-health", mode:"classify" }]},
+  { slug:"ars-technica", name:"Ars Technica", region:"world", tier:2,
+    why:"Deep technical reporting on computing, AI and policy; analysis grounded in primary sources.",
+    feeds:[{ url:"https://feeds.arstechnica.com/arstechnica/index", defaultCategory:"technology-ai", mode:"classify" }]},
+  { slug:"ieee-spectrum", name:"IEEE Spectrum", region:"world", tier:2,
+    why:"Published by the world's largest engineering body; written and reviewed by practicing engineers.",
+    feeds:[{ url:"https://spectrum.ieee.org/feeds/feed.rss", defaultCategory:"technology-ai", mode:"fixed" }]},
+  { slug:"wired", name:"Wired", region:"world", tier:2,
+    why:"Long-form technology journalism; included for reported features rather than opinion.",
+    feeds:[{ url:"https://www.wired.com/feed/rss", defaultCategory:"technology-ai", mode:"classify" }]},
+  { slug:"scientific-american", name:"Scientific American", region:"world", tier:2,
+    why:"Oldest continuously published US magazine; coverage anchored to peer-reviewed research.",
+    feeds:[{ url:"http://rss.sciam.com/ScientificAmerican-Global", defaultCategory:"science-health", mode:"classify" }]},
+  { slug:"nature", name:"Nature News", region:"world", tier:2,
+    why:"News arm of the leading peer-reviewed journal; primary-literature reporting.",
+    feeds:[{ url:"https://www.nature.com/nature.rss", defaultCategory:"science-health", mode:"classify" }]},
+  { slug:"phys-org", name:"Phys.org", region:"world", tier:2,
+    why:"Research-news aggregator sourced directly from universities, journals and labs.",
+    feeds:[{ url:"https://phys.org/rss-feed/", defaultCategory:"science-health", mode:"classify" }]},
+  { slug:"science-daily", name:"ScienceDaily", region:"world", tier:2,
+    why:"Press-release-based research summaries with links to the underlying papers.",
+    feeds:[{ url:"https://www.sciencedaily.com/rss/top.xml", defaultCategory:"science-health", mode:"classify" }]},
+  { slug:"space-com", name:"Space.com", region:"world", tier:2,
+    why:"Dedicated spaceflight and astronomy desk; technical launch and mission coverage.",
+    feeds:[{ url:"https://www.space.com/feeds/all", defaultCategory:"space-astronomy", mode:"fixed" }]},
+  { slug:"earthsky", name:"EarthSky", region:"world", tier:2,
+    why:"Astronomy and earth-science explainers reviewed by scientists.",
+    feeds:[{ url:"https://earthsky.org/feed/", defaultCategory:"space-astronomy", mode:"fixed" }]},
+  { slug:"nasa", name:"NASA News", region:"world", tier:2,
+    why:"Primary source: official mission, research and launch announcements.",
+    feeds:[{ url:"https://www.nasa.gov/news-release/feed/", defaultCategory:"space-astronomy", mode:"fixed" }]},
+  { slug:"carbon-brief", name:"Carbon Brief", region:"world", tier:2,
+    why:"Climate science and policy analysis with data, methods and sources published alongside articles.",
+    feeds:[{ url:"https://www.carbonbrief.org/feed/", defaultCategory:"climate-environment", mode:"fixed" }]},
+  { slug:"our-world-in-data", name:"Our World in Data", region:"world", tier:2,
+    why:"Oxford-based research publication; every claim traceable to open datasets.",
+    feeds:[{ url:"https://ourworldindata.org/atom.xml", defaultCategory:"climate-environment", mode:"classify" }]},
+  { slug:"agencia-publica", name:"Agência Pública", region:"brazil", tier:2,
+    why:"Non-profit investigative agency; reporting reproducible from cited documents.",
+    feeds:[{ url:"https://apublica.org/feed/", defaultCategory:"br-politics", mode:"classify" }]},
+  { slug:"nexo", name:"Nexo Jornal", region:"brazil", tier:2,
+    why:"Subscription-funded explanatory journalism; data-driven, no ad-driven incentives.",
+    feeds:[{ url:"https://www.nexojornal.com.br/rss.xml", defaultCategory:"br-politics", mode:"classify" }]},
+  { slug:"nucleo", name:"Núcleo Jornalismo", region:"brazil", tier:2,
+    why:"Independent newsroom focused on technology's impact on society; transparent methodology.",
+    feeds:[{ url:"https://nucleo.jor.br/rss/", defaultCategory:"br-tech", mode:"classify" }]},
+  { slug:"aos-fatos", name:"Aos Fatos", region:"brazil", tier:2,
+    why:"IFCN-signatory fact-checking organization; every verdict documented step by step.",
+    feeds:[{ url:"https://www.aosfatos.org/noticias/feed/", defaultCategory:"br-politics", mode:"classify" }]},
+  { slug:"canaltech", name:"Canaltech", region:"brazil", tier:2,
+    why:"Specialist technology desk; product and industry reporting, not political coverage.",
+    feeds:[{ url:"https://canaltech.com.br/rss/", defaultCategory:"br-tech", mode:"fixed" }]},
+  { slug:"tecnoblog", name:"Tecnoblog", region:"brazil", tier:2,
+    why:"Independent Brazilian tech publication with two decades of beat reporting.",
+    feeds:[{ url:"https://tecnoblog.net/feed/", defaultCategory:"br-tech", mode:"fixed" }]},
+];
+const SRC = Object.fromEntries(SOURCES.map(s => [s.slug, s]));
+const FEED_COUNT = SOURCES.reduce((n, s) => n + s.feeds.length, 0);
+
+/* ═══════════════ 2 · Keyword classifier (EN + PT) ═══════════════ */
+
+const WORLD_RULES = [
+  ["space-astronomy", ["nasa","spacex","esa","rocket","orbit","orbital","telescope","astronom","asteroid","comet","mars","lunar","galaxy","exoplanet","astronaut","spacecraft","space station","cosmic","observatory","webb","hubble","solar system","meteor","supernova","black hole","satellite launch"]],
+  ["climate-environment", ["climate","emission","carbon","warming","greenhouse","renewable","solar power","wind power","deforest","biodivers","drought","wildfire","heatwave","methane","sustainab","conservation","pollution","el niño","la niña","sea level","glacier","ecosystem","fossil fuel","net zero"]],
+  ["international-conflicts", ["war","ukraine","gaza","ceasefire","missile","airstrike","air strike","drone strike","military","troops","offensive","hostage","insurgen","rebels","frontline","front line","nato","armed forces","shelling","invasion","battlefield","militia","warship","refugee"]],
+  ["technology-ai", ["artificial intelligence"," ai ","machine learning","chatbot","openai","google","apple","microsoft","meta","nvidia","chip","semiconductor","software","smartphone","cyber","hacker","data breach","robot","startup","algorithm","quantum computing","cloud computing","social media","tiktok","streaming","internet","silicon valley"]],
+  ["business-markets", ["market","stocks","shares","earnings","inflation","economy","economic","gdp","trade","tariff","central bank","federal reserve","interest rate","oil price","ipo","merger","acquisition","banking","investor","recession","currency","crypto","bitcoin","bond yield","wall street"]],
+  ["science-health", ["study","research","scientist","vaccine","cancer","disease","drug","clinical","brain","gene","dna","species","fossil","health","hospital","virus","outbreak","psycholog","peer-review","biolog","medicine","neuro","protein","evolution","archaeolog","physics"]],
+  ["politics-government", ["election","vote","parliament","congress","senate","president","prime minister","minister","government","policy","legislation","supreme court","diplomat","summit","treaty","campaign","coalition","impeach","sanction","lawmaker","ballot","referendum","white house"]],
+];
+const BRAZIL_RULES = [
+  ["br-tech", ["tecnologia","startup","aplicativo","inteligência artificial","pix","celular","smartphone","internet","software","cibersegurança","5g","telecom","fintech","games","robô","chip","anatel","plataforma"]],
+  ["br-economy", ["inflação","ipca","selic","juros","pib","economia","dólar","banco central","mercado","imposto","tributár","salário","emprego","varejo","exportaç","fiscal","orçamento","bolsa de valores","agronegócio"]],
+  ["br-justice", ["stf","stj","justiça","crime","polícia","policial","prisão","preso","investigação","tribunal","condenado","julgamento","segurança pública","facção","homicídio","pcc","milícia","operação policial","ministério público"]],
+  ["br-education", ["educação","enem","escola","universidade","professor","ensino","alfabetiza","estudante","vestibular","fundeb","creche","mec","pesquisa acadêmica","bolsa de estudo"]],
+  ["br-politics", ["lula","bolsonaro","planalto","congresso","senado","câmara","eleição","eleições","governo","ministro","ministério","presidente","política","partido","tse","deputado","senador","votação","cpi"]],
+];
+
+const escapeRx = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const compileRules = rules => rules.map(([category, words]) => ({
+  category,
+  patterns: words.map(w => new RegExp("(?<![\\p{L}\\p{N}])" + escapeRx(w.trim()) + "(?![\\p{L}\\p{N}])", "iu")),
+}));
+const RX_WORLD = compileRules(WORLD_RULES);
+const RX_BRAZIL = compileRules(BRAZIL_RULES);
+
+function classify(title, summary, region, fallback) {
+  const rules = region === "world" ? RX_WORLD : RX_BRAZIL;
+  const t = " " + title.toLowerCase() + " ";
+  const s = " " + (summary || "").toLowerCase().slice(0, 600) + " ";
+  let best = fallback, bestScore = 0;
+  for (const r of rules) {
+    let score = 0;
+    for (const p of r.patterns) { if (p.test(t)) score += 2; else if (p.test(s)) score += 1; }
+    if (score > bestScore) { bestScore = score; best = r.category; }
+  }
+  return bestScore > 0 ? best : fallback;
+}
+
+/* ═══════════════ 3 · Utilities ═══════════════ */
+
+const $ = sel => document.querySelector(sel);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+
+function safeHref(u) {
+  try { const p = new URL(u); if (p.protocol === "https:" || p.protocol === "http:") return u; } catch {}
+  return "#";
+}
+
+function fnv1a(input) {
+  let h = 0xcbf29ce484222325n;
+  const P = 0x100000001b3n, M = 0xffffffffffffffffn;
+  for (let i = 0; i < input.length; i++) { h ^= BigInt(input.charCodeAt(i)); h = (h * P) & M; }
+  return h.toString(16).padStart(16, "0");
+}
+
+const TRACKING = /^(utm_|fbclid|gclid|mc_cid|mc_eid|cmp|at_medium|at_campaign|ref$)/i;
+function normalizeUrl(raw) {
+  try {
+    const u = new URL(raw);
+    u.hash = ""; u.hostname = u.hostname.toLowerCase();
+    [...u.searchParams.keys()].filter(k => TRACKING.test(k)).forEach(k => u.searchParams.delete(k));
+    let out = u.toString();
+    if (out.endsWith("/") && u.pathname !== "/") out = out.slice(0, -1);
+    return out;
+  } catch { return raw; }
+}
+
+function stripHtml(html) {
+  // Inert document: no script execution, no resource loads.
+  const doc = document.implementation.createHTMLDocument("");
+  doc.body.innerHTML = html;
+  return (doc.body.textContent || "").replace(/\s+/g, " ").trim();
+}
+
+function truncate(s, max) {
+  if (s.length <= max) return s;
+  const cut = s.slice(0, max), sp = cut.lastIndexOf(" ");
+  return cut.slice(0, sp > max * 0.6 ? sp : max).trimEnd() + "…";
+}
+
+function timeAgo(iso, now) {
+  if (!iso) return "never";
+  const t = Date.parse(iso);
+  if (Number.isNaN(t)) return "unknown";
+  const sec = Math.max(0, Math.floor(((now ?? Date.now()) - t) / 1000));
+  if (sec < 45) return "just now";
+  const min = Math.floor(sec / 60);
+  if (min < 60) return min + " min ago";
+  const h = Math.floor(min / 60);
+  if (h < 24) return h + (h === 1 ? " hour ago" : " hours ago");
+  const d = Math.floor(h / 24);
+  if (d < 14) return d + (d === 1 ? " day ago" : " days ago");
+  return new Date(t).toLocaleDateString(undefined, { month:"short", day:"numeric", year:"numeric" });
+}
+const fmtDate = iso => { const t = Date.parse(iso); return Number.isNaN(t) ? "" : new Date(t).toLocaleDateString(undefined, { month:"short", day:"numeric", year:"numeric" }); };
+
+async function pool(limit, tasks) {
+  const results = new Array(tasks.length);
+  let next = 0;
+  async function worker() { while (next < tasks.length) { const i = next++; results[i] = await tasks[i](); } }
+  await Promise.all(Array.from({ length: Math.min(limit, tasks.length) }, worker));
+  return results;
+}
+
+/* ═══════════════ 4 · Storage: IndexedDB + localStorage ═══════════════ */
+
+const LS = { theme:"spectral-standalone-theme", favs:"spectral-standalone-favs-v1", meta:"spectral-standalone-meta" };
+
+const idb = {
+  db: null, available: false,
+  async init() {
+    try {
+      if (!("indexedDB" in window)) throw new Error("no indexedDB");
+      this.db = await new Promise((res, rej) => {
+        const r = indexedDB.open("spectral-news-standalone", 1);
+        r.onupgradeneeded = () => r.result.createObjectStore("articles", { keyPath: "hash" });
+        r.onsuccess = () => res(r.result);
+        r.onerror = () => rej(r.error || new Error("idb open failed"));
+        r.onblocked = () => rej(new Error("idb blocked"));
+      });
+      this.available = true;
+    } catch { this.available = false; }
+  },
+  async load() {
+    if (!this.available) return [];
+    try {
+      return await new Promise((res, rej) => {
+        const tx = this.db.transaction("articles", "readonly");
+        const rq = tx.objectStore("articles").getAll();
+        rq.onsuccess = () => res(rq.result || []);
+        rq.onerror = () => rej(rq.error);
+      });
+    } catch { return []; }
+  },
+  async saveAll(articles) {
+    if (!this.available) return;
+    try {
+      await new Promise((res, rej) => {
+        const tx = this.db.transaction("articles", "readwrite");
+        const os = tx.objectStore("articles");
+        os.clear();
+        for (const a of articles) os.put(a);
+        tx.oncomplete = () => res();
+        tx.onerror = () => rej(tx.error);
+        tx.onabort = () => rej(tx.error || new Error("idb tx aborted"));
+      });
+    } catch { /* storage is best-effort; the session keeps working in memory */ }
+  },
+};
+
+const lsGet = (k, fb) => { try { const v = JSON.parse(localStorage.getItem(k)); return v ?? fb; } catch { return fb; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+
+/* ═══════════════ 5 · Fetching & feed parsing ═══════════════ */
+
+const FEED_TIMEOUT_MS = 9000;
+const ITEMS_PER_FEED = 14;
+const MAX_RETAINED = 1200;
+
+/* Browsers enforce CORS, so each feed is tried directly, then through public
+   relays. Only the feed URL is sent to a relay — nothing else. */
+const PROXIES = [
+  u => u,
+  u => "https://api.allorigins.win/raw?url=" + encodeURIComponent(u),
+  u => "https://corsproxy.io/?url=" + encodeURIComponent(u),
+  u => "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(u),
+];
+
+async function fetchWithTimeout(url, ms) {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), ms);
+  try { return await fetch(url, { signal: ctl.signal, redirect: "follow" }); }
+  finally { clearTimeout(timer); }
+}
+
+async function fetchFeedText(url) {
+  let lastErr = null;
+  for (const wrap of PROXIES) {
+    try {
+      const res = await fetchWithTimeout(wrap(url), FEED_TIMEOUT_MS);
+      if (!res.ok) { lastErr = new Error("HTTP " + res.status); continue; }
+      const text = await res.text();
+      if (!text || text.length < 80 || !/[<]\s*(\?xml|rss|feed|rdf)/i.test(text.slice(0, 400))) {
+        lastErr = new Error("not a feed"); continue;
+      }
+      return text;
+    } catch (e) { lastErr = e; }
+  }
+  throw lastErr || new Error("unreachable");
+}
+
+/* Namespace-agnostic XML helpers (covers RSS 2.0, Atom, RDF, media:*, dc:*) */
+function childText(el, names) {
+  for (const c of el.children) if (names.includes(c.localName)) {
+    const t = (c.textContent || "").trim();
+    if (t) return t;
+  }
+  return "";
+}
+function itemLink(el) {
+  for (const c of el.children) {
+    if (c.localName !== "link") continue;
+    const href = c.getAttribute("href");
+    if (href) { if ((c.getAttribute("rel") || "alternate") === "alternate") return href.trim(); continue; }
+    const t = (c.textContent || "").trim();
+    if (t) return t;
+  }
+  for (const c of el.children) if (c.localName === "link" && c.getAttribute("href")) return c.getAttribute("href").trim();
+  return "";
+}
+function itemImage(el, html) {
+  for (const n of el.getElementsByTagName("*")) {
+    const ln = n.localName;
+    if (ln === "content" || ln === "thumbnail" || ln === "enclosure") {
+      const url = n.getAttribute("url") || "";
+      if (!url) continue;
+      const medium = n.getAttribute("medium") || "", type = n.getAttribute("type") || "";
+      if (medium && medium !== "image") continue;
+      if (type && !type.startsWith("image/")) continue;
+      if (!medium && !type && !/\.(jpe?g|png|webp|gif|avif)(\?|$)/i.test(url)) continue;
+      try { const p = new URL(url); if (p.protocol === "https:" || p.protocol === "http:") return url; } catch {}
+    }
+  }
+  const m = /<img[^>]+src=["']([^"']+)["']/i.exec(html || "");
+  if (m) { try { const p = new URL(m[1]); if (p.protocol === "https:" || p.protocol === "http:") return m[1]; } catch {} }
+  return null;
+}
+function itemAuthor(el) {
+  const creator = childText(el, ["creator"]);
+  if (creator) return creator;
+  for (const c of el.children) if (c.localName === "author") {
+    const name = childText(c, ["name"]);
+    return name || (c.textContent || "").trim() || null;
+  }
+  return null;
+}
+function itemDate(el) {
+  const raw = childText(el, ["pubDate", "published", "updated", "date"]);
+  const t = Date.parse(raw), now = Date.now();
+  if (Number.isNaN(t)) return new Date(now).toISOString();
+  return new Date(Math.min(t, now + 10 * 60 * 1000)).toISOString();
+}
+const isGoogleLink = u => { try { return new URL(u).hostname.endsWith("news.google.com"); } catch { return false; } };
+
+function parseFeed(xml, source, feed) {
+  const doc = new DOMParser().parseFromString(xml, "text/xml");
+  if (doc.querySelector("parsererror")) throw new Error("XML parse error");
+  const items = [...doc.getElementsByTagName("*")].filter(n => n.localName === "item" || n.localName === "entry").slice(0, ITEMS_PER_FEED);
+  const fetchedAt = new Date().toISOString();
+  const out = [];
+  for (const item of items) {
+    const link = itemLink(item);
+    let title = stripHtml(childText(item, ["title"]));
+    if (!link || !title) continue;
+    const viaGoogle = Boolean(source.viaGoogleNews) && isGoogleLink(link);
+    if (viaGoogle) { const i = title.lastIndexOf(" - "); if (i > 20) title = title.slice(0, i).trim(); }
+    if (title.length < 8) continue;
+
+    const url = normalizeUrl(link);
+    const hash = viaGoogle ? fnv1a(source.slug + "|t|" + title.toLowerCase()) : fnv1a(source.slug + "|u|" + url);
+
+    const rawHtml = childText(item, ["encoded", "description", "summary", "content"]);
+    let summary = truncate(stripHtml(rawHtml), 320);
+    if (viaGoogle && (summary.length < 30 || summary.startsWith(title.slice(0, 40)))) summary = null;
+    if (summary !== null && summary.length < 12) summary = null;
+
+    const category = feed.mode === "fixed"
+      ? feed.defaultCategory
+      : classify(title, summary, source.region, feed.defaultCategory);
+
+    out.push({
+      hash, title, url,
+      source: source.slug, sourceName: source.name,
+      category, region: source.region,
+      summary,
+      imageUrl: viaGoogle ? null : itemImage(item, rawHtml),
+      author: itemAuthor(item),
+      publishedAt: itemDate(item),
+      fetchedAt, tier: source.tier,
+    });
+  }
+  return out;
+}
+
+/* ═══════════════ 6 · Sample fallback (only when nothing else exists) ═══════════════ */
+
+const SAMPLE_SEEDS = [
+  ["How wire services verify a story before it moves","Placeholder article. In live mode this card would show a current Reuters headline. Wire services require two independent sources or a primary document before publishing.","reuters","politics-government","https://www.reuters.com"],
+  ["What 'on background' actually means in sourcing rules","Placeholder for Politics & Government. AP's stylebook defines on-record, background and off-record attribution — the backbone of accountable sourcing.","ap","politics-government","https://apnews.com"],
+  ["Reading central-bank statements: rates, paths and guidance","Placeholder for Business & Markets. Live cards summarize data-driven market coverage without editorializing.","bbc","business-markets","https://www.bbc.com/news/business"],
+  ["Peer review, preprints and why both matter for science news","Placeholder for Science & Health. Spectral's science sources link the underlying paper or dataset.","nature","science-health","https://www.nature.com/news"],
+  ["How attribution science links single events to climate trends","Placeholder for Climate & Environment. Carbon Brief publishes methods and data with each analysis.","carbon-brief","climate-environment","https://www.carbonbrief.org"],
+  ["Neutral conflict reporting: what wire desks do differently","Placeholder for International Conflicts. Coverage here is restricted to wire services that attribute casualty figures and flag unverified claims.","afp","international-conflicts","https://www.afp.com"],
+  ["From launch window to orbit: how missions are scheduled","Placeholder for Space & Astronomy. Live cards carry NASA releases and technical launch coverage.","nasa","space-astronomy","https://www.nasa.gov/news/"],
+  ["Benchmarks, parameters and what AI model cards disclose","Placeholder for Technology & AI. Specialist desks evaluate systems against published benchmarks, not press releases.","ieee-spectrum","technology-ai","https://spectrum.ieee.org"],
+  ["Como agências de checagem documentam um veredito","Artigo de demonstração da seção Brasil. A Aos Fatos publica o passo a passo de cada checagem.","aos-fatos","br-politics","https://www.aosfatos.org"],
+  ["IPCA, Selic e câmbio: o vocabulário básico da economia","Demonstração da categoria Economia & Inflação. Em modo ao vivo, análise orientada a dados do Nexo Jornal.","nexo","br-economy","https://www.nexojornal.com.br"],
+  ["Jornalismo investigativo independente: como se financia","Demonstração da seção Brasil. A Agência Pública publica suas fontes de financiamento.","agencia-publica","br-regional","https://apublica.org"],
+  ["Pix, open finance e a infraestrutura digital brasileira","Demonstração da categoria Tech Innovation. Em modo ao vivo, Canaltech e Tecnoblog cobrem a indústria de tecnologia.","canaltech","br-tech","https://canaltech.com.br"],
+];
+function sampleArticles() {
+  const now = Date.now();
+  return SAMPLE_SEEDS.map(([title, summary, slug, category, url], i) => {
+    const s = SRC[slug];
+    return {
+      hash: "sample-" + (i + 1), title, url,
+      source: slug, sourceName: s.name, category, region: s.region,
+      summary, imageUrl: null, author: null,
+      publishedAt: new Date(now - (i + 1) * 3 * 3600 * 1000).toISOString(),
+      fetchedAt: new Date(now).toISOString(), tier: s.tier, isSample: true,
+    };
+  });
+}
+
+/* ═══════════════ 7 · State ═══════════════ */
+
+const PAGE_SIZE = 36;
+let SAMPLES = null;
+const getSamples = () => (SAMPLES ??= sampleArticles());
+const byDateDesc = (a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt);
+
+const state = {
+  articles: [],
+  region: "world",
+  q: "", category: "", source: "", from: "", to: "",
+  page: 1,
+  refreshing: false,
+  lastUpdated: (lsGet(LS.meta, {}) || {}).lastUpdated || null,
+  favs: new Map((lsGet(LS.favs, []) || []).filter(a => a && a.hash && a.title).map(a => [a.hash, a])),
+  index: new Map(),
+};
+let theme = lsGet(LS.theme, null) === "light" ? "light" : "dark";
+
+const usingSamples = () => state.articles.length === 0;
+const currentDataset = () => (usingSamples() ? getSamples() : state.articles);
+const hasActiveFilters = () => Boolean(state.q || state.category || state.source || state.from || state.to);
+
+function applyFilters(list) {
+  let out = list.filter(a => a.region === state.region);
+  if (state.category) out = out.filter(a => a.category === state.category);
+  if (state.source) out = out.filter(a => a.source === state.source);
+  if (state.from) { const t = Date.parse(state.from + "T00:00:00"); if (!Number.isNaN(t)) out = out.filter(a => Date.parse(a.publishedAt) >= t); }
+  if (state.to) { const t = Date.parse(state.to + "T23:59:59"); if (!Number.isNaN(t)) out = out.filter(a => Date.parse(a.publishedAt) <= t); }
+  if (state.q) {
+    const n = state.q.toLowerCase().trim();
+    if (n) out = out.filter(a => a.title.toLowerCase().includes(n) || (a.summary || "").toLowerCase().includes(n));
+  }
+  return out.slice().sort(byDateDesc);
+}
+
+function pickFeatured(list) {
+  const pool = list.slice(0, 40);
+  const ranked = [
+    ...pool.filter(a => a.tier === 1 && a.imageUrl),
+    ...pool.filter(a => a.tier === 1 && !a.imageUrl),
+    ...pool.filter(a => a.tier !== 1 && a.imageUrl),
+    ...pool.filter(a => a.tier !== 1 && !a.imageUrl),
+  ];
+  const seen = new Set(), out = [];
+  for (const a of ranked) {
+    if (seen.has(a.source)) continue;
+    seen.add(a.source); out.push(a);
+    if (out.length === 3) break;
+  }
+  return out.length === 3 ? out : ranked.slice(0, 3);
+}
+
+/* ═══════════════ 8 · Rendering ═══════════════ */
+
+function tierSpan(a) {
+  const s = SRC[a.source];
+  const label = a.tier === 1 ? "Tier 1 · Gold-standard neutrality" : "Tier 2 · Specialist, evidence-based press";
+  return `<span style="display:inline-flex" title="${esc(label + (s ? " — " + s.why : ""))}"><svg class="icon sm ${a.tier === 1 ? "tier1" : "tier2"}"><use href="#${a.tier === 1 ? "i-star" : "i-check-badge"}"/></svg></span>`;
+}
+
+function catChip(a) {
+  const cat = CAT[a.category] || { name: a.category, color: "#94a3b8" };
+  return `<span class="chip cat" style="--cat:${cat.color}"><span class="dot"></span>${esc(cat.name)}</span>` +
+    (a.isSample ? '<span class="chip muted">Sample</span>' : "");
+}
+
+function saveBtnHTML(a) {
+  const on = state.favs.has(a.hash);
+  return `<button class="save-btn${on ? " on" : ""}" data-hash="${esc(a.hash)}" aria-pressed="${on}" aria-label="${on ? "Remove from saved" : "Save article"}"><svg class="icon"><use href="#${on ? "i-bookmark-f" : "i-bookmark"}"/></svg></button>`;
+}
+
+function cardHTML(a, i) {
+  const cat = CAT[a.category] || { color: "#94a3b8" };
+  const href = safeHref(a.url);
+  const media = a.imageUrl
+    ? `<a href="${esc(href)}" target="_blank" rel="noopener noreferrer" tabindex="-1"><div class="card-img"><img src="${esc(a.imageUrl)}" alt="" loading="lazy"/></div></a>`
+    : `<div class="card-bar"></div>`;
+  return `<article class="card" style="--cat:${cat.color};animation-delay:${(i % 12) * 45}ms">${media}
+  <div class="card-body">
+    <div class="card-top"><div class="card-chips">${catChip(a)}</div>${saveBtnHTML(a)}</div>
+    <h3 class="card-title"><a href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(a.title)}</a></h3>
+    ${a.summary ? `<p class="card-sum">${esc(a.summary)}</p>` : ""}
+    <div class="card-foot">
+      <span class="card-src">${tierSpan(a)}<b>${esc(a.sourceName)}</b></span>
+      <span class="card-when">
+        <span title="Published ${esc(fmtDate(a.publishedAt))}" style="display:inline-flex;align-items:center;gap:4px"><svg class="icon sm"><use href="#i-clock"/></svg><span class="ta" data-t="${esc(a.publishedAt)}">${esc(timeAgo(a.publishedAt))}</span></span>
+        <a class="ext" href="${esc(href)}" target="_blank" rel="noopener noreferrer" aria-label="Open at ${esc(a.sourceName)}"><svg class="icon sm"><use href="#i-ext"/></svg></a>
+      </span>
+    </div>
+  </div></article>`;
+}
+
+function featTileHTML(a, large) {
+  const cat = CAT[a.category] || { color: "#94a3b8" };
+  const href = safeHref(a.url);
+  const hasImg = Boolean(a.imageUrl);
+  return `<a class="feat-tile${large ? " large" : ""}${hasImg ? " has-img" : ""}" style="--cat:${cat.color}" href="${esc(href)}" target="_blank" rel="noopener noreferrer">
+    ${hasImg ? `<img class="feat-img" src="${esc(a.imageUrl)}" alt="" loading="lazy"/><div class="feat-shade"></div>` : `<div class="feat-grad"></div>`}
+    <div class="feat-body">
+      <div style="display:flex;flex-wrap:wrap;gap:7px;align-items:center">${catChip(a)}</div>
+      <h3 class="feat-title">${esc(a.title)}</h3>
+      <div class="feat-meta">${tierSpan(a)}<span style="font-weight:600">${esc(a.sourceName)}</span><span>·</span><span class="ta" data-t="${esc(a.publishedAt)}">${esc(timeAgo(a.publishedAt))}</span><span class="spacer"></span><svg class="icon sm"><use href="#i-ext"/></svg></div>
+    </div>
+  </a>`;
+}
+
+const skeletonHTML = withImg => `<div class="card" style="animation:none">
+  ${withImg ? '<div class="skel" style="aspect-ratio:16/9;border-radius:0"></div>' : ""}
+  <div class="card-body">
+    <div class="skel" style="height:20px;width:110px;border-radius:99px"></div>
+    <div class="skel" style="height:18px;margin-top:13px"></div>
+    <div class="skel" style="height:18px;width:80%;margin-top:7px"></div>
+    <div class="skel" style="height:13px;margin-top:12px"></div>
+    <div class="skel" style="height:13px;width:65%;margin-top:6px"></div>
+    <div style="display:flex;justify-content:space-between;margin-top:16px">
+      <div class="skel" style="height:12px;width:90px"></div><div class="skel" style="height:12px;width:60px"></div>
+    </div>
+  </div></div>`;
+
+let emptyMode = "refresh";
+
+function renderBanner() {
+  const slot = $("#banner-slot");
+  if (usingSamples() && !state.refreshing) {
+    slot.innerHTML = `<div class="banner" style="--tone:#fb923c"><svg class="icon"><use href="#i-alert"/></svg><div><b>Showing bundled sample data</b><span>No live articles are stored yet${navigator.onLine === false ? " and you appear to be offline" : ""}. Press Refresh to fetch current headlines from all sources.</span></div></div>`;
+  } else slot.innerHTML = "";
+}
+
+function renderFeaturedAndGrid() {
+  const grid = $("#grid"), featSec = $("#featured-section"), feat = $("#featured");
+  const empty = $("#empty"), more = $("#btn-more");
+
+  if (state.refreshing && usingSamples()) {
+    featSec.classList.add("hidden");
+    empty.classList.add("hidden");
+    more.classList.add("hidden");
+    $("#banner-slot").innerHTML = "";
+    $("#result-count").textContent = "";
+    grid.innerHTML = Array.from({ length: 9 }, (_, i) => skeletonHTML(i % 3 === 0)).join("");
+    return;
+  }
+
+  const list = applyFilters(currentDataset());
+  state.index = new Map(list.map(a => [a.hash, a]));
+
+  const showFeatured = !hasActiveFilters() && list.length >= 3;
+  let rest = list;
+  if (showFeatured) {
+    const picks = pickFeatured(list);
+    feat.innerHTML = featTileHTML(picks[0], true) + featTileHTML(picks[1], false) + featTileHTML(picks[2], false);
+    featSec.classList.remove("hidden");
+    const used = new Set(picks.map(a => a.hash));
+    rest = list.filter(a => !used.has(a.hash));
+  } else {
+    featSec.classList.add("hidden");
+    feat.innerHTML = "";
+  }
+
+  renderBanner();
+  $("#result-count").textContent = list.length.toLocaleString() + (list.length === 1 ? " result" : " results");
+
+  if (list.length === 0) {
+    grid.innerHTML = "";
+    empty.classList.remove("hidden");
+    more.classList.add("hidden");
+    if (currentDataset().length === 0) {
+      emptyMode = "refresh";
+      $("#empty-title").textContent = "No articles yet";
+      $("#empty-text").textContent = "Press Refresh to fetch the latest headlines from all sources.";
+      $("#empty-action").textContent = "Refresh now";
+    } else {
+      emptyMode = "clear";
+      $("#empty-title").textContent = "No articles match";
+      $("#empty-text").textContent = "Try widening the date range, clearing filters, or refreshing to pull the latest headlines.";
+      $("#empty-action").textContent = "Clear all filters";
+    }
+    return;
+  }
+
+  empty.classList.add("hidden");
+  const visible = rest.slice(0, state.page * PAGE_SIZE);
+  grid.innerHTML = visible.map(cardHTML).join("");
+  const remaining = rest.length - visible.length;
+  more.classList.toggle("hidden", remaining <= 0);
+  $("#more-label").textContent = `Load more (${remaining.toLocaleString()} remaining)`;
+}
+
+function renderStats() {
+  const now = Date.now();
+  $("#stat-articles").textContent = usingSamples() ? "—" : state.articles.length.toLocaleString();
+  $("#stat-updated").textContent = timeAgo(state.lastUpdated, now);
+  $("#updated-mini").textContent = timeAgo(state.lastUpdated, now);
+}
+
+function renderMode() {
+  const chip = $("#mode-chip"), text = $("#mode-text");
+  if (usingSamples()) { chip.style.setProperty("--tone", "#fb923c"); text.textContent = "Sample data · refresh for live"; }
+  else if (idb.available) { chip.style.setProperty("--tone", "#34d399"); text.textContent = "Local-first · IndexedDB"; }
+  else { chip.style.setProperty("--tone", "#38bdf8"); text.textContent = "In-memory session"; }
+}
+
+function renderSaveCount() {
+  const n = state.favs.size, el = $("#save-count");
+  el.classList.toggle("hidden", n === 0);
+  el.textContent = n > 99 ? "99+" : String(n);
+}
+
+function renderSaved() {
+  const favs = [...state.favs.values()];
+  $("#saved-n").textContent = favs.length ? `(${favs.length})` : "";
+  $("#sheet-foot").classList.toggle("hidden", favs.length === 0);
+  const list = $("#saved-list");
+  if (favs.length === 0) {
+    list.innerHTML = `<div class="empty" style="border:none;padding:64px 16px"><svg class="icon"><use href="#i-bookmark"/></svg><h3>Nothing saved yet</h3><p>Tap the bookmark on any card to keep it here for later reading.</p></div>`;
+    return;
+  }
+  list.innerHTML = favs.map(a => `<div class="saved-item">
+    <div class="row">${catChip(a)}<button class="del" data-hash="${esc(a.hash)}" aria-label="Remove from saved"><svg class="icon sm"><use href="#i-trash"/></svg></button></div>
+    <h4><a href="${esc(safeHref(a.url))}" target="_blank" rel="noopener noreferrer">${esc(a.title)}</a></h4>
+    <div class="meta">${tierSpan(a)}<span>${esc(a.sourceName)}</span><span>·</span><span class="ta" data-t="${esc(a.publishedAt)}">${esc(timeAgo(a.publishedAt))}</span></div>
+  </div>`).join("");
+}
+
+function renderRefreshBtn() {
+  $("#btn-refresh").disabled = state.refreshing;
+  $("#refresh-icon").classList.toggle("spin", state.refreshing);
+  if (!state.refreshing) $("#refresh-label").textContent = "Refresh";
+}
+
+function renderClearBtn() {
+  $("#f-clear").classList.toggle("hidden", !hasActiveFilters());
+}
+
+function renderAll() {
+  renderStats(); renderMode(); renderClearBtn();
+  renderFeaturedAndGrid(); renderSaved(); renderSaveCount(); renderRefreshBtn();
+}
+
+function applyTheme() {
+  document.documentElement.classList.toggle("dark", theme === "dark");
+  document.documentElement.style.colorScheme = theme;
+  $("#theme-icon use").setAttribute("href", theme === "dark" ? "#i-sun" : "#i-moon");
+  $("#btn-theme").setAttribute("aria-label", theme === "dark" ? "Switch to light mode" : "Switch to dark mode");
+}
+
+function populateSelects() {
+  $("#f-category").innerHTML = `<option value="">All categories</option>` +
+    CATEGORIES.filter(c => c.region === state.region).map(c => `<option value="${c.slug}">${esc(c.name)}</option>`).join("");
+  $("#f-source").innerHTML = `<option value="">All sources</option>` +
+    SOURCES.filter(s => s.region === state.region).map(s => `<option value="${s.slug}">${s.tier === 1 ? "★ " : "✓ "}${esc(s.name)}</option>`).join("");
+  $("#f-category").value = state.category;
+  $("#f-source").value = state.source;
+}
+
+/* ═══════════════ 9 · Toasts, favorites, refresh ═══════════════ */
+
+function toast(kind, title, detail) {
+  const el = document.createElement("div");
+  el.className = "toast t-" + kind;
+  const icon = kind === "ok" ? "i-check" : kind === "err" ? "i-alert" : "i-info";
+  el.innerHTML = `<svg class="icon"><use href="#${icon}"/></svg><div style="min-width:0;flex:1"><b>${esc(title)}</b>${detail ? `<span>${esc(detail)}</span>` : ""}</div><button class="x" aria-label="Dismiss"><svg class="icon sm"><use href="#i-x"/></svg></button>`;
+  el.querySelector(".x").addEventListener("click", () => el.remove());
+  const box = $("#toasts");
+  box.appendChild(el);
+  while (box.children.length > 3) box.firstChild.remove();
+  setTimeout(() => el.remove(), 5600);
+}
+
+function toggleFav(hash) {
+  const a = state.index.get(hash) || state.favs.get(hash);
+  if (!a) return;
+  if (state.favs.has(hash)) state.favs.delete(hash);
+  else state.favs.set(hash, a);
+  lsSet(LS.favs, [...state.favs.values()].slice(0, 200));
+  const on = state.favs.has(hash);
+  document.querySelectorAll(`.save-btn[data-hash="${CSS.escape(hash)}"]`).forEach(btn => {
+    btn.classList.toggle("on", on);
+    btn.setAttribute("aria-pressed", String(on));
+    btn.setAttribute("aria-label", on ? "Remove from saved" : "Save article");
+    btn.querySelector("use").setAttribute("href", on ? "#i-bookmark-f" : "#i-bookmark");
+  });
+  renderSaved(); renderSaveCount();
+}
+
+async function refresh() {
+  if (state.refreshing) return;
+  state.refreshing = true;
+  renderRefreshBtn();
+  if (usingSamples()) renderFeaturedAndGrid(); // show skeletons on first run
+
+  const pairs = SOURCES.flatMap(s => s.feeds.map(f => [s, f]));
+  let done = 0, fetched = 0;
+  const failures = [];
+  const lists = await pool(6, pairs.map(([s, f]) => async () => {
+    try {
+      const txt = await fetchFeedText(f.url);
+      const arts = parseFeed(txt, s, f);
+      fetched += arts.length;
+      return arts;
+    } catch (e) {
+      failures.push(s.name + ": " + ((e && e.message) || e));
+      return [];
+    } finally {
+      done++;
+      $("#refresh-label").textContent = `Fetching ${done}/${pairs.length}…`;
+    }
+  }));
+
+  const merged = new Map(state.articles.map(a => [a.hash, a]));
+  let added = 0;
+  for (const arts of lists) for (const a of arts) {
+    if (!merged.has(a.hash)) { merged.set(a.hash, a); added++; }
+  }
+  const okFeeds = pairs.length - failures.length;
+  if (okFeeds > 0) {
+    state.articles = [...merged.values()].sort(byDateDesc).slice(0, MAX_RETAINED);
+    state.lastUpdated = new Date().toISOString();
+    lsSet(LS.meta, { lastUpdated: state.lastUpdated });
+    await idb.saveAll(state.articles);
+  }
+
+  state.refreshing = false;
+  state.page = 1;
+  renderAll();
+
+  if (okFeeds === 0) {
+    toast("err", "Couldn't reach any feed", "Check your connection — or the CORS relays may be briefly unavailable. Try again in a minute.");
+  } else if (failures.length > 0) {
+    toast("info", `Fetched ${fetched.toLocaleString()} articles · ${added.toLocaleString()} new`, `${failures.length} of ${pairs.length} feeds failed — they'll be retried next refresh`);
+  } else {
+    toast("ok", `Fetched ${fetched.toLocaleString()} articles · ${added.toLocaleString()} new`, `All ${pairs.length} feeds responded`);
+  }
+}
+
+/* ═══════════════ 10 · Events & init ═══════════════ */
+
+function openSheet(open) {
+  $("#sheet").classList.toggle("open", open);
+  $("#overlay").classList.toggle("open", open);
+  document.body.style.overflow = open ? "hidden" : "";
+}
+
+function clearFilters() {
+  state.q = state.category = state.source = state.from = state.to = "";
+  state.page = 1;
+  $("#f-q").value = ""; $("#f-from").value = ""; $("#f-to").value = "";
+  $("#f-from").removeAttribute("max"); $("#f-to").removeAttribute("min");
+  populateSelects();
+  renderClearBtn(); renderFeaturedAndGrid();
+}
+
+function bindEvents() {
+  $("#btn-refresh").addEventListener("click", refresh);
+  $("#btn-theme").addEventListener("click", () => {
+    theme = theme === "dark" ? "light" : "dark";
+    lsSet(LS.theme, theme);
+    applyTheme();
+  });
+  $("#btn-saved").addEventListener("click", () => openSheet(true));
+  $("#sheet-close").addEventListener("click", () => openSheet(false));
+  $("#overlay").addEventListener("click", () => openSheet(false));
+  document.addEventListener("keydown", e => { if (e.key === "Escape") openSheet(false); });
+  $("#btn-clear-saved").addEventListener("click", () => {
+    state.favs.clear();
+    lsSet(LS.favs, []);
+    renderSaved(); renderSaveCount();
+    document.querySelectorAll(".save-btn.on").forEach(btn => {
+      btn.classList.remove("on");
+      btn.setAttribute("aria-pressed", "false");
+      btn.querySelector("use").setAttribute("href", "#i-bookmark");
+    });
+  });
+
+  document.querySelectorAll(".tab").forEach(tab => tab.addEventListener("click", () => {
+    const region = tab.dataset.region;
+    if (region === state.region) return;
+    state.region = region;
+    state.category = state.source = "";
+    state.page = 1;
+    document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", String(t === tab)));
+    populateSelects();
+    renderClearBtn(); renderFeaturedAndGrid();
+  }));
+
+  let qTimer = null;
+  $("#f-q").addEventListener("input", e => {
+    clearTimeout(qTimer);
+    qTimer = setTimeout(() => {
+      state.q = e.target.value;
+      state.page = 1;
+      renderClearBtn(); renderFeaturedAndGrid();
+    }, 300);
+  });
+
+  $("#f-category").addEventListener("change", e => { state.category = e.target.value; state.page = 1; renderClearBtn(); renderFeaturedAndGrid(); });
+  $("#f-source").addEventListener("change", e => { state.source = e.target.value; state.page = 1; renderClearBtn(); renderFeaturedAndGrid(); });
+  $("#f-from").addEventListener("change", e => {
+    state.from = e.target.value; state.page = 1;
+    if (state.from) $("#f-to").setAttribute("min", state.from); else $("#f-to").removeAttribute("min");
+    renderClearBtn(); renderFeaturedAndGrid();
+  });
+  $("#f-to").addEventListener("change", e => {
+    state.to = e.target.value; state.page = 1;
+    if (state.to) $("#f-from").setAttribute("max", state.to); else $("#f-from").removeAttribute("max");
+    renderClearBtn(); renderFeaturedAndGrid();
+  });
+  $("#f-clear").addEventListener("click", clearFilters);
+
+  $("#btn-more").addEventListener("click", () => { state.page++; renderFeaturedAndGrid(); });
+  $("#empty-action").addEventListener("click", () => { if (emptyMode === "refresh") refresh(); else clearFilters(); });
+
+  // Save/remove buttons (grid, featured never has them, saved panel uses .del)
+  document.addEventListener("click", e => {
+    const save = e.target.closest(".save-btn");
+    if (save) { e.preventDefault(); toggleFav(save.dataset.hash); return; }
+    const del = e.target.closest(".del");
+    if (del) { e.preventDefault(); toggleFav(del.dataset.hash); }
+  });
+
+  // Image fallbacks (error events don't bubble; use capture)
+  document.addEventListener("error", e => {
+    const img = e.target;
+    if (!(img instanceof HTMLImageElement)) return;
+    const wrap = img.closest(".card-img");
+    if (wrap) {
+      const anchor = wrap.closest("a");
+      (anchor || wrap).outerHTML = '<div class="card-bar"></div>';
+      return;
+    }
+    if (img.classList.contains("feat-img")) {
+      const tile = img.closest(".feat-tile");
+      if (!tile) return;
+      tile.classList.remove("has-img");
+      const shade = tile.querySelector(".feat-shade");
+      if (shade) shade.remove();
+      img.insertAdjacentHTML("beforebegin", '<div class="feat-grad"></div>');
+      img.remove();
+    }
+  }, true);
+
+  // Keep "x min ago" labels honest
+  setInterval(() => {
+    const now = Date.now();
+    document.querySelectorAll(".ta[data-t]").forEach(el => { el.textContent = timeAgo(el.dataset.t, now); });
+    $("#stat-updated").textContent = timeAgo(state.lastUpdated, now);
+    $("#updated-mini").textContent = timeAgo(state.lastUpdated, now);
+  }, 30000);
+}
+
+async function init() {
+  $("#year").textContent = String(new Date().getFullYear());
+  $("#stat-sources").textContent = String(SOURCES.length);
+  $("#stat-feeds").textContent = String(FEED_COUNT);
+  $("#tier1-chip").textContent = String(SOURCES.filter(s => s.tier === 1).length);
+  $("#foot-tier1").textContent = SOURCES.filter(s => s.tier === 1).map(s => s.name).join(" · ");
+  $("#foot-tier2").textContent = SOURCES.filter(s => s.tier === 2).map(s => s.name).join(" · ");
+
+  applyTheme();
+  populateSelects();
+  bindEvents();
+
+  await idb.init();
+  state.articles = (await idb.load()).sort(byDateDesc);
+  renderAll();
+
+  // First run with an empty store: fetch automatically so the app is
+  // immediately usable. Subsequent updates are manual only.
+  if (state.articles.length === 0 && navigator.onLine !== false) {
+    toast("info", "First run", "Fetching the latest headlines from all 37 feeds…");
+    setTimeout(() => { refresh(); }, 400);
+  }
+}
+
+init();
+})();
+</script>
+</body>
+</html>

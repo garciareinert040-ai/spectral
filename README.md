@@ -35,6 +35,30 @@ independent Brazilian newsrooms.
 - **No news API keys required** — everything arrives via public RSS/Atom
   (Reuters/AP/AFP through the keyless Google News RSS proxy).
 
+## Standalone single-file edition (zero backend)
+
+Prefer zero setup? [`standalone/index.html`](standalone/index.html) is the
+**entire dashboard in one ~85 KB HTML file** — download it and double-click.
+No Node, no database, no deployment, no CDN dependencies, no API keys.
+
+- Same design, categories, sources, tiers, search/filters, favorites and
+  dark/light themes as the full app — ported to vanilla JS + hand-written CSS.
+- **Refresh fetches feeds in your browser.** Browsers enforce CORS, so each
+  feed is tried directly, then through public CORS relays
+  (allorigins.win → corsproxy.io → codetabs.com). Only feed URLs pass through
+  the relays. This is the one functional difference from the server edition,
+  where Vercel fetches feeds directly.
+- Articles persist in **IndexedDB** (graceful in-memory fallback), favorites
+  and theme in localStorage — everything works offline after the first
+  successful refresh. First open auto-fetches once; afterwards updates are
+  manual only.
+- If nothing is reachable and nothing is stored yet, clearly-labeled sample
+  cards keep the layout intact.
+
+When to use which: the **Vercel + Supabase app** gives you a shareable URL,
+server-side fetching (no CORS relays), and a database that accumulates history;
+the **standalone file** is private, portable and instant.
+
 ## Architecture
 
 ```
@@ -160,6 +184,7 @@ src/            React app
   lib/          API client, category visuals, formatting
 supabase/       schema.sql (tables, RLS, retention function, seeds)
 scripts/        check-feeds.ts
+standalone/     index.html — the whole dashboard as one self-contained file
 docs/           SOURCES.md (methodology) + screenshots
 ```
 
