@@ -170,8 +170,8 @@ header.app{
   -webkit-mask-image:radial-gradient(60rem 26rem at 50% 0%,black 35%,transparent 80%);
   mask-image:radial-gradient(60rem 26rem at 50% 0%,black 35%,transparent 80%);
 }
-.hero-in{position:relative;padding:56px 0 60px}
-@media(min-width:1024px){.hero-in{padding:76px 0 80px}}
+.hero-in{position:relative;padding:38px 0 44px}
+@media(min-width:1024px){.hero-in{padding:50px 0 54px}}
 .hero-chips{display:flex;flex-wrap:wrap;gap:8px}
 .hero h1{
   margin:24px 0 0;font-family:var(--font-display);font-weight:700;
@@ -180,7 +180,7 @@ header.app{
 }
 .hero p.lede{margin:20px 0 0;max-width:60ch;font-size:16px;line-height:1.65;color:var(--muted-fg)}
 .stats{
-  margin-top:40px;display:grid;grid-template-columns:repeat(2,1fr);gap:1px;
+  margin-top:26px;display:grid;grid-template-columns:repeat(2,1fr);gap:1px;
   max-width:760px;border:1px solid var(--border);border-radius:14px;overflow:hidden;
   background:var(--border);
 }
@@ -291,8 +291,10 @@ main{min-height:60vh}
 .card-title a:hover{text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--fg) 35%,transparent);text-underline-offset:4px}
 .card-sum{
   margin:10px 0 0;font-size:13.5px;line-height:1.6;color:var(--muted-fg);
-  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+  display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden;
+  cursor:pointer;
 }
+.card-sum.open{-webkit-line-clamp:unset}
 .card-foot{
   display:flex;align-items:center;justify-content:space-between;gap:10px;
   margin-top:15px;padding-top:13px;border-top:1px solid var(--border);
@@ -369,6 +371,22 @@ main{min-height:60vh}
 .t-ok .icon{color:#34d399}.t-err .icon{color:#fb7185}.t-info .icon{color:#38bdf8}
 .banner .bx{margin-left:auto;flex:none;color:var(--muted-fg);padding:4px;border-radius:7px;transition:all .18s;align-self:flex-start}
 .banner .bx:hover{color:var(--fg);background:var(--accent)}
+/* ── Briefing: regiões e categorias ────────────────────────────────────── */
+.region-sec{padding-top:46px}
+#briefing>.region-sec:first-child{padding-top:6px}
+.region-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;border-bottom:2px solid var(--border);padding-bottom:14px;margin-bottom:24px}
+.region-head .icon{width:22px;height:22px;align-self:center;color:var(--muted-fg)}
+.region-head h2{margin:0;font-family:var(--font-display);font-size:clamp(26px,3.2vw,36px);font-weight:700;letter-spacing:-.01em}
+.region-head .region-sub{font-size:11px;color:var(--muted-fg);text-transform:uppercase;letter-spacing:.16em;font-weight:700}
+.region-head .region-n{margin-left:auto;font-size:12px;color:var(--muted-fg);font-variant-numeric:tabular-nums}
+.cat-block{margin-bottom:38px}
+.cat-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.cat-head .dot{width:10px;height:10px;border-radius:999px;background:var(--cat,#94a3b8);box-shadow:0 0 12px color-mix(in srgb,var(--cat) 55%,transparent)}
+.cat-head h3{margin:0;font-family:var(--font-display);font-size:19px;font-weight:600}
+.cat-count{font-size:11px;font-weight:700;color:var(--muted-fg);background:var(--muted);border-radius:999px;padding:2px 9px}
+.cat-toggle{margin-left:auto;height:30px;padding:0 10px;font-size:12px;color:var(--muted-fg)}
+.cat-grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));align-items:start}
+@media(max-width:640px){.cat-grid{grid-template-columns:1fr}}
 /* ── Footer ────────────────────────────────────────────────────────────── */
 footer.app{margin-top:64px;border-top:1px solid var(--border);background:color-mix(in srgb,var(--card) 40%,transparent)}
 .foot-grid{display:grid;gap:40px;padding:48px 0}
@@ -474,9 +492,9 @@ footer.app{margin-top:64px;border-top:1px solid var(--border);background:color-m
   <div class="filterbar">
     <div class="container filter-rows">
       <div class="frow">
-        <div class="tabs" role="tablist" aria-label="Região">
-          <button class="tab" role="tab" data-region="world" aria-selected="true"><svg class="icon"><use href="#i-globe"/></svg>Mundo</button>
-          <button class="tab" role="tab" data-region="brazil" aria-selected="false"><svg class="icon"><use href="#i-pin"/></svg>Brasil</button>
+        <div class="tabs" role="navigation" aria-label="Ir para a seção">
+          <button class="tab" data-goto="region-world"><svg class="icon"><use href="#i-globe"/></svg>Mundo</button>
+          <button class="tab" data-goto="region-brazil"><svg class="icon"><use href="#i-pin"/></svg>Brasil</button>
         </div>
         <div class="search-wrap">
           <svg class="icon"><use href="#i-search"/></svg>
@@ -501,14 +519,10 @@ footer.app{margin-top:64px;border-top:1px solid var(--border);background:color-m
   </div>
 
   <div class="container">
-    <section id="featured-section" class="section hidden" aria-label="Grandes manchetes">
-      <p class="section-label"><svg class="icon" style="color:#f59e0b"><use href="#i-spark"/></svg>Grandes manchetes — semana · mês · ano</p>
-      <div id="featured" class="featured"></div>
-    </section>
-
     <section class="section" aria-label="Artigos de notícias">
       <div id="banner-slot"></div>
-      <div id="grid" class="masonry"></div>
+      <div id="briefing"></div>
+      <div id="grid" class="masonry hidden"></div>
       <div id="empty" class="empty hidden">
         <svg class="icon"><use href="#i-news"/></svg>
         <h3 id="empty-title">Nenhum artigo ainda</h3>
@@ -964,7 +978,7 @@ function parseFeed(xml, source, feed) {
     const hash = viaGoogle ? fnv1a(source.slug + "|t|" + title.toLowerCase()) : fnv1a(source.slug + "|u|" + url);
 
     const rawHtml = childText(item, ["encoded", "description", "summary", "content"]);
-    let summary = truncate(stripHtml(rawHtml), 320);
+    let summary = truncate(stripHtml(rawHtml), 600);
     if (viaGoogle && (summary.length < 30 || summary.startsWith(title.slice(0, 40)))) summary = null;
     if (summary !== null && summary.length < 12) summary = null;
 
@@ -1037,7 +1051,6 @@ const byDateDesc = (a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedA
 
 const state = {
   articles: [],
-  region: "world",
   q: "", category: "", source: "", from: "", to: "",
   page: 1,
   refreshing: false,
@@ -1046,6 +1059,7 @@ const state = {
   index: new Map(),
   big: null,
   lastFailures: null,
+  expandedCats: new Set(),
 };
 let theme = lsGet(LS.theme, null) === "light" ? "light" : "dark";
 
@@ -1054,7 +1068,7 @@ const currentDataset = () => (usingSamples() ? getSamples() : state.articles);
 const hasActiveFilters = () => Boolean(state.q || state.category || state.source || state.from || state.to);
 
 function applyFilters(list) {
-  let out = list.filter(a => a.region === state.region);
+  let out = list.slice();
   if (state.category) out = out.filter(a => a.category === state.category);
   if (state.source) out = out.filter(a => a.source === state.source);
   if (state.from) { const t = Date.parse(state.from + "T00:00:00"); if (!Number.isNaN(t)) out = out.filter(a => Date.parse(a.publishedAt) >= t); }
@@ -1180,7 +1194,7 @@ function tierSpan(a) {
 function catChip(a) {
   const cat = CAT[a.category] || { name: a.category, color: "#94a3b8" };
   return `<span class="chip cat" style="--cat:${cat.color}"><span class="dot"></span>${esc(cat.name)}</span>` +
-    (a.isSample ? '<span class="chip muted">Sample</span>' : "");
+    (a.isSample ? '<span class="chip muted">Exemplo</span>' : "");
 }
 
 function saveBtnHTML(a) {
@@ -1198,7 +1212,7 @@ function cardHTML(a, i) {
   <div class="card-body">
     <div class="card-top"><div class="card-chips">${catChip(a)}</div>${saveBtnHTML(a)}</div>
     <h3 class="card-title"><a href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(a.title)}</a></h3>
-    ${a.summary ? `<p class="card-sum">${esc(a.summary)}</p>` : ""}
+    ${a.summary ? `<p class="card-sum" title="Clique para expandir o resumo">${esc(a.summary)}</p>` : ""}
     <div class="card-foot">
       <span class="card-src">${tierSpan(a)}<b>${esc(a.sourceName)}</b></span>
       <span class="card-when">
@@ -1230,18 +1244,57 @@ function bigTileHTML(pin, win, large) {
   </a>`;
 }
 
-function renderBig() {
-  const sec = $("#featured-section"), box = $("#featured");
-  const pins = (state.big && state.big[state.region]) || {};
+function bigRowHTML(region) {
+  const pins = (state.big && state.big[region]) || {};
   const order = ["week", "month", "year"].filter(k => pins[k]);
-  if (hasActiveFilters() || order.length === 0) {
-    sec.classList.add("hidden");
-    box.innerHTML = "";
-    return;
-  }
+  if (order.length === 0) return "";
   const wins = windowsNow();
-  sec.classList.remove("hidden");
-  box.innerHTML = order.map((k, i) => bigTileHTML(pins[k], wins[k], i === 0)).join("");
+  return `<p class="section-label"><svg class="icon" style="color:#f59e0b"><use href="#i-spark"/></svg>Grandes manchetes — semana · mês · ano</p>
+  <div class="featured" style="margin-bottom:32px">${order.map((k, i) => bigTileHTML(pins[k], wins[k], i === 0)).join("")}</div>`;
+}
+
+const REGION_META = {
+  world:  { id: "region-world",  title: "Mundo",  sub: "World News",  icon: "i-globe" },
+  brazil: { id: "region-brazil", title: "Brasil", sub: "Brazil News", icon: "i-pin" },
+};
+
+function categoryBlockHTML(cat, articles) {
+  const expanded = state.expandedCats.has(cat.slug);
+  const shown = expanded ? articles : articles.slice(0, 4);
+  return `<section class="cat-block" id="cat-${cat.slug}" style="--cat:${cat.color}">
+    <div class="cat-head">
+      <span class="dot"></span>
+      <h3>${esc(cat.name)}</h3>
+      <span class="cat-count">${articles.length}</span>
+      ${articles.length > 4 ? `<button class="cat-toggle btn btn-ghost" data-cat="${cat.slug}">${expanded ? "Mostrar menos" : `Mostrar todos (${articles.length})`}</button>` : ""}
+    </div>
+    <div class="cat-grid">${shown.map((a, i) => cardHTML(a, i)).join("")}</div>
+  </section>`;
+}
+
+function regionHTML(region) {
+  const meta = REGION_META[region];
+  const arts = currentDataset().filter(a => a.region === region).slice().sort(byDateDesc);
+  const blocks = CATEGORIES.filter(c => c.region === region)
+    .map(c => {
+      const list = arts.filter(a => a.category === c.slug);
+      return list.length > 0 ? categoryBlockHTML(c, list) : "";
+    })
+    .join("");
+  const emptyNote = arts.length === 0
+    ? `<div class="banner" style="--tone:#fb923c"><svg class="icon"><use href="#i-alert"/></svg><div><b>Nenhum artigo desta seção ainda</b><span>Toque em Atualizar para buscar — se alguma fonte falhar, o aviso no topo mostra qual.</span></div></div>`
+    : "";
+  return `<section class="region-sec" id="${meta.id}">
+    <div class="region-head">
+      <svg class="icon"><use href="#${meta.icon}"/></svg>
+      <h2>${meta.title}</h2>
+      <span class="region-sub">${meta.sub}</span>
+      <span class="region-n">${arts.length} artigo${arts.length === 1 ? "" : "s"}</span>
+    </div>
+    ${bigRowHTML(region)}
+    ${emptyNote}
+    ${blocks}
+  </section>`;
 }
 
 const skeletonHTML = withImg => `<div class="card" style="animation:none">
@@ -1274,52 +1327,65 @@ function renderBanner() {
   slot.innerHTML = "";
 }
 
-function renderFeaturedAndGrid() {
-  const grid = $("#grid"), featSec = $("#featured-section"), feat = $("#featured");
+function renderContent() {
+  const briefing = $("#briefing"), grid = $("#grid");
   const empty = $("#empty"), more = $("#btn-more");
 
   if (state.refreshing && usingSamples()) {
-    featSec.classList.add("hidden");
     empty.classList.add("hidden");
     more.classList.add("hidden");
+    briefing.innerHTML = "";
+    grid.classList.remove("hidden");
     $("#banner-slot").innerHTML = "";
     $("#result-count").textContent = "";
     grid.innerHTML = Array.from({ length: 9 }, (_, i) => skeletonHTML(i % 3 === 0)).join("");
     return;
   }
 
+  renderBanner();
+
+  // Sem filtros → edição agrupada: Mundo e Brasil, cada um com suas categorias.
+  if (!hasActiveFilters()) {
+    grid.classList.add("hidden");
+    grid.innerHTML = "";
+    empty.classList.add("hidden");
+    more.classList.add("hidden");
+    const dataset = currentDataset();
+    state.index = new Map(dataset.map(a => [a.hash, a]));
+    if (state.big) {
+      for (const region of ["world", "brazil"]) {
+        for (const pin of Object.values(state.big[region] || {})) {
+          if (pin && pin.article) state.index.set(pin.article.hash, pin.article);
+        }
+      }
+    }
+    $("#result-count").textContent = dataset.length.toLocaleString() + " artigos";
+    briefing.innerHTML = regionHTML("world") + regionHTML("brazil");
+    return;
+  }
+
+  // Com filtros → lista plana de resultados.
+  briefing.innerHTML = "";
+  grid.classList.remove("hidden");
   const list = applyFilters(currentDataset());
   state.index = new Map(list.map(a => [a.hash, a]));
-
-  // Manchetes fixadas da semana/mês/ano; a grade abaixo mostra TUDO do dia a dia.
-  renderBig();
-  const rest = list;
-
-  renderBanner();
   $("#result-count").textContent = list.length.toLocaleString() + (list.length === 1 ? " resultado" : " resultados");
 
   if (list.length === 0) {
     grid.innerHTML = "";
     empty.classList.remove("hidden");
     more.classList.add("hidden");
-    if (currentDataset().length === 0) {
-      emptyMode = "refresh";
-      $("#empty-title").textContent = "Nenhum artigo ainda";
-      $("#empty-text").textContent = "Toque em Atualizar para buscar as manchetes mais recentes de todas as fontes.";
-      $("#empty-action").textContent = "Atualizar agora";
-    } else {
-      emptyMode = "clear";
-      $("#empty-title").textContent = "Nada corresponde aos filtros";
-      $("#empty-text").textContent = "Tente ampliar o intervalo de datas, limpar os filtros ou atualizar para buscar as manchetes mais recentes.";
-      $("#empty-action").textContent = "Limpar todos os filtros";
-    }
+    emptyMode = "clear";
+    $("#empty-title").textContent = "Nada corresponde aos filtros";
+    $("#empty-text").textContent = "Tente ampliar o intervalo de datas, limpar os filtros ou atualizar para buscar as manchetes mais recentes.";
+    $("#empty-action").textContent = "Limpar todos os filtros";
     return;
   }
 
   empty.classList.add("hidden");
-  const visible = rest.slice(0, state.page * PAGE_SIZE);
+  const visible = list.slice(0, state.page * PAGE_SIZE);
   grid.innerHTML = visible.map(cardHTML).join("");
-  const remaining = rest.length - visible.length;
+  const remaining = list.length - visible.length;
   more.classList.toggle("hidden", remaining <= 0);
   $("#more-label").textContent = `Carregar mais (${remaining.toLocaleString()} restantes)`;
 }
@@ -1372,7 +1438,7 @@ function renderClearBtn() {
 
 function renderAll() {
   renderStats(); renderMode(); renderClearBtn();
-  renderFeaturedAndGrid(); renderSaved(); renderSaveCount(); renderRefreshBtn();
+  renderContent(); renderSaved(); renderSaveCount(); renderRefreshBtn();
 }
 
 function applyTheme() {
@@ -1383,10 +1449,14 @@ function applyTheme() {
 }
 
 function populateSelects() {
+  const catOpts = region => CATEGORIES.filter(c => c.region === region)
+    .map(c => `<option value="${c.slug}">${esc(c.name)}</option>`).join("");
+  const srcOpts = region => SOURCES.filter(s => s.region === region)
+    .map(s => `<option value="${s.slug}">${s.tier === 1 ? "★ " : "✓ "}${esc(s.name)}</option>`).join("");
   $("#f-category").innerHTML = `<option value="">Todas as categorias</option>` +
-    CATEGORIES.filter(c => c.region === state.region).map(c => `<option value="${c.slug}">${esc(c.name)}</option>`).join("");
+    `<optgroup label="Mundo">${catOpts("world")}</optgroup><optgroup label="Brasil">${catOpts("brazil")}</optgroup>`;
   $("#f-source").innerHTML = `<option value="">Todas as fontes</option>` +
-    SOURCES.filter(s => s.region === state.region).map(s => `<option value="${s.slug}">${s.tier === 1 ? "★ " : "✓ "}${esc(s.name)}</option>`).join("");
+    `<optgroup label="Mundo">${srcOpts("world")}</optgroup><optgroup label="Brasil">${srcOpts("brazil")}</optgroup>`;
   $("#f-category").value = state.category;
   $("#f-source").value = state.source;
 }
@@ -1425,7 +1495,7 @@ async function refresh() {
   if (state.refreshing) return;
   state.refreshing = true;
   renderRefreshBtn();
-  if (usingSamples()) renderFeaturedAndGrid(); // show skeletons on first run
+  if (usingSamples()) renderContent(); // show skeletons on first run
 
   const pairs = SOURCES.flatMap(s => s.feeds.map(f => [s, f]));
   let done = 0, fetched = 0;
@@ -1487,7 +1557,7 @@ function clearFilters() {
   $("#f-q").value = ""; $("#f-from").value = ""; $("#f-to").value = "";
   $("#f-from").removeAttribute("max"); $("#f-to").removeAttribute("min");
   populateSelects();
-  renderClearBtn(); renderFeaturedAndGrid();
+  renderClearBtn(); renderContent();
 }
 
 function bindEvents() {
@@ -1512,15 +1582,11 @@ function bindEvents() {
     });
   });
 
-  document.querySelectorAll(".tab").forEach(tab => tab.addEventListener("click", () => {
-    const region = tab.dataset.region;
-    if (region === state.region) return;
-    state.region = region;
-    state.category = state.source = "";
-    state.page = 1;
-    document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", String(t === tab)));
-    populateSelects();
-    renderClearBtn(); renderFeaturedAndGrid();
+  // Navegação rápida Mundo/Brasil (rola até a seção)
+  document.querySelectorAll(".tab[data-goto]").forEach(tab => tab.addEventListener("click", () => {
+    if (hasActiveFilters()) clearFilters();
+    const el = document.getElementById(tab.dataset.goto);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   }));
 
   let qTimer = null;
@@ -1529,33 +1595,48 @@ function bindEvents() {
     qTimer = setTimeout(() => {
       state.q = e.target.value;
       state.page = 1;
-      renderClearBtn(); renderFeaturedAndGrid();
+      renderClearBtn(); renderContent();
     }, 300);
   });
 
-  $("#f-category").addEventListener("change", e => { state.category = e.target.value; state.page = 1; renderClearBtn(); renderFeaturedAndGrid(); });
-  $("#f-source").addEventListener("change", e => { state.source = e.target.value; state.page = 1; renderClearBtn(); renderFeaturedAndGrid(); });
+  $("#f-category").addEventListener("change", e => { state.category = e.target.value; state.page = 1; renderClearBtn(); renderContent(); });
+  $("#f-source").addEventListener("change", e => { state.source = e.target.value; state.page = 1; renderClearBtn(); renderContent(); });
   $("#f-from").addEventListener("change", e => {
     state.from = e.target.value; state.page = 1;
     if (state.from) $("#f-to").setAttribute("min", state.from); else $("#f-to").removeAttribute("min");
-    renderClearBtn(); renderFeaturedAndGrid();
+    renderClearBtn(); renderContent();
   });
   $("#f-to").addEventListener("change", e => {
     state.to = e.target.value; state.page = 1;
     if (state.to) $("#f-from").setAttribute("max", state.to); else $("#f-from").removeAttribute("max");
-    renderClearBtn(); renderFeaturedAndGrid();
+    renderClearBtn(); renderContent();
   });
   $("#f-clear").addEventListener("click", clearFilters);
 
-  $("#btn-more").addEventListener("click", () => { state.page++; renderFeaturedAndGrid(); });
+  $("#btn-more").addEventListener("click", () => { state.page++; renderContent(); });
   $("#empty-action").addEventListener("click", () => { if (emptyMode === "refresh") refresh(); else clearFilters(); });
 
-  // Save/remove buttons (grid, featured never has them, saved panel uses .del)
+  // Delegação: salvar/remover, expandir categoria, expandir resumo
   document.addEventListener("click", e => {
     const save = e.target.closest(".save-btn");
     if (save) { e.preventDefault(); toggleFav(save.dataset.hash); return; }
     const del = e.target.closest(".del");
-    if (del) { e.preventDefault(); toggleFav(del.dataset.hash); }
+    if (del) { e.preventDefault(); toggleFav(del.dataset.hash); return; }
+    const catBtn = e.target.closest(".cat-toggle");
+    if (catBtn) {
+      const slug = catBtn.dataset.cat;
+      const wasExpanded = state.expandedCats.has(slug);
+      if (wasExpanded) state.expandedCats.delete(slug);
+      else state.expandedCats.add(slug);
+      renderContent();
+      if (wasExpanded) {
+        const block = document.getElementById("cat-" + slug);
+        if (block) block.scrollIntoView({ block: "nearest" });
+      }
+      return;
+    }
+    const sum = e.target.closest(".card-sum");
+    if (sum) sum.classList.toggle("open");
   });
 
   // Image fallbacks (error events don't bubble; use capture)

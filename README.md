@@ -41,9 +41,13 @@ Prefer zero setup? [`standalone/index.html`](standalone/index.html) is the
 **entire dashboard in one ~85 KB HTML file** — download it and double-click.
 No Node, no database, no deployment, no CDN dependencies, no API keys.
 
-- Same design, categories, sources, tiers, search/filters, favorites and
-  dark/light themes as the full app — ported to vanilla JS + hand-written CSS.
-  UI in Brazilian Portuguese (pt-BR).
+- Same sources, tiers, search/filters, favorites and dark/light themes as the
+  full app — ported to vanilla JS + hand-written CSS. UI in Brazilian
+  Portuguese (pt-BR).
+- **Edition layout**: articles are grouped into a Mundo section and a Brasil
+  section, each subdivided by its categories (expandable per category), with
+  summary-forward cards (click a summary to read it in full). Searching or
+  filtering switches to a flat results list.
 - **Grandes manchetes**: pinned top story of the week, month and year per
   region, ranked by cross-source coverage (similar headlines from multiple
   outlets cluster together; more sources — especially Tier 1 — score higher).
