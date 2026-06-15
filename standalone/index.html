@@ -388,6 +388,43 @@ main{min-height:60vh}
 .cat-grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));align-items:start}
 @media(max-width:640px){.cat-grid{grid-template-columns:1fr}}
 /* ── Footer ────────────────────────────────────────────────────────────── */
+.card{cursor:pointer}
+.card-title{cursor:pointer}
+.card .ext,.card .save-btn{cursor:pointer}
+.saved-item h4{cursor:pointer}
+.saved-item h4:hover{text-decoration:underline;text-underline-offset:3px}
+/* ── Leitor interno ────────────────────────────────────────────────────── */
+#reader-overlay{z-index:70}
+.reader{
+  position:fixed;top:0;right:0;bottom:0;z-index:71;width:min(100vw,720px);
+  background:var(--bg);border-left:1px solid var(--border);box-shadow:var(--shadow);
+  transform:translateX(105%);transition:transform .34s cubic-bezier(.32,.72,.35,1);
+  display:flex;flex-direction:column;
+}
+.reader.open{transform:none}
+.reader-bar{display:flex;align-items:center;gap:10px;padding:13px 18px;border-bottom:1px solid var(--border)}
+#reader-chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center;flex:1;min-width:0}
+#reader-chips .chip.cat{white-space:nowrap}
+.reader-scroll{flex:1;overflow-y:auto;padding:24px clamp(20px,4vw,46px) 72px;scrollbar-width:thin}
+.reader-scroll::-webkit-scrollbar{width:9px}
+.reader-scroll::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--fg) 15%,transparent);border-radius:99px}
+.reader-hero{width:100%;border-radius:14px;margin-bottom:20px;max-height:360px;object-fit:cover}
+.reader-title{font-family:var(--font-display);font-size:clamp(25px,3.4vw,35px);line-height:1.16;letter-spacing:-.01em;margin:0 0 12px;text-wrap:balance}
+.reader-meta{font-size:13px;color:var(--muted-fg);margin-bottom:20px}
+.reader-actions{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px;padding-bottom:22px;border-bottom:1px solid var(--border)}
+.reader-body{font-size:16.5px;line-height:1.76;color:color-mix(in srgb,var(--fg) 90%,var(--muted-fg))}
+.reader-body p{margin:0 0 16px}
+.reader-body h2,.reader-body h3,.reader-body h4{font-family:var(--font-display);line-height:1.3;margin:26px 0 10px;color:var(--fg)}
+.reader-body h2{font-size:21px}.reader-body h3{font-size:18px}.reader-body h4{font-size:16px}
+.reader-body a{color:var(--fg);text-decoration:underline;text-underline-offset:3px;text-decoration-color:color-mix(in srgb,var(--fg) 40%,transparent)}
+.reader-body ul,.reader-body ol{margin:0 0 16px;padding-left:22px}
+.reader-body li{margin:0 0 7px}
+.reader-body blockquote{margin:0 0 16px;padding:6px 0 6px 16px;border-left:3px solid color-mix(in srgb,var(--cat,var(--ring)) 60%,transparent);color:var(--muted-fg);font-style:italic}
+.reader-note{font-size:13.5px;line-height:1.6;color:var(--muted-fg);background:var(--muted);border-radius:10px;padding:12px 14px;margin-top:20px}
+.reader-note a{color:var(--fg);text-underline-offset:3px}
+.reader-loading{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--muted-fg);padding:16px 0;margin-top:8px}
+@media(max-width:640px){.reader{width:100vw}}
+/* ── Footer ────────────────────────────────────────────────────────────── */
 footer.app{margin-top:64px;border-top:1px solid var(--border);background:color-mix(in srgb,var(--card) 40%,transparent)}
 .foot-grid{display:grid;gap:40px;padding:48px 0}
 @media(min-width:840px){.foot-grid{grid-template-columns:repeat(3,1fr)}}
@@ -583,6 +620,15 @@ footer.app{margin-top:64px;border-top:1px solid var(--border);background:color-m
     </button>
   </div>
 </aside>
+
+<div id="reader-overlay" class="overlay"></div>
+<article id="reader" class="reader" role="dialog" aria-modal="true" aria-label="Leitor de notícia" aria-hidden="true">
+  <div class="reader-bar">
+    <div id="reader-chips"></div>
+    <button id="reader-close" class="icon-btn" aria-label="Fechar leitor"><svg class="icon"><use href="#i-x"/></svg></button>
+  </div>
+  <div id="reader-scroll" class="reader-scroll"></div>
+</article>
 
 <div id="toasts" class="toasts"></div>
 <script>
@@ -796,6 +842,90 @@ function truncate(s, max) {
   return cut.slice(0, sp > max * 0.6 ? sp : max).trimEnd() + "…";
 }
 
+const CONTENT_CAP = 12000;
+const ALLOWED_TAGS = new Set(["P","BR","STRONG","B","EM","I","U","A","UL","OL","LI","BLOCKQUOTE","H2","H3","H4","H5","FIGCAPTION","SUB","SUP","CODE","PRE","SPAN"]);
+
+/* Sanitiza HTML de feeds/páginas: mantém só tags de texto seguras, remove
+   scripts/estilos/atributos e força links a abrir em nova aba. */
+function sanitizeHtml(html) {
+  if (!html) return null;
+  const doc = document.implementation.createHTMLDocument("");
+  doc.body.innerHTML = String(html);
+  doc.body.querySelectorAll("script,style,noscript,iframe,object,embed,form,svg,img,video,audio,link,meta,button,input,figure,picture,source,table").forEach(n => n.remove());
+  const allowSel = [...ALLOWED_TAGS].map(t => t.toLowerCase()).join(",");
+  for (let pass = 0; pass < 8; pass++) {
+    const bad = doc.body.querySelectorAll(`:not(${allowSel})`);
+    if (bad.length === 0) break;
+    let changed = false;
+    bad.forEach(el => {
+      const parent = el.parentNode;
+      if (!parent) return;
+      while (el.firstChild) parent.insertBefore(el.firstChild, el);
+      parent.removeChild(el);
+      changed = true;
+    });
+    if (!changed) break;
+  }
+  doc.body.querySelectorAll("*").forEach(el => {
+    [...el.attributes].forEach(attr => {
+      const keep = el.tagName === "A" && attr.name === "href" && /^https?:/i.test(attr.value);
+      if (!keep) el.removeAttribute(attr.name);
+    });
+    if (el.tagName === "A") { el.setAttribute("target", "_blank"); el.setAttribute("rel", "noopener noreferrer"); }
+  });
+  let out = doc.body.innerHTML.replace(/(\s)\s+/g, "$1").trim();
+  if (out.length > CONTENT_CAP) out = out.slice(0, CONTENT_CAP) + "…";
+  return stripHtml(out).length > 0 ? out : null;
+}
+const stripLen = html => stripHtml(String(html || "")).length;
+
+/* Busca a página original via cadeia de relays e devolve o HTML bruto. */
+async function fetchPageText(url) {
+  let lastErr = null;
+  for (const wrap of PROXIES) {
+    try {
+      const res = await fetchWithTimeout(wrap(url), 14000);
+      if (!res.ok) { lastErr = new Error("HTTP " + res.status); continue; }
+      const t = await res.text();
+      if (t && t.length > 500) return t;
+      lastErr = new Error("conteúdo vazio");
+    } catch (e) { lastErr = e; }
+  }
+  throw lastErr || new Error("inacessível");
+}
+
+/* Heurística de leitura: maior bloco de parágrafos da página, limpo. */
+function extractReadable(htmlText) {
+  let doc;
+  try { doc = new DOMParser().parseFromString(htmlText, "text/html"); } catch { return null; }
+  if (!doc || !doc.body) return null;
+  doc.querySelectorAll("script,style,noscript,iframe,nav,header,footer,aside,form").forEach(n => n.remove());
+  const pLen = el => { let n = 0; el.querySelectorAll("p").forEach(x => n += (x.textContent || "").trim().length); return n; };
+  const sel = "article, main, [itemprop='articleBody'], [class*='article-body'], [class*='article__body'], [class*='post-content'], [class*='entry-content'], [class*='story-body'], [class*='c-article-body']";
+  let best = null, bestLen = 0;
+  doc.querySelectorAll(sel).forEach(c => { const l = pLen(c); if (l > bestLen) { bestLen = l; best = c; } });
+  if (!best || bestLen < 400) {
+    const map = new Map();
+    doc.querySelectorAll("p").forEach(x => {
+      const par = x.parentElement; if (!par) return;
+      const l = (x.textContent || "").trim().length; if (l < 25) return;
+      map.set(par, (map.get(par) || 0) + l);
+    });
+    for (const [el, l] of map) if (l > bestLen) { bestLen = l; best = el; }
+  }
+  if (!best || bestLen < 300) return null;
+  const esc2 = t => t.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+  const parts = [];
+  best.querySelectorAll("p, h2, h3, h4, li, blockquote").forEach(el => {
+    const txt = (el.textContent || "").replace(/\s+/g, " ").trim();
+    if (txt.length < 2) return;
+    const tag = el.tagName.toLowerCase();
+    parts.push(`<${tag}>${esc2(txt)}</${tag}>`);
+  });
+  return sanitizeHtml(parts.join(""));
+}
+async function fetchReadable(url) { return extractReadable(await fetchPageText(url)); }
+
 function timeAgo(iso, now) {
   if (!iso) return "nunca";
   const t = Date.parse(iso);
@@ -977,10 +1107,13 @@ function parseFeed(xml, source, feed) {
     const url = normalizeUrl(link);
     const hash = viaGoogle ? fnv1a(source.slug + "|t|" + title.toLowerCase()) : fnv1a(source.slug + "|u|" + url);
 
-    const rawHtml = childText(item, ["encoded", "description", "summary", "content"]);
-    let summary = truncate(stripHtml(rawHtml), 600);
+    const rawHtml = childText(item, ["encoded", "content", "description", "summary"]);
+    const fullText = stripHtml(rawHtml);
+    let summary = truncate(fullText, 600);
     if (viaGoogle && (summary.length < 30 || summary.startsWith(title.slice(0, 40)))) summary = null;
     if (summary !== null && summary.length < 12) summary = null;
+    let content = viaGoogle ? null : sanitizeHtml(rawHtml);
+    if (content && stripHtml(content).length < 60) content = null;
 
     const category = feed.mode === "fixed"
       ? feed.defaultCategory
@@ -990,7 +1123,7 @@ function parseFeed(xml, source, feed) {
       hash, title, url,
       source: source.slug, sourceName: source.name,
       category, region: source.region,
-      summary,
+      summary, content,
       imageUrl: viaGoogle ? null : itemImage(item, rawHtml),
       author: itemAuthor(item),
       publishedAt: itemDate(item),
@@ -1204,20 +1337,19 @@ function saveBtnHTML(a) {
 
 function cardHTML(a, i) {
   const cat = CAT[a.category] || { color: "#94a3b8" };
-  const href = safeHref(a.url);
   const media = a.imageUrl
-    ? `<a href="${esc(href)}" target="_blank" rel="noopener noreferrer" tabindex="-1"><div class="card-img"><img src="${esc(a.imageUrl)}" alt="" loading="lazy"/></div></a>`
+    ? `<div class="card-img"><img src="${esc(a.imageUrl)}" alt="" loading="lazy"/></div>`
     : `<div class="card-bar"></div>`;
-  return `<article class="card" style="--cat:${cat.color};animation-delay:${(i % 12) * 45}ms">${media}
+  return `<article class="card" data-open="${esc(a.hash)}" style="--cat:${cat.color};animation-delay:${(i % 12) * 45}ms">${media}
   <div class="card-body">
     <div class="card-top"><div class="card-chips">${catChip(a)}</div>${saveBtnHTML(a)}</div>
-    <h3 class="card-title"><a href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(a.title)}</a></h3>
-    ${a.summary ? `<p class="card-sum" title="Clique para expandir o resumo">${esc(a.summary)}</p>` : ""}
+    <h3 class="card-title">${esc(a.title)}</h3>
+    ${a.summary ? `<p class="card-sum">${esc(a.summary)}</p>` : ""}
     <div class="card-foot">
       <span class="card-src">${tierSpan(a)}<b>${esc(a.sourceName)}</b></span>
       <span class="card-when">
         <span title="Publicado em ${esc(fmtDate(a.publishedAt))}" style="display:inline-flex;align-items:center;gap:4px"><svg class="icon sm"><use href="#i-clock"/></svg><span class="ta" data-t="${esc(a.publishedAt)}">${esc(timeAgo(a.publishedAt))}</span></span>
-        <a class="ext" href="${esc(href)}" target="_blank" rel="noopener noreferrer" aria-label="Abrir em ${esc(a.sourceName)}"><svg class="icon sm"><use href="#i-ext"/></svg></a>
+        <a class="ext" href="${esc(safeHref(a.url))}" target="_blank" rel="noopener noreferrer" aria-label="Abrir original em ${esc(a.sourceName)}"><svg class="icon sm"><use href="#i-ext"/></svg></a>
       </span>
     </div>
   </div></article>`;
@@ -1231,7 +1363,7 @@ function bigTileHTML(pin, win, large) {
   const cov = pin.sources.length > 1
     ? `<span title="${esc(pin.sources.join(" · "))}">· ${pin.sources.length} fontes</span>`
     : "";
-  return `<a class="feat-tile${large ? " large" : ""}${hasImg ? " has-img" : ""}" style="--cat:${cat.color}" href="${esc(href)}" target="_blank" rel="noopener noreferrer">
+  return `<a class="feat-tile${large ? " large" : ""}${hasImg ? " has-img" : ""}" data-open="${esc(a.hash)}" style="--cat:${cat.color}" href="${esc(href)}" target="_blank" rel="noopener noreferrer">
     ${hasImg ? `<img class="feat-img" src="${esc(a.imageUrl)}" alt="" loading="lazy"/><div class="feat-shade"></div>` : `<div class="feat-grad"></div>`}
     <div class="feat-body">
       <div style="display:flex;flex-wrap:wrap;gap:7px;align-items:center">
@@ -1421,7 +1553,7 @@ function renderSaved() {
   }
   list.innerHTML = favs.map(a => `<div class="saved-item">
     <div class="row">${catChip(a)}<button class="del" data-hash="${esc(a.hash)}" aria-label="Remover dos salvos"><svg class="icon sm"><use href="#i-trash"/></svg></button></div>
-    <h4><a href="${esc(safeHref(a.url))}" target="_blank" rel="noopener noreferrer">${esc(a.title)}</a></h4>
+    <h4 class="saved-open" data-open="${esc(a.hash)}">${esc(a.title)}</h4>
     <div class="meta">${tierSpan(a)}<span>${esc(a.sourceName)}</span><span>·</span><span class="ta" data-t="${esc(a.publishedAt)}">${esc(timeAgo(a.publishedAt))}</span></div>
   </div>`).join("");
 }
@@ -1545,6 +1677,83 @@ async function refresh() {
 
 /* ═══════════════ 10 · Events & init ═══════════════ */
 
+let readerHash = null;
+
+function bigByHash(hash) {
+  if (!state.big) return null;
+  for (const r of ["world", "brazil"]) for (const pin of Object.values(state.big[r] || {})) {
+    if (pin && pin.article && pin.article.hash === hash) return pin.article;
+  }
+  return null;
+}
+
+function refreshReaderSave(a) {
+  const b = $("#reader-save"); if (!b) return;
+  const on = state.favs.has(a.hash);
+  b.innerHTML = `<svg class="icon"><use href="#${on ? "i-bookmark-f" : "i-bookmark"}"/></svg>${on ? "Salvo" : "Salvar"}`;
+}
+
+function openReaderShell(open) {
+  $("#reader").classList.toggle("open", open);
+  $("#reader-overlay").classList.toggle("open", open);
+  $("#reader").setAttribute("aria-hidden", String(!open));
+  if (open) document.body.style.overflow = "hidden";
+  else { if (!$("#sheet").classList.contains("open")) document.body.style.overflow = ""; readerHash = null; }
+}
+function closeReader() { openReaderShell(false); }
+
+async function loadFullText(a) {
+  const slot = $("#reader-fullslot"); if (!slot) return;
+  slot.innerHTML = `<div class="reader-loading"><svg class="icon spin"><use href="#i-refresh"/></svg>Buscando o texto completo da matéria…</div>`;
+  try {
+    const html = await fetchReadable(a.url);
+    if (readerHash !== a.hash) return;
+    if (!html || stripLen(html) < 200) throw new Error("sem texto");
+    const body = document.querySelector("#reader-scroll .reader-body");
+    if (body) body.innerHTML = html;
+    a.content = html;
+    if (state.favs.has(a.hash)) { state.favs.set(a.hash, a); lsSet(LS.favs, [...state.favs.values()].slice(0, 200)); }
+    slot.innerHTML = `<p class="reader-note">Texto completo carregado da fonte · <a href="${esc(safeHref(a.url))}" target="_blank" rel="noopener noreferrer">ver no site original</a></p>`;
+  } catch (e) {
+    if (readerHash !== a.hash) return;
+    slot.innerHTML = `<p class="reader-note">Não foi possível trazer o texto completo para cá (a fonte pode bloquear leitura externa). <a href="${esc(safeHref(a.url))}" target="_blank" rel="noopener noreferrer">Abrir no site original</a>.</p>`;
+  }
+}
+
+function openReader(hash) {
+  const a = state.index.get(hash) || state.favs.get(hash) || bigByHash(hash);
+  if (!a) return;
+  readerHash = hash;
+  const cat = CAT[a.category] || { name: a.category, color: "#94a3b8" };
+  $("#reader-chips").innerHTML =
+    `<span class="chip cat" style="--cat:${cat.color}"><span class="dot"></span>${esc(cat.name)}</span>${tierSpan(a)}${a.isSample ? '<span class="chip muted">Exemplo</span>' : ""}`;
+  const hero = a.imageUrl ? `<img class="reader-hero" src="${esc(a.imageUrl)}" alt=""/>` : "";
+  const meta = `<div class="reader-meta">${esc(a.sourceName)}${a.author ? " · " + esc(a.author) : ""} · ${esc(fmtDate(a.publishedAt))}</div>`;
+  const body = a.content
+    ? `<div class="reader-body">${a.content}</div>`
+    : `<div class="reader-body"><p>${esc(a.summary || "")}</p></div>`;
+  const needFull = stripLen(a.content || "") < 400;
+  const isG = isGoogleLink(a.url);
+  let slot = "";
+  if (needFull && isG) {
+    slot = `<p class="reader-note">Agências como Reuters, AP e AFP divulgam apenas a manchete no agregador. Use “Abrir original” para ler a matéria completa.</p>`;
+  } else if (needFull) {
+    slot = `<div id="reader-fullslot"><button class="btn btn-secondary" id="reader-full"><svg class="icon"><use href="#i-news"/></svg>Carregar texto completo</button></div>`;
+  }
+  const actions = `<div class="reader-actions">
+    <button class="btn btn-primary" id="reader-save"><svg class="icon"><use href="#${state.favs.has(a.hash) ? "i-bookmark-f" : "i-bookmark"}"/></svg>${state.favs.has(a.hash) ? "Salvo" : "Salvar"}</button>
+    <a class="btn btn-outline" href="${esc(safeHref(a.url))}" target="_blank" rel="noopener noreferrer"><svg class="icon"><use href="#i-ext"/></svg>Abrir original</a>
+  </div>`;
+  const scroll = $("#reader-scroll");
+  scroll.innerHTML = `${hero}<h1 class="reader-title">${esc(a.title)}</h1>${meta}${actions}${body}${slot}`;
+  scroll.scrollTop = 0;
+  $("#reader-save").addEventListener("click", () => { toggleFav(a.hash); refreshReaderSave(a); });
+  const fb = $("#reader-full");
+  if (fb) fb.addEventListener("click", () => loadFullText(a));
+  openReaderShell(true);
+  if (needFull && !isG) loadFullText(a);
+}
+
 function openSheet(open) {
   $("#sheet").classList.toggle("open", open);
   $("#overlay").classList.toggle("open", open);
@@ -1570,7 +1779,9 @@ function bindEvents() {
   $("#btn-saved").addEventListener("click", () => openSheet(true));
   $("#sheet-close").addEventListener("click", () => openSheet(false));
   $("#overlay").addEventListener("click", () => openSheet(false));
-  document.addEventListener("keydown", e => { if (e.key === "Escape") openSheet(false); });
+  $("#reader-close").addEventListener("click", closeReader);
+  $("#reader-overlay").addEventListener("click", closeReader);
+  document.addEventListener("keydown", e => { if (e.key !== "Escape") return; if ($("#reader").classList.contains("open")) closeReader(); else openSheet(false); });
   $("#btn-clear-saved").addEventListener("click", () => {
     state.favs.clear();
     lsSet(LS.favs, []);
@@ -1616,7 +1827,7 @@ function bindEvents() {
   $("#btn-more").addEventListener("click", () => { state.page++; renderContent(); });
   $("#empty-action").addEventListener("click", () => { if (emptyMode === "refresh") refresh(); else clearFilters(); });
 
-  // Delegação: salvar/remover, expandir categoria, expandir resumo
+  // Delegação: salvar/remover, expandir categoria, abrir leitor interno
   document.addEventListener("click", e => {
     const save = e.target.closest(".save-btn");
     if (save) { e.preventDefault(); toggleFav(save.dataset.hash); return; }
@@ -1635,14 +1846,17 @@ function bindEvents() {
       }
       return;
     }
-    const sum = e.target.closest(".card-sum");
-    if (sum) sum.classList.toggle("open");
+    if (e.target.closest(".ext")) return;                 // deixa abrir o site original
+    const opener = e.target.closest("[data-open]");
+    if (opener) { e.preventDefault(); openReader(opener.getAttribute("data-open")); return; }
+    if (e.target.closest("a[href]")) return;              // demais links normais
   });
 
   // Image fallbacks (error events don't bubble; use capture)
   document.addEventListener("error", e => {
     const img = e.target;
     if (!(img instanceof HTMLImageElement)) return;
+    if (img.classList.contains("reader-hero")) { img.remove(); return; }
     const wrap = img.closest(".card-img");
     if (wrap) {
       const anchor = wrap.closest("a");

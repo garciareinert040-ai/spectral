@@ -45,9 +45,15 @@ No Node, no database, no deployment, no CDN dependencies, no API keys.
   full app — ported to vanilla JS + hand-written CSS. UI in Brazilian
   Portuguese (pt-BR).
 - **Edition layout**: articles are grouped into a Mundo section and a Brasil
-  section, each subdivided by its categories (expandable per category), with
-  summary-forward cards (click a summary to read it in full). Searching or
-  filtering switches to a flat results list.
+  section, each subdivided by its categories (expandable per category).
+  Searching or filtering switches to a flat results list.
+- **Read in-app**: clicking any card opens an internal reader panel showing
+  the full article content carried in the feed — no leaving for the
+  publisher's site. Feeds are now ingested with their full content (sanitized).
+  When a feed only carries a headline (e.g. wire services via Google News), the
+  reader offers a best-effort "Carregar texto completo" that fetches and
+  extracts the article through the CORS relay chain, falling back to an
+  "Abrir original" link if the source blocks external reading.
 - **Grandes manchetes**: pinned top story of the week, month and year per
   region, ranked by cross-source coverage (similar headlines from multiple
   outlets cluster together; more sources — especially Tier 1 — score higher).
