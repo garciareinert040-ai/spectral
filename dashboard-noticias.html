@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Painel de Notícias</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg:       #0a0a0a;
+    --bg-2:     #111213;
+    --card:     #141517;
+    --card-2:   #17181b;
+    --border:   #242629;
+    --border-2: #303236;
+    --fg:       #eae6df;
+    --fg-soft:  #b7b4ad;
+    --fg-mut:   #76746e;
+    --display:  "Playfair Display", Georgia, "Times New Roman", serif;
+    --sans:     "DM Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(60rem 32rem at 80% -8%, rgba(124,131,255,.05), transparent 60%),
+      radial-gradient(50rem 30rem at 5% 0%, rgba(217,164,65,.045), transparent 55%),
+      var(--bg);
+    color: var(--fg);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; color: inherit; cursor: pointer; background: none; border: none; }
+  .wrap { max-width: 1640px; margin: 0 auto; padding: 0 28px; }
+  @media (max-width: 640px) { .wrap { padding: 0 16px; } }
+
+  /* ── Header ──────────────────────────────────────────────────────────── */
+  header.topo {
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(255,255,255,.02), transparent);
+    position: sticky; top: 0; z-index: 20;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  .topo-in { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; padding: 26px 0 22px; flex-wrap: wrap; }
+  .marca h1 {
+    font-family: var(--display); font-weight: 800; letter-spacing: -.015em;
+    font-size: clamp(26px, 3.4vw, 40px); margin: 0; line-height: 1.04;
+  }
+  .marca h1 .pingo { color: #d9a441; }
+  .marca .data { margin: 8px 0 0; font-size: 13.5px; color: var(--fg-mut); letter-spacing: .01em; }
+  .topo-acoes { display: flex; align-items: center; gap: 12px; }
+  .relogio { font-size: 12.5px; color: var(--fg-mut); font-variant-numeric: tabular-nums; }
+  .btn-atualizar {
+    display: inline-flex; align-items: center; gap: 9px;
+    padding: 10px 18px; border: 1px solid var(--border-2); border-radius: 10px;
+    background: var(--card); font-weight: 600; font-size: 14px; letter-spacing: .005em;
+    transition: border-color .18s, background .18s, transform .18s;
+  }
+  .btn-atualizar:hover { border-color: #4a4d52; background: var(--card-2); }
+  .btn-atualizar:disabled { opacity: .6; cursor: default; }
+  .btn-atualizar .ic { display: inline-block; font-size: 16px; line-height: 1; }
+  .girando .ic { animation: girar 1s linear infinite; }
+  @keyframes girar { to { transform: rotate(360deg); } }
+
+  /* ── Trilhas (grade dinâmica) ────────────────────────────────────────── */
+  main { padding: 30px 0 60px; }
+  .trilhas {
+    display: grid; gap: 20px;
+    grid-template-columns: repeat(4, 1fr);
+  }
+  @media (max-width: 1280px) { .trilhas { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 720px)  { .trilhas { grid-template-columns: 1fr; } }
+
+  .trilha { display: flex; flex-direction: column; min-width: 0; }
+  .trilha-head { display: flex; align-items: center; gap: 10px; padding-bottom: 12px; border-bottom: 2px solid var(--cor); }
+  .trilha-titulo { display: flex; align-items: center; gap: 9px; min-width: 0; }
+  .bolinha { width: 9px; height: 9px; border-radius: 50%; background: var(--cor); box-shadow: 0 0 14px color-mix(in srgb, var(--cor) 70%, transparent); flex: none; }
+  .trilha-titulo h2 { font-family: var(--display); font-weight: 700; font-size: 19px; margin: 0; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .trilha-acoes { margin-left: auto; display: flex; align-items: center; gap: 8px; flex: none; }
+  .trilha-status { font-size: 11px; color: var(--fg-mut); white-space: nowrap; }
+  .btn-refresh-trilha {
+    width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--border);
+    display: inline-flex; align-items: center; justify-content: center; font-size: 15px; color: var(--fg-soft);
+    transition: border-color .18s, color .18s, background .18s;
+  }
+  .btn-refresh-trilha:hover { border-color: var(--cor); color: var(--cor); background: color-mix(in srgb, var(--cor) 10%, transparent); }
+  .trilha-desc { margin: 11px 0 14px; font-size: 12px; color: var(--fg-mut); line-height: 1.5; min-height: 34px; }
+  .trilha-body { display: flex; flex-direction: column; gap: 13px; }
+
+  /* ── Card de notícia ─────────────────────────────────────────────────── */
+  .card {
+    position: relative; border: 1px solid var(--border); border-radius: 12px;
+    background: var(--card); padding: 15px 16px 14px;
+    transition: border-color .2s, transform .2s, background .2s;
+  }
+  .card::before {
+    content: ""; position: absolute; left: 0; top: 14px; bottom: 14px; width: 2px; border-radius: 2px;
+    background: var(--cor); opacity: 0; transition: opacity .2s;
+  }
+  .card:hover { border-color: var(--border-2); background: var(--card-2); transform: translateY(-2px); }
+  .card:hover::before { opacity: .65; }
+  .fonte-tag {
+    display: inline-block; font-size: 10.5px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase;
+    color: var(--cor); background: color-mix(in srgb, var(--cor) 13%, transparent);
+    border: 1px solid color-mix(in srgb, var(--cor) 30%, transparent);
+    padding: 2px 8px; border-radius: 999px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .card-titulo { font-family: var(--display); font-weight: 600; font-size: 16.5px; line-height: 1.28; margin: 11px 0 0; letter-spacing: -.005em; }
+  .card-titulo a { transition: color .15s; }
+  .card-titulo a:hover { color: var(--cor); }
+  .card-resumo { margin: 8px 0 0; font-size: 13.5px; line-height: 1.6; color: var(--fg-soft); }
+  .card-link { display: inline-block; margin-top: 11px; font-size: 12px; font-weight: 600; color: var(--fg-mut); transition: color .15s; }
+  .card-link:hover { color: var(--cor); }
+
+  /* ── Skeleton (carregando) ───────────────────────────────────────────── */
+  .sk { border: 1px solid var(--border); border-radius: 12px; background: var(--card); padding: 15px 16px; }
+  .sk-line { height: 11px; border-radius: 6px; margin-bottom: 9px;
+    background: linear-gradient(100deg, #1b1c1f 30%, #26282c 50%, #1b1c1f 70%);
+    background-size: 480px 100%; animation: shimmer 1.5s linear infinite; }
+  .sk-line.tag { width: 64px; height: 16px; border-radius: 999px; margin-bottom: 13px; }
+  .sk-line.t1 { width: 95%; height: 14px; }
+  .sk-line.t2 { width: 70%; height: 14px; }
+  .sk-line.r1 { width: 100%; }
+  .sk-line.r2 { width: 85%; margin-bottom: 0; }
+  @keyframes shimmer { 0% { background-position: -240px 0; } 100% { background-position: 240px 0; } }
+
+  /* ── Erro ────────────────────────────────────────────────────────────── */
+  .erro { border: 1px solid color-mix(in srgb, #e5687a 32%, var(--border)); border-radius: 12px;
+    background: color-mix(in srgb, #e5687a 7%, var(--card)); padding: 15px 16px; }
+  .erro p { margin: 0 0 11px; font-size: 13px; color: #e6a3ad; line-height: 1.5; }
+  .btn-retry { font-size: 12.5px; font-weight: 600; padding: 7px 13px; border-radius: 8px;
+    border: 1px solid var(--border-2); background: var(--card); transition: border-color .18s, background .18s; }
+  .btn-retry:hover { border-color: #4a4d52; background: var(--card-2); }
+  .vazio { font-size: 12.5px; color: var(--fg-mut); padding: 6px 2px; }
+
+  /* ── Seções fixas ────────────────────────────────────────────────────── */
+  .fixas { margin-top: 46px; display: grid; gap: 22px; grid-template-columns: 1.3fr 1fr; }
+  @media (max-width: 900px) { .fixas { grid-template-columns: 1fr; } }
+  .bloco-fixo { border: 1px solid var(--border); border-radius: 14px; background: linear-gradient(180deg, rgba(255,255,255,.015), transparent), var(--bg-2); padding: 22px 22px 24px; }
+  .bloco-fixo h2 { font-family: var(--display); font-weight: 700; font-size: 20px; margin: 0 0 4px; letter-spacing: -.01em; }
+  .bloco-fixo .sub { margin: 0 0 18px; font-size: 12.5px; color: var(--fg-mut); }
+  .fontes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 11px; }
+  .fonte-fixa {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--card);
+    transition: border-color .18s, background .18s, transform .18s;
+  }
+  .fonte-fixa:hover { border-color: var(--cor); background: var(--card-2); transform: translateY(-2px); }
+  .fonte-nome { font-weight: 600; font-size: 14px; }
+  .fonte-cat { font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--cor); border: 1px solid color-mix(in srgb, var(--cor) 32%, transparent);
+    background: color-mix(in srgb, var(--cor) 12%, transparent); padding: 2px 7px; border-radius: 999px; flex: none; }
+  .notas-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 11px; }
+  .notas-list li { display: flex; align-items: flex-start; gap: 11px; font-size: 14px; color: var(--fg-soft); line-height: 1.5; }
+  .notas-list .marc { width: 7px; height: 7px; border-radius: 2px; background: #d9a441; margin-top: 7px; flex: none; transform: rotate(45deg); }
+
+  footer.rodape { border-top: 1px solid var(--border); }
+  .rodape-in { padding: 20px 0 30px; font-size: 12px; color: var(--fg-mut); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .rodape-in a { color: var(--fg-soft); text-decoration: underline; text-underline-offset: 3px; }
+</style>
+</head>
+<body>
+  <header class="topo">
+    <div class="wrap topo-in">
+      <div class="marca">
+        <h1>Painel de Notícias<span class="pingo">.</span></h1>
+        <p class="data" id="data-hoje">—</p>
+      </div>
+      <div class="topo-acoes">
+        <span class="relogio" id="relogio"></span>
+        <button class="btn-atualizar" id="refresh-all"><span class="ic">↻</span> Atualizar tudo</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="trilhas" id="trilhas" aria-label="Trilhas de notícias"></section>
+
+    <section class="fixas">
+      <div class="bloco-fixo">
+        <h2>Fontes fixas</h2>
+        <p class="sub">Links que eu acesso sempre — edite no array <code>FONTES_FIXAS</code>.</p>
+        <div class="fontes-grid" id="fontes"></div>
+      </div>
+      <div class="bloco-fixo">
+        <h2>Notas · Acompanhar</h2>
+        <p class="sub">O que estou monitorando — edite no array <code>NOTAS</code>.</p>
+        <ul class="notas-list" id="notas"></ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="rodape">
+    <div class="wrap rodape-in">
+      <span>Notícias buscadas e resumidas automaticamente · sempre confira na fonte original.</span>
+      <span id="modo"></span>
+    </div>
+  </footer>
+
+<script>
+"use strict";
+(() => {
+
+/* ════════════════════════════════════════════════════════════════════════
+   ▼▼▼  CONFIGURAÇÃO EDITÁVEL — mexa só aqui  ▼▼▼
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* 1) TRILHAS dinâmicas (puxadas da API por busca na web).
+      cor   = acento visual da coluna
+      tema  = legenda curta exibida sob o título
+      escopo = o assunto pedido ao modelo na busca                          */
+const TRILHAS = [
+  {
+    id: "geopolitica",
+    nome: "Geopolítica",
+    cor: "#d9a441",
+    tema: "Conflitos, relações internacionais e o Brasil no mundo",
+    escopo: "geopolítica: conflitos, relações internacionais, política global e a posição do Brasil no cenário externo",
+  },
+  {
+    id: "cripto",
+    nome: "Cripto / Economia",
+    cor: "#3fb27f",
+    tema: "Mercado cripto, macro, juros e economia brasileira",
+    escopo: "mercado de criptomoedas, macroeconomia, juros, SELIC, IPCA e movimentos econômicos relevantes para o Brasil",
+  },
+  {
+    id: "tecnologia",
+    nome: "Tecnologia",
+    cor: "#7c83ff",
+    tema: "IA, big tech, lançamentos e regulação",
+    escopo: "tecnologia: inteligência artificial, big tech, lançamentos de produtos e regulação de tecnologia",
+  },
+  {
+    id: "brasil",
+    nome: "Brasil",
+    cor: "#4db6ac",
+    tema: "Política nacional, economia interna e fatos do dia",
+    escopo: "Brasil: política nacional, economia interna e os principais fatos do dia no país",
+  },
+];
+
+/* 2) FONTES FIXAS — links curados que aparecem sempre.
+      { nome, url, tag (categoria curta), cor }                              */
+const FONTES_FIXAS = [
+  { nome: "The News",      url: "https://thenews.cc",            tag: "Newsletter", cor: "#d9a441" },
+  { nome: "The Block",     url: "https://www.theblock.co",       tag: "Cripto",     cor: "#3fb27f" },
+  { nome: "Ground News",   url: "https://ground.news",           tag: "Viés",       cor: "#7c83ff" },
+  { nome: "Reuters",       url: "https://www.reuters.com",       tag: "Agência",    cor: "#4db6ac" },
+  { nome: "AP News",       url: "https://apnews.com",            tag: "Agência",    cor: "#4db6ac" },
+  { nome: "Nexo Jornal",   url: "https://www.nexojornal.com.br", tag: "Brasil",     cor: "#c98f5c" },
+];
+
+/* 3) NOTAS / ACOMPANHAR — lista simples que você monitora manualmente.     */
+const NOTAS = [
+  "Decisão do Copom sobre a taxa Selic",
+  "Fluxos de ETFs de Bitcoin e próximos eventos do mercado cripto",
+  "Tensões geopolíticas e eleições em andamento",
+  "Lançamentos e regulação de novos modelos de IA",
+  "IPCA do mês e projeções de inflação",
+];
+
+/* (opcional) Ajustes da chamada à API. max_uses limita as buscas por trilha. */
+const MODELO = "claude-sonnet-4-6";
+const MAX_TOKENS = 1000;
+const MAX_BUSCAS = 5;
+
+/* ════════════════════════════════════════════════════════════════════════
+   ▲▲▲  FIM DA CONFIGURAÇÃO  ▲▲▲
+   ════════════════════════════════════════════════════════════════════════ */
+
+const API_URL = "https://api.anthropic.com/v1/messages";
+
+// Estado em memória (sem localStorage — não funciona no ambiente de artifacts).
+const estado = {};
+TRILHAS.forEach((t) => (estado[t.id] = { status: "idle", noticias: [], erro: null, em: null }));
+
+// ── utilidades ────────────────────────────────────────────────────────────
+const $ = (sel) => document.querySelector(sel);
+const esc = (s) =>
+  String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]),
+  );
+function urlSeguro(u) {
+  try {
+    const p = new URL(u);
+    if (p.protocol === "http:" || p.protocol === "https:") return u;
+  } catch (_) {}
+  return null;
+}
+function horaAgora() {
+  return new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
+function dataHoje() {
+  const d = new Date().toLocaleDateString("pt-BR", {
+    weekday: "long", day: "numeric", month: "long", year: "numeric",
+  });
+  return d.charAt(0).toUpperCase() + d.slice(1);
+}
+
+// ── prompt enviado por trilha ──────────────────────────────────────────────
+function promptDaTrilha(t) {
+  return (
+    `Você é um editor de notícias criterioso e imparcial. Use a busca na web para encontrar ` +
+    `as 4 a 5 notícias mais relevantes das últimas 24 a 48 horas sobre ${t.escopo}.\n\n` +
+    `Priorize fatos verificáveis de fontes confiáveis e evite especulação. Para cada notícia: ` +
+    `um título curto, um resumo de 1 a 2 frases em português do Brasil, o nome da fonte e a URL real da matéria.\n\n` +
+    `Responda ESTRITAMENTE em JSON válido, sem markdown, sem cercas de código e sem nenhum texto antes ou depois. ` +
+    `Use exatamente este formato:\n` +
+    `{"noticias":[{"titulo":"...","resumo":"...","fonte":"...","url":"https://..."}]}`
+  );
+}
+
+// ── parse seguro do JSON (remove cercas ```json e tolera lixo em volta) ─────
+function parseNoticias(txt) {
+  let s = String(txt || "").trim();
+  s = s.replace(/^```(?:json)?/i, "").replace(/```$/i, "").trim();
+
+  // 1) tenta o objeto inteiro, do primeiro { ao último }
+  const ini = s.indexOf("{");
+  const fim = s.lastIndexOf("}");
+  const candidato = ini !== -1 && fim > ini ? s.slice(ini, fim + 1) : s;
+  try {
+    const obj = JSON.parse(candidato);
+    if (obj && Array.isArray(obj.noticias)) {
+      return obj.noticias.filter((n) => n && n.titulo);
+    }
+  } catch (_) {
+    /* cai no fallback abaixo (ex.: resposta cortada por max_tokens) */
+  }
+
+  // 2) fallback: extrai cada objeto {...} completo que tenha "titulo"
+  const out = [];
+  const re = /\{[^{}]*"titulo"[^{}]*\}/g;
+  let m;
+  while ((m = re.exec(s))) {
+    try {
+      const o = JSON.parse(m[0]);
+      if (o && o.titulo) out.push(o);
+    } catch (_) {}
+  }
+  return out;
+}
+
+// ── chamada à API por trilha ────────────────────────────────────────────────
+// Sem API key: o ambiente de artifacts cuida da autenticação. Só Content-Type.
+async function buscarTrilha(t) {
+  const res = await fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: MODELO,
+      max_tokens: MAX_TOKENS,
+      tools: [{ type: "web_search_20250305", name: "web_search", max_uses: MAX_BUSCAS }],
+      messages: [{ role: "user", content: promptDaTrilha(t) }],
+    }),
+  });
+
+  let data;
+  try {
+    data = await res.json();
+  } catch (_) {
+    throw new Error("Resposta inválida da API.");
+  }
+  if (!res.ok || (data && data.type === "error")) {
+    const msg = data && data.error && data.error.message ? data.error.message : "HTTP " + res.status;
+    throw new Error(msg);
+  }
+
+  // Respostas com tool use trazem vários blocos; o texto final está nos type:"text".
+  const blocos = Array.isArray(data.content) ? data.content : [];
+  const texto = blocos
+    .filter((b) => b && b.type === "text")
+    .map((b) => b.text || "")
+    .join("\n")
+    .trim();
+  if (!texto) throw new Error("A resposta não trouxe texto utilizável.");
+
+  const noticias = parseNoticias(texto);
+  if (!noticias.length) throw new Error("Não foi possível interpretar as notícias retornadas.");
+  return noticias;
+}
+
+// ── renderização ─────────────────────────────────────────────────────────
+function cardHTML(n) {
+  const url = urlSeguro(n.url);
+  const titulo = esc(n.titulo);
+  const tituloHTML = url
+    ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${titulo}</a>`
+    : titulo;
+  const linkHTML = url
+    ? `<a class="card-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer">ler na fonte ↗</a>`
+    : "";
+  return (
+    `<article class="card">` +
+    `<span class="fonte-tag">${esc(n.fonte || "Fonte")}</span>` +
+    `<h3 class="card-titulo">${tituloHTML}</h3>` +
+    (n.resumo ? `<p class="card-resumo">${esc(n.resumo)}</p>` : "") +
+    linkHTML +
+    `</article>`
+  );
+}
+function skeletonHTML() {
+  const um =
+    `<div class="sk"><div class="sk-line tag"></div>` +
+    `<div class="sk-line t1"></div><div class="sk-line t2"></div>` +
+    `<div class="sk-line r1"></div><div class="sk-line r2"></div></div>`;
+  return um + um + um;
+}
+function erroHTML(msg, id) {
+  return (
+    `<div class="erro"><p>${esc(msg)}</p>` +
+    `<button class="btn-retry" data-id="${esc(id)}">tentar de novo</button></div>`
+  );
+}
+
+function renderTrilha(id) {
+  const trilha = document.querySelector('.trilha[data-id="' + id + '"]');
+  if (!trilha) return;
+  const body = trilha.querySelector(".trilha-body");
+  const status = trilha.querySelector(".trilha-status");
+  const st = estado[id];
+
+  if (st.status === "loading") {
+    body.innerHTML = skeletonHTML();
+    status.textContent = "buscando…";
+  } else if (st.status === "erro") {
+    body.innerHTML = erroHTML(st.erro, id);
+    status.textContent = "erro";
+  } else if (st.status === "ok") {
+    body.innerHTML = st.noticias.length
+      ? st.noticias.map(cardHTML).join("")
+      : '<p class="vazio">Nenhuma notícia encontrada agora.</p>';
+    status.textContent = st.em ? "atualizado " + st.em : "";
+  } else {
+    body.innerHTML = '<p class="vazio">Toque em “Atualizar” para buscar.</p>';
+    status.textContent = "";
+  }
+}
+
+async function atualizarTrilha(id) {
+  const t = TRILHAS.find((x) => x.id === id);
+  if (!t) return;
+  estado[id] = { status: "loading", noticias: [], erro: null, em: null };
+  renderTrilha(id);
+  try {
+    const noticias = await buscarTrilha(t);
+    estado[id] = { status: "ok", noticias, erro: null, em: horaAgora() };
+  } catch (e) {
+    estado[id] = { status: "erro", noticias: [], erro: (e && e.message) || "Falha ao buscar.", em: null };
+  }
+  renderTrilha(id);
+}
+
+// Cada trilha falha/carrega de forma independente — uma não trava as outras.
+async function atualizarTudo() {
+  const btn = $("#refresh-all");
+  btn.classList.add("girando");
+  btn.disabled = true;
+  await Promise.allSettled(TRILHAS.map((t) => atualizarTrilha(t.id)));
+  btn.classList.remove("girando");
+  btn.disabled = false;
+  $("#relogio").textContent = "Atualizado às " + horaAgora();
+}
+
+// ── montagem das seções ────────────────────────────────────────────────────
+function montarTrilhas() {
+  $("#trilhas").innerHTML = TRILHAS.map(
+    (t) =>
+      `<div class="trilha" data-id="${esc(t.id)}" style="--cor:${esc(t.cor)}">` +
+      `<div class="trilha-head">` +
+      `<div class="trilha-titulo"><span class="bolinha"></span><h2>${esc(t.nome)}</h2></div>` +
+      `<div class="trilha-acoes"><span class="trilha-status"></span>` +
+      `<button class="btn-refresh-trilha" data-id="${esc(t.id)}" title="Atualizar ${esc(t.nome)}" aria-label="Atualizar ${esc(t.nome)}">↻</button></div>` +
+      `</div>` +
+      `<p class="trilha-desc">${esc(t.tema)}</p>` +
+      `<div class="trilha-body"></div>` +
+      `</div>`,
+  ).join("");
+  TRILHAS.forEach((t) => renderTrilha(t.id));
+}
+function montarFontes() {
+  $("#fontes").innerHTML = FONTES_FIXAS.map((f) => {
+    const url = urlSeguro(f.url) || "#";
+    return (
+      `<a class="fonte-fixa" href="${esc(url)}" target="_blank" rel="noopener noreferrer" style="--cor:${esc(f.cor || "#888")}">` +
+      `<span class="fonte-nome">${esc(f.nome)}</span>` +
+      (f.tag ? `<span class="fonte-cat">${esc(f.tag)}</span>` : "") +
+      `</a>`
+    );
+  }).join("");
+}
+function montarNotas() {
+  $("#notas").innerHTML = NOTAS.map(
+    (n) => `<li><span class="marc"></span>${esc(typeof n === "string" ? n : n && n.texto)}</li>`,
+  ).join("");
+}
+
+// ── eventos (sem <form>, só handlers) ───────────────────────────────────────
+function ligarEventos() {
+  $("#refresh-all").addEventListener("click", atualizarTudo);
+
+  // delegação: botão ↻ de cada trilha e botão "tentar de novo" dos erros
+  document.addEventListener("click", (e) => {
+    const ref = e.target.closest(".btn-refresh-trilha");
+    if (ref) { atualizarTrilha(ref.dataset.id); return; }
+    const retry = e.target.closest(".btn-retry");
+    if (retry) { atualizarTrilha(retry.dataset.id); }
+  });
+}
+
+// ── init ────────────────────────────────────────────────────────────────────
+function init() {
+  $("#data-hoje").textContent = dataHoje();
+  $("#modo").textContent = "Modelo: " + MODELO;
+  montarTrilhas();
+  montarFontes();
+  montarNotas();
+  ligarEventos();
+  // Abriu o painel → já busca tudo automaticamente.
+  atualizarTudo();
+}
+
+init();
+})();
+</script>
+</body>
+</html>
