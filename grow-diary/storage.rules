@@ -1,0 +1,19 @@
+rules_version = '2';
+
+// =============================================================================
+// Regras de segurança do Firebase Storage — Diário de Cultivo (fotos)
+// Cada usuário só lê/escreve as PRÓPRIAS fotos, em users/{uid}/...
+// (opcional) limita upload a imagens de até 5 MB.
+// Cole isto em: Console Firebase → Storage → aba "Regras" → Publicar.
+// =============================================================================
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /users/{uid}/{allPaths=**} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null
+                   && request.auth.uid == uid
+                   && request.resource.size < 5 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+  }
+}
