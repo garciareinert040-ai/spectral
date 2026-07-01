@@ -24,13 +24,13 @@ import { getStorage } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-
 // ┌──────────────────────────────────────────────────────────────────────────┐
 // │  COLE AQUI a configuração do seu projeto Firebase (plano Spark / grátis):  │
 // └──────────────────────────────────────────────────────────────────────────┘
-export const firebaseConfig = {
-  apiKey: 'COLE_AQUI',
-  authDomain: 'COLE_AQUI.firebaseapp.com',
-  projectId: 'COLE_AQUI',
-  storageBucket: 'COLE_AQUI.appspot.com',
-  messagingSenderId: 'COLE_AQUI',
-  appId: 'COLE_AQUI',
+const firebaseConfig = {
+  apiKey: "AIzaSyC3FEgY_TCf1x4F0OSmrLnvfbKEkSoE2vI",
+  authDomain: "autoflower-pineapple-express.firebaseapp.com",
+  projectId: "autoflower-pineapple-express",
+  storageBucket: "autoflower-pineapple-express.firebasestorage.app",
+  messagingSenderId: "611224860939",
+  appId: "1:611224860939:web:f3054b62a8d1797d008a0e"
 };
 
 // Detecta se a config ainda é o placeholder — o app mostra um aviso amigável
