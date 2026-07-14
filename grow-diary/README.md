@@ -19,15 +19,21 @@ e deixa você registrar dados + fotos todo dia — da germinação à colheita, 
 |---|---|
 | `index.html` | Casca do app (carrega fontes, Chart.js e o JS) |
 | `style.css` | Tema dark editorial |
-| `js/firebase-init.js` | **← cole aqui as chaves do Firebase** + inicialização (auth, Firestore offline, Storage) |
+| `js/firebase-init.js` | **← cole aqui as chaves do Firebase** + inicialização (auth + Firestore offline) |
 | `js/store.js` | Toda a conversa com a nuvem (login, config, registros, fotos, export/import) |
 | `js/data.js` | Conteúdo fixo do guia (cronograma, tabelas, textos) — edite aqui pra ajustar |
-| `js/phase.js` | Cálculo de dia/semana/fase a partir da data de plantio |
+| `js/phase.js` | Cálculo de dia/semana/fase a partir da data de plantio (+ ajuste de dias) |
 | `js/reminders.js` | Motor de lembretes (datas-gatilho + alertas dos seus dados) |
 | `js/app.js` | Telas, navegação, formulários, gráficos |
 | `manifest.json` + `sw.js` | PWA (instalar no celular + app shell offline) |
-| `firestore.rules` / `storage.rules` | Regras de segurança prontas pra colar |
-| `firebase.json` | Config de deploy (Firebase Hosting + regras) |
+| `firestore.rules` | Regras de segurança prontas pra colar |
+| `storage.rules` | Opcional — só se um dia você voltar a usar o Firebase Storage (não é necessário) |
+| `firebase.json` | Config de deploy (Firebase Hosting + regras do Firestore) |
+
+> **Sobre as fotos:** o Firebase **Storage** passou a exigir plano pago (Blaze).
+> Por isso este app **não usa Storage** — as fotos são comprimidas no navegador e
+> guardadas dentro do próprio **Firestore** (plano Spark, grátis). Você **não
+> precisa ativar o Storage**.
 
 ---
 
@@ -45,10 +51,10 @@ e deixa você registrar dados + fotos todo dia — da germinação à colheita, 
    - Menu **Build → Firestore Database → Criar banco de dados**.
    - Escolha um local (ex.: `southamerica-east1`). Comece em **modo de produção**
      (as regras seguras estão no Passo 3).
+   - É aqui que ficam os dados **e as fotos** (comprimidas).
 
-   **c) Storage**
-   - Menu **Build → Storage → Get started**. Aceite o local sugerido.
-   - (No plano Spark o Storage funciona normalmente para uso pessoal.)
+   > **Storage não é necessário.** Como o Firebase Storage virou plano pago, o app
+   > guarda as fotos no Firestore. Pode pular a ativação do Storage.
 
 ---
 
@@ -99,23 +105,10 @@ service cloud.firestore {
 }
 ```
 
-**Storage** — Console → **Storage → aba Regras** → cole o conteúdo de
-[`storage.rules`](./storage.rules) → **Publicar**:
-
-```
-rules_version = '2';
-service firebase.storage {
-  match /b/{bucket}/o {
-    match /users/{uid}/{allPaths=**} {
-      allow read: if request.auth != null && request.auth.uid == uid;
-      allow write: if request.auth != null
-                   && request.auth.uid == uid
-                   && request.resource.size < 5 * 1024 * 1024
-                   && request.resource.contentType.matches('image/.*');
-    }
-  }
-}
-```
+> **Storage:** não precisa publicar nada. O app não usa Firebase Storage (as fotos
+> ficam no Firestore, já cobertas pelas regras acima). O arquivo
+> [`storage.rules`](./storage.rules) fica no projeto só como referência, caso um dia
+> você opte por migrar as fotos de volta pro Storage (aí sim no plano Blaze).
 
 ---
 
@@ -137,7 +130,7 @@ npm install -g firebase-tools
 firebase login
 cd grow-diary
 firebase use --add          # escolha o projeto que você criou
-firebase deploy             # usa o firebase.json daqui (hosting + firestore + storage)
+firebase deploy             # usa o firebase.json daqui (hosting + regras do firestore)
 ```
 O `firebase.json` já aponta o `public` para esta pasta. Ao final ele mostra a URL
 pública (ex.: `https://diario-cultivo.web.app`).
@@ -160,9 +153,20 @@ Qualquer host de site estático serve. Aponte o diretório de publicação para 
 
 1. Abra a URL, **crie a conta** (e-mail + senha) na tela de login.
 2. No **onboarding**, informe a **data de plantio** (âncora de todo o cronograma),
-   o nome do cultivo e a meta em gramas.
+   o nome do cultivo, a meta em gramas e — se precisar — o **ajuste de dias**.
 3. Pronto — o dashboard já mostra dia/semana/fase e o que fazer hoje.
 4. Faça login com **a mesma conta** em outro dispositivo: os dados aparecem sozinhos.
+
+### Ajuste de dias (ex.: germinação antes da semana 1)
+Se o cronograma do guia (Semana 1 = germinação) não bate com a sua realidade — por
+exemplo, a semente passou alguns dias germinando antes de virar "dia 1" — dá pra
+corrigir sem mexer em nada do que você já registrou:
+
+- Menu ⋯ → **Editar cultivo** → campo **Ajuste de dias**.
+- Número **positivo adianta** a contagem, **negativo atrasa**. Uma prévia mostra na
+  hora em que Dia/Semana/Fase o "hoje" vai cair — é só deixar batendo com a realidade.
+- Isso muda **apenas o rótulo** de dia/semana/fase. Seus registros são guardados por
+  **data**, então **nenhum dado preenchido é alterado**.
 
 ---
 
@@ -194,8 +198,8 @@ Além da nuvem, dá pra guardar uma cópia:
 
 - **Exportar:** menu ⋯ → **Exportar backup (JSON)**. Baixa um arquivo com a config e
   todos os registros.
-  > As **fotos não vão embutidas** no JSON (só as URLs) pra manter o arquivo leve — as
-  > imagens seguem guardadas no Firebase Storage.
+  > As **fotos não vão embutidas** no JSON (só a contagem por dia) pra manter o arquivo
+  > leve — as imagens já ficam guardadas no Firestore, na nuvem.
 - **Importar:** menu ⋯ → **Importar backup (JSON)** e escolha o arquivo. Os registros
   são regravados no Firestore (e sincronizam pros outros dispositivos).
 
@@ -205,8 +209,8 @@ Além da nuvem, dá pra guardar uma cópia:
 
 - **Textos / cronograma / tabelas:** `js/data.js`.
 - **Datas-gatilho dos lembretes:** `js/reminders.js` (constante `DATE_REMINDERS`).
-- **Regra de contagem de dia/fase:** `js/phase.js` (função `dayNumber`).
-- **Integração com Firebase:** `js/store.js` (login, Firestore, Storage) e
+- **Regra de contagem de dia/fase:** `js/phase.js` (função `dayNumber`, com o `offset`).
+- **Integração com Firebase:** `js/store.js` (login, Firestore, fotos) e
   `js/firebase-init.js` (config + offline).
 
 Todos esses pontos estão comentados no código.
@@ -215,7 +219,11 @@ Todos esses pontos estão comentados no código.
 
 ## Limites do plano grátis (Spark)
 
-Pra 1 planta e uso pessoal, o plano **Spark** sobra. As fotos são **comprimidas no
-navegador** (máx. 1280px, JPEG ~0.7) antes de subir, o que economiza bastante espaço e
-banda. Se um dia quiser mais folga de Storage, o **Blaze** (pré-pago) mantém uma cota
-grátis parecida e só cobra o excedente.
+Pra 1 planta e uso pessoal, o plano **Spark** sobra — e **sem precisar de plano pago**,
+já que não usamos o Storage. As fotos são **comprimidas no navegador** (máx. 1080px,
+JPEG ~0.6) e guardadas no **Firestore**, junto do registro do dia.
+
+O Firestore no plano Spark oferece **1 GiB de armazenamento** + limites diários
+generosos de leitura/escrita — de sobra pra um cultivo pessoal. Como cada documento do
+Firestore tem teto de **1 MiB**, o app comprime bem as fotos e **avisa** caso as imagens
+de um mesmo dia fiquem grandes demais (é só remover uma e salvar de novo).

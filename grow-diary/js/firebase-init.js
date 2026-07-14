@@ -19,7 +19,8 @@ import {
 import {
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { getStorage } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
+// Obs.: NÃO usamos mais o Firebase Storage. Ele passou a exigir plano pago (Blaze).
+// As fotos são comprimidas e guardadas no próprio Firestore (plano Spark, grátis).
 
 // ┌──────────────────────────────────────────────────────────────────────────┐
 // │  COLE AQUI a configuração do seu projeto Firebase (plano Spark / grátis):  │
@@ -39,7 +40,7 @@ export const configPending = Object.values(firebaseConfig).some(
   (v) => typeof v === 'string' && v.includes('COLE_AQUI')
 );
 
-let app, auth, db, storage;
+let app, auth, db;
 
 if (!configPending) {
   app = initializeApp(firebaseConfig);
@@ -52,12 +53,10 @@ if (!configPending) {
 
   // --- Firestore com CACHE OFFLINE (IndexedDB, multi-abas) --------------------
   // Assim o app continua funcionando sem internet e sincroniza ao voltar.
+  // As fotos (comprimidas em data URL) também ficam aqui, nos registros.
   db = initializeFirestore(app, {
     localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
   });
-
-  // --- Storage: fotos comprimidas ------------------------------------------
-  storage = getStorage(app);
 }
 
-export { app, auth, db, storage };
+export { app, auth, db };

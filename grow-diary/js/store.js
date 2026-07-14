@@ -1,15 +1,16 @@
 // =============================================================================
-// store.js — Camada de dados: Auth + Firestore + Storage
+// store.js — Camada de dados: Auth + Firestore
 // -----------------------------------------------------------------------------
 // Concentra TODA a conversa com o Firebase para o resto do app não precisar
 // conhecer os detalhes do SDK. Pontos de integração comentados:
 //   • LOGIN / CADASTRO / LOGOUT ............ Firebase Auth
 //   • CONFIG do grow ....................... Firestore  users/{uid}
 //   • REGISTROS diários .................... Firestore  users/{uid}/entries/{data}
-//   • FOTOS (comprimidas) .................. Storage    users/{uid}/photos/{data}/{arquivo}
+//   • FOTOS (comprimidas → data URL) ....... guardadas DENTRO do próprio registro
+//        no Firestore. Não usamos Firebase Storage (virou plano pago).
 // =============================================================================
 
-import { auth, db, storage } from './firebase-init.js';
+import { auth, db } from './firebase-init.js';
 import {
   createUserWithEmailAndPassword, signInWithEmailAndPassword,
   signOut, onAuthStateChanged,
@@ -18,9 +19,6 @@ import {
   doc, getDoc, setDoc, collection, getDocs, deleteDoc,
   serverTimestamp, writeBatch, onSnapshot,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import {
-  ref, uploadBytes, getDownloadURL, deleteObject,
-} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
 
 // ---------------------------------------------------------------------------
 // AUTENTICAÇÃO  (ponto de integração: login / cadastro / logout)
@@ -121,13 +119,16 @@ export async function deleteEntry(uid, date) {
 }
 
 // ---------------------------------------------------------------------------
-// FOTOS  (Storage users/{uid}/photos/{data}/{arquivo})
-// As fotos são COMPRIMIDAS no navegador antes de subir (canvas → JPEG).
+// FOTOS  (guardadas como DATA URL dentro do registro, no Firestore)
+// As fotos são COMPRIMIDAS no navegador (canvas → JPEG) e viram um texto
+// "data:image/jpeg;base64,..." salvo junto do registro do dia. Sem Storage.
+//
+// Limite do Firestore: 1 documento ≤ 1 MiB. Por isso comprimimos com folga
+// (máx. ~1080px, JPEG ~0.6) e o app avisa se um dia ficar grande demais.
 // ---------------------------------------------------------------------------
 
-// Redimensiona pra no máx. `maxSide` px no lado maior e exporta JPEG `quality`.
-// Retorna um Blob pronto pra upload. (Requisito técnico: ~1280px, JPEG ~0.7.)
-export function compressImage(file, maxSide = 1280, quality = 0.7) {
+// Redimensiona pra no máx. `maxSide` px no lado maior e devolve uma DATA URL JPEG.
+export function compressImageToDataURL(file, maxSide = 1080, quality = 0.6) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
@@ -139,43 +140,41 @@ export function compressImage(file, maxSide = 1280, quality = 0.7) {
       const canvas = document.createElement('canvas');
       canvas.width = width; canvas.height = height;
       canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-      canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('Falha ao comprimir'))), 'image/jpeg', quality);
+      resolve(canvas.toDataURL('image/jpeg', quality));
     };
     img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Imagem inválida')); };
     img.src = url;
   });
 }
 
-// Comprime + envia UMA foto. Retorna { url, path } pra salvar na entrada.
-export async function uploadPhoto(uid, date, file) {
-  const blob = await compressImage(file);
-  const name = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
-  const path = `users/${uid}/photos/${date}/${name}`;
-  const r = ref(storage, path);
-  await uploadBytes(r, blob, { contentType: 'image/jpeg' });
-  const url = await getDownloadURL(r);
-  return { url, path };
-}
-
-export async function deletePhoto(path) {
-  try { await deleteObject(ref(storage, path)); }
-  catch (e) { console.warn('[storage] não removeu a foto (pode já não existir):', e); }
+// Comprime UMA foto e devolve { data } (a data URL) pra guardar no registro.
+export async function preparePhoto(file) {
+  const data = await compressImageToDataURL(file);
+  return { data };
 }
 
 // ---------------------------------------------------------------------------
 // EXPORT / IMPORT  (backup extra em JSON, além da nuvem)
-// Fotos NÃO são embutidas no JSON (só as URLs) — mantém o arquivo leve, como
-// pede o requisito. As imagens continuam guardadas no Firebase Storage.
+// As fotos (data URLs) NÃO vão no JSON — manteria o arquivo enorme. Exportamos
+// só os dados estruturados; as imagens seguem guardadas no Firestore (nuvem).
 // ---------------------------------------------------------------------------
+
+// Remove o conteúdo pesado das fotos, deixando só a contagem (pro backup leve).
+function stripPhotos(entry) {
+  if (!entry || !Array.isArray(entry.photos)) return entry;
+  const { photos, ...rest } = entry;
+  return { ...rest, photoCount: photos.length };
+}
+
 export async function exportAll(uid) {
   const [config, entries] = await Promise.all([loadConfig(uid), loadEntries(uid)]);
   return {
     app: 'diario-de-cultivo',
     version: 1,
     exportedAt: new Date().toISOString(),
-    note: 'Fotos não são embutidas neste backup (apenas as URLs). As imagens seguem no Firebase Storage.',
+    note: 'Backup de dados. As fotos não vão embutidas (só a contagem por dia) — elas seguem guardadas no Firestore, na nuvem.',
     config: config || null,
-    entries: Object.values(entries),
+    entries: Object.values(entries).map(stripPhotos),
   };
 }
 

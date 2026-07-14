@@ -9,7 +9,7 @@ import { configPending } from './firebase-init.js';
 import {
   watchAuth, currentUid, login, register, logout, authErrorMessage,
   loadConfig, saveConfig, saveEntry, deleteEntry,
-  watchConfig, watchEntries, uploadPhoto, deletePhoto,
+  watchConfig, watchEntries, preparePhoto,
   exportAll, importAll,
 } from './store.js';
 import {
@@ -37,9 +37,17 @@ const S = {
 };
 const root = () => document.getElementById('root');
 
+// Ajuste de dias configurável (ex.: germinação antes da semana 1). Só afeta o
+// CÁLCULO de dia/semana/fase — nunca os registros (que são guardados por data).
+const OFFSET = () => Number((S.config && S.config.dayOffset) || 0);
+
 // ------------------------------- helpers ------------------------------------
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+// Origem da imagem de uma foto: `data` (novo modelo, data URL no Firestore) ou
+// `url` (modelo antigo do Storage, mantido por compatibilidade).
+const photoSrc = (p) => (p && (p.data || p.url)) || '';
 
 function toast(msg, type = '') {
   let wrap = document.querySelector('.toast-wrap');
@@ -207,6 +215,11 @@ function renderOnboarding() {
           <label>Meta (gramas secos)</label>
           <input type="number" id="onb-goal" value="${GROW.defaultGoal}" min="1" step="1">
         </div>
+        <div class="field">
+          <label>Ajuste de dias (opcional)</label>
+          <input type="number" id="onb-offset" value="0" step="1">
+          <div class="hint">Se a planta já estava adiantada quando foi pro vaso (ex.: alguns dias de germinação), coloque aqui os dias a somar. Dá pra mudar depois.</div>
+        </div>
         <button class="btn" id="onb-submit" type="submit">Começar o diário</button>
       </form>
       ${legalFooter()}
@@ -220,6 +233,7 @@ function renderOnboarding() {
       plantingDate: document.getElementById('onb-date').value,
       name: document.getElementById('onb-name').value.trim() || 'Auto Pineapple Express',
       goalGrams: Number(document.getElementById('onb-goal').value) || GROW.defaultGoal,
+      dayOffset: Math.trunc(Number(document.getElementById('onb-offset').value || 0)),
       postHarvest: {},
     };
     try {
@@ -238,7 +252,7 @@ function renderOnboarding() {
 // =============================================================================
 function renderApp() {
   if (!S.config || !S.config.plantingDate) { renderOnboarding(); return; }
-  const status = computeStatus(S.config.plantingDate);
+  const status = computeStatus(S.config.plantingDate, new Date(), OFFSET());
   const activeCls = status.stage === 'veg' ? 'veg' : status.stage === 'mature' ? 'mature' : '';
 
   root().innerHTML = `
@@ -280,7 +294,7 @@ function rerender() {
   // se o shell não existe ainda, monta tudo
   if (!document.getElementById('view')) { renderApp(); return; }
   // atualiza a linha do topo e re-renderiza a view atual
-  const status = computeStatus(S.config.plantingDate);
+  const status = computeStatus(S.config.plantingDate, new Date(), OFFSET());
   const sub = document.querySelector('.grow-name span');
   if (sub) sub.textContent = `Dia ${status.day} · Sem ${status.week} · ${status.phase}`;
   renderView();
@@ -323,9 +337,9 @@ function renderView() {
 //  VIEW: HOJE (dashboard)
 // =============================================================================
 function viewToday() {
-  const status = computeStatus(S.config.plantingDate);
+  const status = computeStatus(S.config.plantingDate, new Date(), OFFSET());
   const wk = status.schedule;
-  const reminders = allReminders(S.config.plantingDate, S.entries);
+  const reminders = allReminders(S.config.plantingDate, S.entries, new Date(), OFFSET());
   const today = todayStr();
   const hasToday = !!S.entries[today];
 
@@ -393,7 +407,7 @@ function mountToday() {
 // =============================================================================
 //  VIEW: REGISTRO DIÁRIO (formulário)
 // =============================================================================
-let formState = null; // { date, existingPhotos, newFiles:[{file,url}], removedPaths:[] }
+let formState = null; // { date, existingPhotos:[{data}], newFiles:[{file,url}] }
 
 function openEntryForm(date) {
   S.tab = 'entry';
@@ -404,7 +418,7 @@ function openEntryForm(date) {
 function renderEntryForm() {
   const v = document.getElementById('view');
   const date = S._entryDate || todayStr();
-  const day = dayNumber(S.config.plantingDate, new Date(date + 'T12:00:00'));
+  const day = dayNumber(S.config.plantingDate, new Date(date + 'T12:00:00'), OFFSET());
   const wk = weekForDay(day);
   const existing = S.entries[date] || null;
 
@@ -412,7 +426,6 @@ function renderEntryForm() {
     date,
     existingPhotos: existing && Array.isArray(existing.photos) ? [...existing.photos] : [],
     newFiles: [],
-    removedPaths: [],
   };
 
   const checks = QUICK_CHECKS.filter((c) => day >= c.fromDay && day <= c.toDay);
@@ -494,7 +507,7 @@ function renderEntryForm() {
         <label>Fotos</label>
         <div class="photo-input" id="photo-input"></div>
         <input type="file" id="photo-file" accept="image/*" multiple capture="environment" class="hidden">
-        <div class="hint">Comprimidas automaticamente (máx. 1280px) antes de subir pra nuvem.</div>
+        <div class="hint">Comprimidas automaticamente (máx. 1080px) e guardadas na nuvem (Firestore).</div>
       </div>
 
       <div class="field">
@@ -538,7 +551,7 @@ function renderPhotoInput() {
   const box = document.getElementById('photo-input');
   if (!box) return;
   const existingHtml = formState.existingPhotos.map((p, i) => `
-    <div class="photo-thumb"><img src="${esc(p.url)}" alt="foto">
+    <div class="photo-thumb"><img src="${esc(p.data || p.url)}" alt="foto">
       <button type="button" class="rm" data-rm-existing="${i}">×</button></div>`).join('');
   const newHtml = formState.newFiles.map((f, i) => `
     <div class="photo-thumb"><img src="${esc(f.url)}" alt="nova foto">
@@ -548,7 +561,6 @@ function renderPhotoInput() {
   document.getElementById('photo-add').onclick = () => document.getElementById('photo-file').click();
   box.querySelectorAll('[data-rm-existing]').forEach((b) => b.onclick = () => {
     const i = +b.dataset.rmExisting;
-    formState.removedPaths.push(formState.existingPhotos[i].path);
     formState.existingPhotos.splice(i, 1); renderPhotoInput();
   });
   box.querySelectorAll('[data-rm-new]').forEach((b) => b.onclick = () => {
@@ -586,16 +598,13 @@ async function saveCurrentEntry() {
   }
 
   try {
-    // 1) sobe as fotos novas (comprimidas dentro de uploadPhoto)
-    const uploaded = [];
+    // 1) comprime as fotos novas em data URL (ficam guardadas no Firestore)
+    const prepared = [];
     for (const nf of formState.newFiles) {
-      const p = await uploadPhoto(S.uid, date, nf.file);
-      uploaded.push(p);
+      const p = await preparePhoto(nf.file);
+      prepared.push(p);
     }
-    // 2) remove do Storage as fotos marcadas
-    for (const path of formState.removedPaths) await deletePhoto(path);
-
-    const photos = [...formState.existingPhotos, ...uploaded];
+    const photos = [...formState.existingPhotos, ...prepared];
 
     const entry = {
       date,
@@ -610,6 +619,17 @@ async function saveCurrentEntry() {
       trichomes,
       photos,
     };
+
+    // Guarda: 1 documento do Firestore ≤ 1 MiB. Se as fotos do dia estourarem,
+    // avisa e não grava (o usuário remove alguma), em vez de falhar sem explicar.
+    const approxBytes = new Blob([JSON.stringify(entry)]).size;
+    if (approxBytes > 1_000_000) {
+      S.syncing = false; updateSync();
+      toast('As fotos deste dia ficaram grandes demais. Remova uma e salve de novo.', 'err');
+      btn.disabled = false; btn.textContent = 'Salvar na nuvem';
+      return;
+    }
+
     await saveEntry(S.uid, entry);
     S.entries[date] = { ...entry }; // otimista (o snapshot confirma depois)
     S.syncing = false; updateSync();
@@ -633,8 +653,7 @@ function confirmDelete(date) {
   document.getElementById('do-del').onclick = async () => {
     closeSheet();
     try {
-      const e = S.entries[date];
-      if (e && Array.isArray(e.photos)) for (const p of e.photos) await deletePhoto(p.path);
+      // As fotos ficam dentro do próprio registro, então apagar o doc já leva tudo.
       await deleteEntry(S.uid, date);
       delete S.entries[date];
       toast('Registro apagado', 'ok');
@@ -660,7 +679,7 @@ function viewHistory() {
   // agrupa por semana do cultivo
   const groups = {};
   dates.forEach((d) => {
-    const day = dayNumber(S.config.plantingDate, new Date(d + 'T12:00:00'));
+    const day = dayNumber(S.config.plantingDate, new Date(d + 'T12:00:00'), OFFSET());
     const wk = weekForDay(day);
     (groups[wk.week] = groups[wk.week] || { wk, items: [] }).items.push({ date: d, day });
   });
@@ -669,7 +688,7 @@ function viewHistory() {
     <div class="card">
       <div class="card-label">🎞️ Galeria de evolução</div>
       <div class="gallery-strip" id="gallery-strip">
-        ${gallery.map((g, i) => `<img src="${esc(g.url)}" data-gi="${i}" alt="${esc(g.date)}">`).join('')}
+        ${gallery.map((g, i) => `<img src="${esc(photoSrc(g))}" data-gi="${i}" alt="${esc(g.date)}">`).join('')}
       </div>
       <p style="font-size:12px;color:var(--muted)">Role para ver a planta crescendo · toque para ampliar</p>
     </div>` : '';
@@ -699,8 +718,9 @@ function entryCard(e, day) {
   const chipLabels = { lst: 'LST', topdress: 'Top-dress', trichomes: 'Tricomas', support: 'Escora' };
   const chips = e.checks ? Object.entries(e.checks).filter(([, v]) => v).map(([k]) => `<span class="chip">✓ ${chipLabels[k] || k}</span>`).join('') : '';
   const thumbs = (e.photos || []).map((p) => {
-    const gi = (window._gallery || []).findIndex((g) => g.url === p.url);
-    return `<img src="${esc(p.url)}" data-gi="${gi}" alt="foto">`;
+    const src = photoSrc(p);
+    const gi = (window._gallery || []).findIndex((g) => photoSrc(g) === src);
+    return `<img src="${esc(src)}" data-gi="${gi}" alt="foto">`;
   }).join('');
 
   return `
@@ -733,7 +753,7 @@ function openLightbox(startIndex) {
     lb.innerHTML = `
       <button class="lb-x">×</button>
       ${i > 0 ? '<button class="lb-nav lb-prev">‹</button>' : ''}
-      <img src="${esc(g.url)}" alt="">
+      <img src="${esc(photoSrc(g))}" alt="">
       ${i < gallery.length - 1 ? '<button class="lb-nav lb-next">›</button>' : ''}
       <div class="lb-cap">${fmtBR(g.date)} · ${i + 1}/${gallery.length}</div>`;
     lb.querySelector('.lb-x').onclick = () => lb.remove();
@@ -802,7 +822,7 @@ function mountCharts() {
 //  VIEW: CRONOGRAMA COMPLETO (guia semana-a-semana, semana atual destacada)
 // =============================================================================
 function viewSchedule() {
-  const status = computeStatus(S.config.plantingDate);
+  const status = computeStatus(S.config.plantingDate, new Date(), OFFSET());
   return `<h2 class="section-title">Cronograma</h2>
     <div class="section-sub">Guia completo · semana atual destacada</div>
     ${SCHEDULE.map((wk) => {
@@ -826,7 +846,7 @@ function viewSchedule() {
 //  VIEW: REFERÊNCIAS
 // =============================================================================
 function viewRef() {
-  const status = computeStatus(S.config.plantingDate);
+  const status = computeStatus(S.config.plantingDate, new Date(), OFFSET());
   const wateringRow = (r, i) => {
     const cur = (status.week <= 2 && i === 0) || ((status.week === 3 || status.week === 4) && i === 1) || (status.week >= 5 && i === 2);
     return `<tr class="${cur ? 'current' : ''}"><td class="wk">${esc(r.phase)}</td><td>${esc(r.amount)}</td><td>${esc(r.when)}</td></tr>`;
@@ -1024,14 +1044,35 @@ function openEditConfig() {
     <div class="field"><label>Data de plantio</label><input type="date" id="c-date" value="${c.plantingDate}" max="${todayStr()}"></div>
     <div class="field"><label>Nome</label><input type="text" id="c-name" value="${esc(c.name || '')}"></div>
     <div class="field"><label>Meta (g)</label><input type="number" id="c-goal" value="${c.goalGrams || GROW.defaultGoal}" min="1"></div>
+    <div class="field">
+      <label>Ajuste de dias</label>
+      <input type="number" id="c-offset" value="${Number(c.dayOffset || 0)}" step="1">
+      <div class="hint">Se o app mostra um dia diferente do real (ex.: houve germinação antes da semana 1), corrija aqui. Positivo adianta, negativo atrasa. <b>Não altera seus registros.</b></div>
+      <div class="golden" id="c-preview" style="margin:10px 0 0"></div>
+    </div>
     <button class="btn" id="c-save">Salvar</button>
     <button class="btn btn-ghost" id="c-cancel" style="margin-top:10px">Cancelar</button>`);
+
+  // Prévia ao vivo: mostra em que Dia/Semana/Fase o "hoje" cai com o ajuste.
+  const updatePreview = () => {
+    const pd = document.getElementById('c-date').value || c.plantingDate;
+    const off = Number(document.getElementById('c-offset').value || 0);
+    const box = document.getElementById('c-preview');
+    if (!pd) { box.textContent = '—'; return; }
+    const st = computeStatus(pd, new Date(), off);
+    box.innerHTML = `Com este ajuste, <b>hoje = Dia ${st.day}</b> · Semana ${st.week} · ${esc(st.phase)}`;
+  };
+  document.getElementById('c-offset').oninput = updatePreview;
+  document.getElementById('c-date').onchange = updatePreview;
+  updatePreview();
+
   document.getElementById('c-cancel').onclick = closeSheet;
   document.getElementById('c-save').onclick = async () => {
     const upd = {
       plantingDate: document.getElementById('c-date').value,
       name: document.getElementById('c-name').value.trim() || 'Cultivo',
       goalGrams: Number(document.getElementById('c-goal').value) || GROW.defaultGoal,
+      dayOffset: Math.trunc(Number(document.getElementById('c-offset').value || 0)),
     };
     try { await saveConfig(S.uid, upd); S.config = { ...S.config, ...upd }; closeSheet(); renderApp(); toast('Cultivo atualizado ✓', 'ok'); }
     catch { toast('Erro ao salvar', 'err'); }

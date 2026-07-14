@@ -1,10 +1,14 @@
 rules_version = '2';
 
 // =============================================================================
-// Regras de segurança do Firebase Storage — Diário de Cultivo (fotos)
-// Cada usuário só lê/escreve as PRÓPRIAS fotos, em users/{uid}/...
-// (opcional) limita upload a imagens de até 5 MB.
-// Cole isto em: Console Firebase → Storage → aba "Regras" → Publicar.
+// [OPCIONAL — não é mais necessário] Regras do Firebase Storage
+// -----------------------------------------------------------------------------
+// O app NÃO usa mais o Firebase Storage: ele virou plano pago (Blaze). As fotos
+// agora são comprimidas e guardadas no próprio Firestore (plano Spark, grátis),
+// então você NÃO precisa ativar o Storage nem publicar estas regras.
+//
+// Este arquivo fica aqui só caso um dia você opte por migrar as fotos de volta
+// pro Storage (aí ative o Storage no plano Blaze e cole isto nas regras dele).
 // =============================================================================
 service firebase.storage {
   match /b/{bucket}/o {

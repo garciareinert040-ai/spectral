@@ -34,11 +34,14 @@ export function fmtBR(str) {
 const MS_DAY = 86400000;
 
 // Número do dia do cultivo para uma data qualquer (default: hoje).
+// `offset` = ajuste manual de dias (ex.: dias de germinação antes da semana 1).
+//   Positivo adianta a contagem, negativo atrasa. Não altera nenhum registro —
+//   os registros são guardados por DATA; isto só muda o rótulo do dia/semana.
 // >>> AJUSTE AQUI se quiser mudar a regra de contagem (ex.: começar do dia 0). <<<
-export function dayNumber(plantingDate, forDate = new Date()) {
+export function dayNumber(plantingDate, forDate = new Date(), offset = 0) {
   const start = parseDate(plantingDate);
   const ref = new Date(forDate.getFullYear(), forDate.getMonth(), forDate.getDate());
-  return Math.floor((ref - start) / MS_DAY) + 1; // dia do plantio = dia 1
+  return Math.floor((ref - start) / MS_DAY) + 1 + Number(offset || 0); // dia do plantio = dia 1 (+ ajuste)
 }
 
 // Devolve o objeto de semana (do SCHEDULE) correspondente a um número de dia.
@@ -52,8 +55,8 @@ export function weekForDay(day) {
 }
 
 // Pacote completo do "estado atual" do cultivo — o coração do dashboard.
-export function computeStatus(plantingDate, forDate = new Date()) {
-  const day = dayNumber(plantingDate, forDate);
+export function computeStatus(plantingDate, forDate = new Date(), offset = 0) {
+  const day = dayNumber(plantingDate, forDate, offset);
   const wk = weekForDay(day);
   const totalDays = GROW.cycleDays;
   const daysToHarvest = Math.max(0, totalDays - day);

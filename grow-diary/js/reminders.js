@@ -78,8 +78,9 @@ export function derivedAlerts(status, entriesByDate) {
 }
 
 // Junta lembretes por data + alertas derivados (dashboard mostra tudo junto).
-export function allReminders(plantingDate, entriesByDate, forDate = new Date()) {
-  const status = computeStatus(plantingDate, forDate);
+// `offset` = mesmo ajuste de dias usado no resto do app (ver phase.js).
+export function allReminders(plantingDate, entriesByDate, forDate = new Date(), offset = 0) {
+  const status = computeStatus(plantingDate, forDate, offset);
   return [...derivedAlerts(status, entriesByDate), ...dateReminders(status)];
 }
 
