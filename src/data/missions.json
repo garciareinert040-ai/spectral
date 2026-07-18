@@ -1,0 +1,676 @@
+[
+  {
+    "id": "s01-m01",
+    "sequencia": 1,
+    "ordem": 1,
+    "nome": "Edward Kenway",
+    "local": "Cape Bonavista",
+    "coordenadas": {
+      "x": 445,
+      "y": 440
+    },
+    "tipo": "principal",
+    "resumoJogo": "Uma batalha naval termina em naufrágio numa enseada de Cape Bonavista. Edward persegue o traidor Duncan Walpole pela ilha, o mata e assume sua identidade — e o convite dos Templários em Havana.",
+    "contextoHistorico": "O Tratado de Utrecht (1713) encerrou a Guerra da Sucessão Espanhola e deixou milhares de corsários e marinheiros sem trabalho — muitos, como o Edward histórico teria sido, viraram piratas."
+  },
+  {
+    "id": "s02-m01",
+    "sequencia": 2,
+    "ordem": 1,
+    "nome": "Lively Havana",
+    "local": "Havana",
+    "coordenadas": {
+      "x": 586,
+      "y": 358
+    },
+    "tipo": "principal",
+    "resumoJogo": "Edward chega a Havana com Stede Bonnet, conhece a cidade e acaba em uma briga com guardas espanhóis, tendo seus pertences confiscados."
+  },
+  {
+    "id": "s02-m02",
+    "sequencia": 2,
+    "ordem": 2,
+    "nome": "...And My Sugar?",
+    "local": "Havana",
+    "coordenadas": {
+      "x": 618,
+      "y": 346
+    },
+    "tipo": "principal",
+    "resumoJogo": "Para ajudar Bonnet, Edward recupera o açúcar roubado dos capangas locais — e de quebra seus próprios pertences, treinando furtividade pelas ruas de Havana."
+  },
+  {
+    "id": "s02-m03",
+    "sequencia": 2,
+    "ordem": 3,
+    "nome": "Mister Walpole, I Presume?",
+    "local": "Havana",
+    "coordenadas": {
+      "x": 566,
+      "y": 380
+    },
+    "tipo": "principal",
+    "resumoJogo": "Passando-se por Duncan Walpole, Edward é recebido pelo governador Torres e apresentado a Woodes Rogers e Julien du Casse. Entrega os mapas roubados e vislumbra o tamanho da conspiração templária."
+  },
+  {
+    "id": "s02-m04",
+    "sequencia": 2,
+    "ordem": 4,
+    "nome": "A Man They Call the Sage",
+    "local": "Havana",
+    "coordenadas": {
+      "x": 648,
+      "y": 372
+    },
+    "tipo": "principal",
+    "resumoJogo": "Os Templários exibem seu prisioneiro: Bartholomew Roberts, o Sábio — o único homem capaz de guiá-los ao Observatório. Edward participa da escolta e fareja um tesouro maior que qualquer saque."
+  },
+  {
+    "id": "s02-m05",
+    "sequencia": 2,
+    "ordem": 5,
+    "nome": "Claiming What's Due",
+    "local": "Havana",
+    "coordenadas": {
+      "x": 556,
+      "y": 344
+    },
+    "tipo": "principal",
+    "resumoJogo": "O Sábio escapa na noite anterior. Edward cobra de Torres o pagamento prometido a Walpole e é enviado à frota do tesouro para receber sua parte — como prisioneiro em potencial."
+  },
+  {
+    "id": "s02-m06",
+    "sequencia": 2,
+    "ordem": 6,
+    "nome": "The Treasure Fleet",
+    "local": "Estreito da Flórida",
+    "coordenadas": {
+      "x": 700,
+      "y": 258
+    },
+    "tipo": "principal",
+    "resumoJogo": "Desmascarado e acorrentado num galeão da frota do tesouro espanhola, Edward liberta Adéwalé e os demais cativos em meio a um furacão, rouba um brigue e batiza-o de Jackdaw — o Gralha.",
+    "contextoHistorico": "A Frota do Tesouro espanhola de 1715 naufragou de verdade num furacão na costa da Flórida, carregada de ouro e prata. A corrida pelo salvamento dos destroços atraiu marinheiros de todo o Caribe e deu combustível à era de ouro da pirataria."
+  },
+  {
+    "id": "s03-m01",
+    "sequencia": 3,
+    "ordem": 1,
+    "nome": "This Tyro Captain",
+    "local": "Mar ao norte de Cuba",
+    "coordenadas": {
+      "x": 800,
+      "y": 330
+    },
+    "tipo": "principal",
+    "resumoJogo": "Capitão de primeira viagem, Edward aprende a comandar o Gralha rumo a Nassau: velas, abordagens e os primeiros saques de sua carreira pirata."
+  },
+  {
+    "id": "s03-m02",
+    "sequencia": 3,
+    "ordem": 2,
+    "nome": "Now Hiring",
+    "local": "Nassau",
+    "coordenadas": {
+      "x": 1008,
+      "y": 188
+    },
+    "tipo": "principal",
+    "resumoJogo": "Em Nassau, Edward reencontra Hornigold, Thatch e James Kidd. Para engrossar a tripulação do Gralha, recruta marujos e liberta piratas capturados pela milícia."
+  },
+  {
+    "id": "s03-m03",
+    "sequencia": 3,
+    "ordem": 3,
+    "nome": "Prizes and Plunder",
+    "local": "Salt Key Bank",
+    "coordenadas": {
+      "x": 775,
+      "y": 300
+    },
+    "tipo": "principal",
+    "resumoJogo": "Trabalho sujo em Salt Key Bank: pilhagem de navios e caça em alto-mar para provar que o Gralha é digno da bandeira que pretende hastear."
+  },
+  {
+    "id": "s03-m04",
+    "sequencia": 3,
+    "ordem": 4,
+    "nome": "Raise the Black Flag",
+    "local": "Nassau",
+    "coordenadas": {
+      "x": 1046,
+      "y": 208
+    },
+    "tipo": "principal",
+    "resumoJogo": "Sob a bandeira negra, Edward navega com Charles Vane e prova seu valor em combate naval, consolidando seu lugar entre os capitães da república pirata.",
+    "contextoHistorico": "A República Pirata de Nassau (~1706–1718) existiu de fato: um porto das Bahamas controlado pelos próprios piratas, sem lei da Coroa — Benjamin Hornigold, Edward Thatch (o Barba Negra) e Charles Vane estavam entre seus líderes."
+  },
+  {
+    "id": "s03-m05",
+    "sequencia": 3,
+    "ordem": 5,
+    "nome": "Sugarcane and Its Yields",
+    "local": "Costa de Cuba",
+    "coordenadas": {
+      "x": 706,
+      "y": 348
+    },
+    "tipo": "principal",
+    "resumoJogo": "Numa plantação de açúcar, Edward e Kidd caçam informações sobre o Sábio — e Edward descobre que o alvo dos Templários vale mais vivo do que qualquer carregamento."
+  },
+  {
+    "id": "s03-m06",
+    "sequencia": 3,
+    "ordem": 6,
+    "nome": "Proper Defence",
+    "local": "Nassau",
+    "coordenadas": {
+      "x": 1032,
+      "y": 176
+    },
+    "tipo": "principal",
+    "resumoJogo": "Nassau precisa de dentes: Edward ajuda a montar as defesas do porto e a proteger a costa da república pirata contra visitantes indesejados."
+  },
+  {
+    "id": "s03-m07",
+    "sequencia": 3,
+    "ordem": 7,
+    "nome": "A Single Madman",
+    "local": "Great Inagua",
+    "coordenadas": {
+      "x": 1352,
+      "y": 522
+    },
+    "tipo": "principal",
+    "resumoJogo": "Edward segue Julien du Casse até seu refúgio em Great Inagua e o assassina. A ilha — e sua enseada escondida — agora tem novo dono."
+  },
+  {
+    "id": "s04-m01",
+    "sequencia": 4,
+    "ordem": 1,
+    "nome": "This Old Cove",
+    "local": "Great Inagua",
+    "coordenadas": {
+      "x": 1375,
+      "y": 540
+    },
+    "tipo": "principal",
+    "resumoJogo": "A tripulação toma posse da enseada de Great Inagua e a transforma no esconderijo do Gralha. Liberta o refúgio, com melhorias para o navio e a ilha."
+  },
+  {
+    "id": "s04-m02",
+    "sequencia": 4,
+    "ordem": 2,
+    "nome": "Nothing Is True...",
+    "local": "Great Inagua",
+    "coordenadas": {
+      "x": 1338,
+      "y": 548
+    },
+    "tipo": "principal",
+    "resumoJogo": "James Kidd põe Edward à prova com os ensinamentos do Credo — um teste de percepção e agilidade que termina com um convite para conhecer os Assassinos de verdade."
+  },
+  {
+    "id": "s04-m03",
+    "sequencia": 4,
+    "ordem": 3,
+    "nome": "The Sage's Buried Secret",
+    "local": "Tulum",
+    "coordenadas": {
+      "x": 177,
+      "y": 600
+    },
+    "tipo": "principal",
+    "resumoJogo": "Em Tulum, Edward conhece Ah Tabai e a irmandade dos Assassinos — e descobre que foram os mapas que ele vendeu a Torres que puseram a irmandade sob ataque."
+  },
+  {
+    "id": "s04-m04",
+    "sequencia": 4,
+    "ordem": 4,
+    "nome": "Overrun and Outnumbered",
+    "local": "Tulum",
+    "coordenadas": {
+      "x": 190,
+      "y": 622
+    },
+    "tipo": "principal",
+    "resumoJogo": "Soldados atacam Tulum: os agentes que Edward armou vieram cobrar a conta. Ele ajuda a expulsar os invasores e parte com a desconfiança dos Assassinos nas costas."
+  },
+  {
+    "id": "s05-m01",
+    "sequencia": 5,
+    "ordem": 1,
+    "nome": "The Forts",
+    "local": "Forte na costa de Cuba",
+    "coordenadas": {
+      "x": 1140,
+      "y": 498
+    },
+    "tipo": "principal",
+    "resumoJogo": "Com Adéwalé, Edward toma de assalto um forte naval espanhol — o primeiro de muitos — e aprende que uma fortaleza a menos no mapa é um mar a mais para os piratas."
+  },
+  {
+    "id": "s05-m02",
+    "sequencia": 5,
+    "ordem": 2,
+    "nome": "Traveling Salesman",
+    "local": "Kingston",
+    "coordenadas": {
+      "x": 988,
+      "y": 768
+    },
+    "tipo": "principal",
+    "resumoJogo": "Em Kingston, Edward segue a trilha do mercador de escravos Laurens Prins, esperando trocá-lo pelo paradeiro do Sábio junto aos Templários."
+  },
+  {
+    "id": "s05-m03",
+    "sequencia": 5,
+    "ordem": 3,
+    "nome": "Unmanned",
+    "local": "Kingston",
+    "coordenadas": {
+      "x": 1030,
+      "y": 752
+    },
+    "tipo": "principal",
+    "resumoJogo": "Edward bisbilhota Woodes Rogers e Benjamin Hornigold em Kingston e descobre que o Sábio está nas mãos de Prins — e que velhos aliados mudaram de lado."
+  },
+  {
+    "id": "s05-m04",
+    "sequencia": 5,
+    "ordem": 4,
+    "nome": "TODO: confirmar 4ª missão da Sequência 5",
+    "local": "Kingston",
+    "coordenadas": {
+      "x": 952,
+      "y": 790
+    },
+    "tipo": "principal",
+    "resumoJogo": "TODO: confirmar o nome e o resumo da 4ª memória da Sequência 5 no Resynced (no jogo original, o arco fecha com a morte de Laurens Prins em Kingston e o Sábio escapando outra vez)."
+  },
+  {
+    "id": "s06-m01",
+    "sequencia": 6,
+    "ordem": 1,
+    "nome": "Diving for Medicines",
+    "local": "Naufrágio ao sul de Cuba",
+    "coordenadas": {
+      "x": 880,
+      "y": 690
+    },
+    "tipo": "principal",
+    "resumoJogo": "Com um sino de mergulho, Edward desce a um naufrágio em busca de remédios para Nassau, onde a doença corre mais solta que o rum."
+  },
+  {
+    "id": "s06-m02",
+    "sequencia": 6,
+    "ordem": 2,
+    "nome": "Devil's Advocate",
+    "local": "Kingston",
+    "coordenadas": {
+      "x": 1008,
+      "y": 796
+    },
+    "tipo": "principal",
+    "resumoJogo": "A crise em Nassau se agrava. Edward faz o jogo político entre os capitães piratas enquanto a Coroa Britânica aperta o cerco à república."
+  },
+  {
+    "id": "s06-m03",
+    "sequencia": 6,
+    "ordem": 3,
+    "nome": "The Siege of Charles-Towne",
+    "local": "Charles-Towne (ao norte, além desta carta)",
+    "coordenadas": {
+      "x": 900,
+      "y": 48
+    },
+    "tipo": "principal",
+    "resumoJogo": "Edward acompanha o Barba Negra no famoso bloqueio de Charles-Towne, extorquindo da cidade os remédios que Nassau precisa — o golpe mais ousado da carreira de Thatch.",
+    "contextoHistorico": "O bloqueio de Charleston aconteceu de verdade em maio de 1718: o Barba Negra fechou o porto com sua esquadra e exigiu como resgate apenas um baú de remédios — e o recebeu."
+  },
+  {
+    "id": "s07-m01",
+    "sequencia": 7,
+    "ordem": 1,
+    "nome": "We Demand a Parley",
+    "local": "Nassau",
+    "coordenadas": {
+      "x": 1005,
+      "y": 214
+    },
+    "tipo": "principal",
+    "resumoJogo": "Com a esquadra britânica no horizonte, os capitães de Nassau discutem os termos: aceitar o perdão real ou lutar. Edward tenta costurar uma saída entre orgulho e sobrevivência."
+  },
+  {
+    "id": "s07-m02",
+    "sequencia": 7,
+    "ordem": 2,
+    "nome": "The Gunpowder Plot",
+    "local": "Nassau",
+    "coordenadas": {
+      "x": 1064,
+      "y": 184
+    },
+    "tipo": "principal",
+    "resumoJogo": "TODO: detalhar (missão do arco do bloqueio no Resynced). Um plano com pólvora para romper o cerco britânico a Nassau."
+  },
+  {
+    "id": "s07-m03",
+    "sequencia": 7,
+    "ordem": 3,
+    "nome": "Commodore Eighty-Sixed",
+    "local": "Águas de Nassau",
+    "coordenadas": {
+      "x": 985,
+      "y": 158
+    },
+    "tipo": "principal",
+    "resumoJogo": "Edward caça o comodoro da esquadra de bloqueio em combate naval, abrindo uma brecha no cerco a Nassau."
+  },
+  {
+    "id": "s07-m04",
+    "sequencia": 7,
+    "ordem": 4,
+    "nome": "The Fireship",
+    "local": "Porto de Nassau",
+    "coordenadas": {
+      "x": 1030,
+      "y": 232
+    },
+    "tipo": "principal",
+    "resumoJogo": "Um brulote em chamas contra a frota de Woodes Rogers: a fuga incendiária de Nassau marca o fim da república pirata como Edward a conheceu.",
+    "contextoHistorico": "Woodes Rogers chegou a Nassau em 1718 com o Perdão Real: anistia para os piratas que se rendessem e forca para os que não. Charles Vane respondeu lançando um brulote contra a esquadra do novo governador e escapando do porto — a cena que o jogo recria."
+  },
+  {
+    "id": "s08-m01",
+    "sequencia": 8,
+    "ordem": 1,
+    "nome": "Do Not Go Gently...",
+    "local": "Ocracoke (ao norte, além desta carta)",
+    "coordenadas": {
+      "x": 1120,
+      "y": 42
+    },
+    "tipo": "principal",
+    "resumoJogo": "Na enseada de Ocracoke, a Marinha Real encurrala Edward Thatch. O Barba Negra cai lutando para cobrir a fuga dos companheiros — e a era de ouro perde seu maior mito.",
+    "contextoHistorico": "O Barba Negra morreu de verdade em novembro de 1718, em Ocracoke, na Carolina do Norte, em combate contra o tenente Robert Maynard — precisou de cinco tiros e vinte cutiladas para cair."
+  },
+  {
+    "id": "s08-m02",
+    "sequencia": 8,
+    "ordem": 2,
+    "nome": "Vainglorious Bastards",
+    "local": "Canal de Barlavento",
+    "coordenadas": {
+      "x": 1322,
+      "y": 648
+    },
+    "tipo": "principal",
+    "resumoJogo": "Edward e Charles Vane, agora foragidos, caçam presas espanholas rumo ao sul. A parceria rende saque — e mostra o quanto Vane está se desfazendo por dentro."
+  },
+  {
+    "id": "s08-m03",
+    "sequencia": 8,
+    "ordem": 3,
+    "nome": "Marooned",
+    "local": "Isla Providencia (ao sul, além desta carta)",
+    "coordenadas": {
+      "x": 640,
+      "y": 952
+    },
+    "tipo": "principal",
+    "resumoJogo": "Naufragados numa ilha deserta, Edward e Vane deixam de ser aliados. Entre emboscadas e delírios, Edward recupera o Gralha — roubado por Rackham — e deixa Vane para trás.",
+    "contextoHistorico": "O verdadeiro Charles Vane recusou o perdão real até o fim: naufragou, foi reconhecido, preso e enforcado em Port Royal em 1721, com o corpo pendurado na entrada do porto como aviso."
+  },
+  {
+    "id": "s09-m01",
+    "sequencia": 9,
+    "ordem": 1,
+    "nome": "Imagine My Surprise",
+    "local": "Kingston",
+    "coordenadas": {
+      "x": 958,
+      "y": 756
+    },
+    "tipo": "principal",
+    "resumoJogo": "Em Kingston, Edward espiona Woodes Rogers e Benjamin Hornigold — agora Templário — e descobre que a caçada ao Sábio, e ao Observatório, continua.",
+    "contextoHistorico": "Woodes Rogers foi mesmo o homem que fechou a era de ouro: ex-corsário que circum-navegou o globo, chegou a Nassau em 1718 como governador real oferecendo o Perdão do Rei — quem aceitasse virava súdito; quem recusasse virava caça."
+  },
+  {
+    "id": "s09-m02",
+    "sequencia": 9,
+    "ordem": 2,
+    "nome": "Trust Is Earned",
+    "local": "Príncipe (além-mar, a leste)",
+    "coordenadas": {
+      "x": 1568,
+      "y": 872
+    },
+    "tipo": "principal",
+    "resumoJogo": "Do outro lado do Atlântico, na ilha de Príncipe, Edward reencontra Bartholomew Roberts — e paga em sangue o preço de navegar ao lado do Sábio."
+  },
+  {
+    "id": "s10-m01",
+    "sequencia": 10,
+    "ordem": 1,
+    "nome": "Black Bart's Gambit",
+    "local": "Águas de Príncipe (além-mar)",
+    "coordenadas": {
+      "x": 1540,
+      "y": 906
+    },
+    "tipo": "principal",
+    "resumoJogo": "Edward e Roberts emboscam o navio de guerra português Nosso Senhor. O plano de Black Bart é frio, brilhante e cruel — como o próprio."
+  },
+  {
+    "id": "s10-m02",
+    "sequencia": 10,
+    "ordem": 2,
+    "nome": "Murder and Mayhem",
+    "local": "Mar das Bahamas",
+    "coordenadas": {
+      "x": 1288,
+      "y": 372
+    },
+    "tipo": "principal",
+    "resumoJogo": "A esquadra de Hornigold intercepta o Gralha. No combate, Edward acerta as contas com o velho mentor que trocou a bandeira negra pela cruz templária."
+  },
+  {
+    "id": "s10-m03",
+    "sequencia": 10,
+    "ordem": 3,
+    "nome": "The Observatory",
+    "local": "Long Bay, Jamaica",
+    "coordenadas": {
+      "x": 1076,
+      "y": 764
+    },
+    "tipo": "principal",
+    "resumoJogo": "Roberts guia Edward ao Observatório dos Precursores. Lá dentro, Edward vê o poder do artefato — e descobre, tarde demais, que o Sábio não divide tesouros."
+  },
+  {
+    "id": "s11-m01",
+    "sequencia": 11,
+    "ordem": 1,
+    "nome": "TODO: confirmar 1ª missão da Sequência 11",
+    "local": "Kingston / Port Royal",
+    "coordenadas": {
+      "x": 1102,
+      "y": 822
+    },
+    "tipo": "principal",
+    "resumoJogo": "TODO: confirmar nome e resumo (arco da prisão: traído e vendido por Roberts, Edward é levado a julgamento em Port Royal)."
+  },
+  {
+    "id": "s11-m02",
+    "sequencia": 11,
+    "ordem": 2,
+    "nome": "TODO: confirmar 2ª missão da Sequência 11",
+    "local": "Kingston / Port Royal",
+    "coordenadas": {
+      "x": 1128,
+      "y": 836
+    },
+    "tipo": "principal",
+    "resumoJogo": "TODO: confirmar nome e resumo (na prisão, Edward reencontra Anne Bonny, Mary Read e Jack Rackham enquanto os Templários decidem seu destino)."
+  },
+  {
+    "id": "s11-m03",
+    "sequencia": 11,
+    "ordem": 3,
+    "nome": "Everything Is Permitted",
+    "local": "Kingston / Port Royal",
+    "coordenadas": {
+      "x": 1074,
+      "y": 842
+    },
+    "tipo": "principal",
+    "resumoJogo": "Com ajuda de Ah Tabai e Anne Bonny, Edward escapa da prisão de Port Royal. Mary Read não sobrevive à fuga — e Edward, enfim, escolhe um lado. Libera o capítulo A World Without Gold em Great Inagua.",
+    "contextoHistorico": "Anne Bonny e Mary Read foram julgadas na Jamaica em 1720 e escaparam da forca alegando gravidez. Mary morreu na prisão; o destino de Anne é um mistério histórico até hoje."
+  },
+  {
+    "id": "s12-m01",
+    "sequencia": 12,
+    "ordem": 1,
+    "nome": "A Governor No Longer",
+    "local": "Kingston",
+    "coordenadas": {
+      "x": 1002,
+      "y": 836
+    },
+    "tipo": "principal",
+    "resumoJogo": "Woodes Rogers, caído em desgraça, é o próximo alvo. Numa festa em Kingston, Edward age como Assassino — não mais como pirata.",
+    "contextoHistorico": "\"Calico Jack\" Rackham — que rouba o Gralha no jogo — foi capturado e executado em Port Royal, Jamaica, em 1720; seu corpo ficou exposto num islote da baía que até hoje se chama Rackham's Cay."
+  },
+  {
+    "id": "s12-m02",
+    "sequencia": 12,
+    "ordem": 2,
+    "nome": "TODO: confirmar 2ª missão da Sequência 12",
+    "local": "Tulum",
+    "coordenadas": {
+      "x": 152,
+      "y": 568
+    },
+    "tipo": "principal",
+    "resumoJogo": "TODO: confirmar nome e resumo (no original, Edward retorna aos Assassinos e se prepara para a caçada final ao Sábio e a Torres)."
+  },
+  {
+    "id": "s12-m03",
+    "sequencia": 12,
+    "ordem": 3,
+    "nome": "TODO: confirmar missão final (provável Royal Misfortune)",
+    "local": "Mar do Caribe",
+    "coordenadas": {
+      "x": 1440,
+      "y": 736
+    },
+    "tipo": "principal",
+    "resumoJogo": "TODO: confirmar nome e resumo do desfecho no Resynced (no original: o duelo naval contra o Royal Fortune de Bartholomew Roberts e o acerto de contas final com o Grão-Mestre Torres)."
+  },
+  {
+    "id": "awg-m01",
+    "sequencia": "awwg",
+    "ordem": 1,
+    "nome": "That Bastard Maynard",
+    "local": "Great Inagua",
+    "coordenadas": {
+      "x": 1392,
+      "y": 560
+    },
+    "tipo": "awwg",
+    "resumoJogo": "Na taverna de Great Inagua, Anne Bonny traz notícias: o tenente Robert Maynard, algoz do Barba Negra, cruzou o caminho errado. Começa a caçada do novo capítulo do remake.",
+    "contextoHistorico": "O Robert Maynard real era tenente da Marinha Real: em novembro de 1718 emboscou o Barba Negra em Ocracoke, o matou em combate e voltou para a Virgínia com a cabeça do pirata pendurada no gurupés."
+  },
+  {
+    "id": "awg-m02",
+    "sequencia": "awwg",
+    "ordem": 2,
+    "nome": "Not a Real Captain At All",
+    "local": "TODO: confirmar local",
+    "coordenadas": {
+      "x": 1240,
+      "y": 592
+    },
+    "tipo": "awwg",
+    "resumoJogo": "TODO: preencher após jogar (2ª missão do capítulo A World Without Gold, na trilha de Maynard)."
+  },
+  {
+    "id": "awg-m03",
+    "sequencia": "awwg",
+    "ordem": 3,
+    "nome": "What The Bloody Hell",
+    "local": "TODO: confirmar local",
+    "coordenadas": {
+      "x": 600,
+      "y": 422
+    },
+    "tipo": "awwg",
+    "resumoJogo": "TODO: preencher após jogar (3ª missão do capítulo A World Without Gold)."
+  },
+  {
+    "id": "awg-m04",
+    "sequencia": "awwg",
+    "ordem": 4,
+    "nome": "This Is A Good Beginning",
+    "local": "TODO: confirmar local",
+    "coordenadas": {
+      "x": 795,
+      "y": 318
+    },
+    "tipo": "awwg",
+    "resumoJogo": "TODO: preencher após jogar (4ª missão do capítulo A World Without Gold)."
+  },
+  {
+    "id": "awg-m05",
+    "sequencia": "awwg",
+    "ordem": 5,
+    "nome": "Not Natural Allies",
+    "local": "TODO: confirmar local",
+    "coordenadas": {
+      "x": 1030,
+      "y": 824
+    },
+    "tipo": "awwg",
+    "resumoJogo": "TODO: preencher após jogar (5ª missão do capítulo A World Without Gold)."
+  },
+  {
+    "id": "awg-m06",
+    "sequencia": "awwg",
+    "ordem": 6,
+    "nome": "All I Want To Do Is Chat",
+    "local": "TODO: confirmar local",
+    "coordenadas": {
+      "x": 1012,
+      "y": 252
+    },
+    "tipo": "awwg",
+    "resumoJogo": "TODO: preencher após jogar (6ª missão do capítulo A World Without Gold)."
+  },
+  {
+    "id": "awg-m07",
+    "sequencia": "awwg",
+    "ordem": 7,
+    "nome": "A Cockalorum",
+    "local": "TODO: confirmar local",
+    "coordenadas": {
+      "x": 1352,
+      "y": 668
+    },
+    "tipo": "awwg",
+    "resumoJogo": "TODO: preencher após jogar (7ª missão do capítulo A World Without Gold)."
+  },
+  {
+    "id": "awg-m08",
+    "sequencia": "awwg",
+    "ordem": 8,
+    "nome": "A World Without Gold",
+    "local": "Mar aberto (Atlântico)",
+    "coordenadas": {
+      "x": 1252,
+      "y": 248
+    },
+    "tipo": "awwg",
+    "resumoJogo": "O desfecho do capítulo novo: uma batalha contra a armada de Maynard e um duelo final, um contra um, para fechar as contas do Gralha. TODO: confirmar detalhes e local exato após jogar."
+  }
+]
