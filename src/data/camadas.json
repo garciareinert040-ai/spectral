@@ -1,0 +1,277 @@
+[
+  {
+    "id": "th-opia",
+    "nome": "Caçada Templária — Opía Apito",
+    "local": "Oeste de Cuba",
+    "coordenadas": {
+      "x": 528,
+      "y": 528
+    },
+    "tipo": "cacadas",
+    "resumoJogo": "Série de missões ao lado da caçadora taína Opía Apito, na trilha da templária Lucia Márquez pelo interior de Cuba. Recompensa: uma das chaves templárias."
+  },
+  {
+    "id": "th-rhona",
+    "nome": "Caçada Templária — Rhona Dinsmore",
+    "local": "Havana",
+    "coordenadas": {
+      "x": 596,
+      "y": 394
+    },
+    "tipo": "cacadas",
+    "resumoJogo": "Ao lado da assassina Rhona Dinsmore, Edward desmonta a rede templária de Havana, bomba a bomba, até o confronto final. Recompensa: uma das chaves templárias."
+  },
+  {
+    "id": "th-anto",
+    "nome": "Caçada Templária — Anto",
+    "local": "Kingston",
+    "coordenadas": {
+      "x": 1046,
+      "y": 780
+    },
+    "tipo": "cacadas",
+    "resumoJogo": "Com Anto, líder dos quilombolas de Kingston, Edward liberta escravizados e caça o templário que financia a repressão na cidade. Recompensa: uma das chaves templárias."
+  },
+  {
+    "id": "th-vance",
+    "nome": "Caçada Templária — Vance Travers",
+    "local": "Nassau",
+    "coordenadas": {
+      "x": 1062,
+      "y": 158
+    },
+    "tipo": "cacadas",
+    "resumoJogo": "Em Nassau, a caçada com Vance Travers azeda entre traições de irmãos e ouro contrabandeado. Recompensa: uma das chaves templárias."
+  },
+  {
+    "id": "ct-havana",
+    "nome": "Contratos de Assassino — Havana",
+    "local": "Havana e arredores",
+    "coordenadas": {
+      "x": 628,
+      "y": 404
+    },
+    "tipo": "contratos",
+    "resumoJogo": "Contratos dos pombais na região de Havana: alvos templários e informantes da Coroa espanhola. Marque como concluído ao fechar todos os da região."
+  },
+  {
+    "id": "ct-nassau",
+    "nome": "Contratos de Assassino — Nassau",
+    "local": "Nassau e arredores",
+    "coordenadas": {
+      "x": 964,
+      "y": 244
+    },
+    "tipo": "contratos",
+    "resumoJogo": "Contratos dos pombais nas Bahamas: caçadores de piratas, delatores e oficiais do bloqueio. Marque como concluído ao fechar todos os da região."
+  },
+  {
+    "id": "ct-kingston",
+    "nome": "Contratos de Assassino — Kingston",
+    "local": "Kingston e arredores",
+    "coordenadas": {
+      "x": 1118,
+      "y": 800
+    },
+    "tipo": "contratos",
+    "resumoJogo": "Contratos dos pombais na Jamaica: mercadores de escravos e agentes templários sob proteção da Coroa. Marque como concluído ao fechar todos os da região."
+  },
+  {
+    "id": "ct-navais",
+    "nome": "Contratos Navais — Mar Aberto",
+    "local": "Fortes conquistados",
+    "coordenadas": {
+      "x": 872,
+      "y": 588
+    },
+    "tipo": "contratos",
+    "resumoJogo": "Contratos navais aceitos nos fortes conquistados: escoltas, caçadas e presas específicas em alto-mar. Marque como concluído ao fechar todos."
+  },
+  {
+    "id": "ls-impoluto",
+    "nome": "Navio Lendário — El Impoluto",
+    "local": "Extremo noroeste",
+    "coordenadas": {
+      "x": 116,
+      "y": 92
+    },
+    "tipo": "lendarios",
+    "resumoJogo": "Um caça-navios espanhol implacável ronda o canto noroeste da carta. Aríete de proa mortal — não deixe que ele tome distância para investir. (Local aproximado.)"
+  },
+  {
+    "id": "ls-fearless",
+    "nome": "Navios Lendários — HMS Fearless e HMS Prince",
+    "local": "Extremo nordeste",
+    "coordenadas": {
+      "x": 1478,
+      "y": 84
+    },
+    "tipo": "lendarios",
+    "resumoJogo": "Dois navios de linha britânicos caçam em dupla no canto nordeste. Separe-os ou afunde-os juntos — mas nunca dê o costado aos dois ao mesmo tempo. (Local aproximado.)"
+  },
+  {
+    "id": "ls-dama",
+    "nome": "Navio Lendário — La Dama Negra",
+    "local": "Extremo sudoeste",
+    "coordenadas": {
+      "x": 130,
+      "y": 924
+    },
+    "tipo": "lendarios",
+    "resumoJogo": "A Dama Negra guarda o canto sudoeste com morteiros de alcance absurdo e casco blindado. Aproxime-se em zigue-zague ou vire recife. (Local aproximado.)"
+  },
+  {
+    "id": "ls-sovereign",
+    "nome": "Navio Lendário — Royal Sovereign",
+    "local": "Extremo sudeste",
+    "coordenadas": {
+      "x": 1476,
+      "y": 930
+    },
+    "tipo": "lendarios",
+    "resumoJogo": "O Royal Sovereign patrulha o canto sudeste da carta. Rápido, pesado e sem paciência para brigues atrevidos. (Local aproximado.)"
+  },
+  {
+    "id": "ft-tortuga",
+    "nome": "Forte de Dry Tortuga",
+    "local": "Oeste das Chaves da Flórida",
+    "coordenadas": {
+      "x": 534,
+      "y": 240
+    },
+    "tipo": "fortes",
+    "resumoJogo": "Forte naval que guarda a entrada do Golfo. Derrube as muralhas com o Gralha e tome-o para abrir os mares do norte."
+  },
+  {
+    "id": "ft-gibara",
+    "nome": "Forte de Gibara",
+    "local": "Nordeste de Cuba",
+    "coordenadas": {
+      "x": 1122,
+      "y": 508
+    },
+    "tipo": "fortes",
+    "resumoJogo": "Bastião espanhol na costa nordeste de Cuba. Tomá-lo revela a região e abre novos contratos navais."
+  },
+  {
+    "id": "ft-guarico",
+    "nome": "Forte de Punta Guarico",
+    "local": "Leste de Cuba",
+    "coordenadas": {
+      "x": 1246,
+      "y": 572
+    },
+    "tipo": "fortes",
+    "resumoJogo": "Forte de pedra sobre o Canal de Barlavento. Posição-chave entre Cuba e Hispaniola."
+  },
+  {
+    "id": "ft-cruz",
+    "nome": "Forte de Cabo de Cruz",
+    "local": "Sul de Cuba",
+    "coordenadas": {
+      "x": 978,
+      "y": 660
+    },
+    "tipo": "fortes",
+    "resumoJogo": "Guarda o mar entre Cuba e Jamaica. Suas baterias alcançam longe — entre atirando."
+  },
+  {
+    "id": "ft-jagua",
+    "nome": "Castillo de Jagua",
+    "local": "Costa sul de Cuba",
+    "coordenadas": {
+      "x": 742,
+      "y": 502
+    },
+    "tipo": "fortes",
+    "resumoJogo": "Fortaleza espanhola da baía de Jagua. Tome-a para dominar a costa central do sul de Cuba."
+  },
+  {
+    "id": "ft-eleuthera",
+    "nome": "Forte de Eleuthera",
+    "local": "Bahamas",
+    "coordenadas": {
+      "x": 1124,
+      "y": 216
+    },
+    "tipo": "fortes",
+    "resumoJogo": "Bastião britânico nas águas rasas das Bahamas, no caminho de quem vai e volta de Nassau."
+  },
+  {
+    "id": "ft-navassa",
+    "nome": "Forte de Navassa",
+    "local": "Entre Jamaica e Hispaniola",
+    "coordenadas": {
+      "x": 1258,
+      "y": 742
+    },
+    "tipo": "fortes",
+    "resumoJogo": "Ilhota fortificada no mar entre Jamaica e Hispaniola. Pequena no mapa, teimosa no canhão."
+  },
+  {
+    "id": "ft-serranilla",
+    "nome": "Forte de Serranilla",
+    "local": "Mar do sul",
+    "coordenadas": {
+      "x": 700,
+      "y": 916
+    },
+    "tipo": "fortes",
+    "resumoJogo": "Forte isolado nos bancos de areia do sul. Quem o domina, domina a rota para Providencia."
+  },
+  {
+    "id": "ft-chinchorro",
+    "nome": "Forte de Chinchorro",
+    "local": "Costa do Yucatán",
+    "coordenadas": {
+      "x": 152,
+      "y": 852
+    },
+    "tipo": "fortes",
+    "resumoJogo": "Bateria espanhola no banco de Chinchorro, vigiando a costa sul do Yucatán."
+  },
+  {
+    "id": "ft-conttoyor",
+    "nome": "Forte de Conttoyor",
+    "local": "Norte do Yucatán",
+    "coordenadas": {
+      "x": 224,
+      "y": 470
+    },
+    "tipo": "fortes",
+    "resumoJogo": "Guarda o cabo norte do Yucatán e a rota de Tulum para o Golfo."
+  },
+  {
+    "id": "of-01",
+    "nome": "Missão de Oficial — I",
+    "local": "Great Inagua — TODO: confirmar",
+    "coordenadas": {
+      "x": 1332,
+      "y": 574
+    },
+    "tipo": "oficiais",
+    "resumoJogo": "TODO: conteúdo novo do remake — missão do 1º oficial recrutável do Gralha. Preencher nome do oficial, local e resumo após jogar."
+  },
+  {
+    "id": "of-02",
+    "nome": "Missão de Oficial — II",
+    "local": "Nassau — TODO: confirmar",
+    "coordenadas": {
+      "x": 1090,
+      "y": 238
+    },
+    "tipo": "oficiais",
+    "resumoJogo": "TODO: conteúdo novo do remake — missão do 2º oficial recrutável do Gralha. Preencher nome do oficial, local e resumo após jogar."
+  },
+  {
+    "id": "of-03",
+    "nome": "Missão de Oficial — III",
+    "local": "Kingston — TODO: confirmar",
+    "coordenadas": {
+      "x": 940,
+      "y": 812
+    },
+    "tipo": "oficiais",
+    "resumoJogo": "TODO: conteúdo novo do remake — missão do 3º oficial recrutável do Gralha. Preencher nome do oficial, local e resumo após jogar."
+  }
+]
