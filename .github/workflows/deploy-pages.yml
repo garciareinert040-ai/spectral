@@ -3,8 +3,8 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches:
-      - claude/pirate-map-ac-black-flag-dnbyvu
-      - main
+      # branch default do repositório — único aceito pelo environment github-pages
+      - claude/friendly-allen-a8mbp4
   workflow_dispatch:
 
 permissions:
