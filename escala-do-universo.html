@@ -1,0 +1,3090 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Escala do Universo — Estudo Interativo</title>
+<meta name="description" content="Estudo interativo sobre a magnitude e a estrutura do universo: da Terra ao universo observável, em 10 níveis de escala.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-0:#05070d;
+  --bg-1:#0a0e1a;
+  --bg-2:#0f1526;
+  --bg-3:#151c33;
+  --panel:rgba(15,21,38,.82);
+  --panel-solid:#0f1526;
+  --line:rgba(120,150,255,.14);
+  --line-strong:rgba(120,150,255,.30);
+  --txt-0:#e8ecf8;
+  --txt-1:#aab4d4;
+  --txt-2:#6b7699;
+  --cyan:#4fd8eb;
+  --cyan-dim:rgba(79,216,235,.16);
+  --violet:#8b7bf4;
+  --violet-dim:rgba(139,123,244,.16);
+  --ok:#4fe0a3;
+  --warn:#f0b45c;
+  --err:#f07a7a;
+  --font-title:'Space Grotesk',system-ui,sans-serif;
+  --font-body:'Inter',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:radial-gradient(ellipse at 50% -10%, #0d1322 0%, var(--bg-1) 45%, var(--bg-0) 100%);
+  color:var(--txt-0);
+  font-family:var(--font-body);
+  font-size:15px;
+  line-height:1.6;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+::selection{background:rgba(79,216,235,.30)}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:var(--bg-0)}
+::-webkit-scrollbar-thumb{background:#1d2745;border-radius:5px}
+::-webkit-scrollbar-thumb:hover{background:#2a3760}
+a{color:var(--cyan);text-decoration:none}
+a:hover{text-decoration:underline}
+button{font-family:var(--font-body);cursor:pointer}
+canvas{display:block}
+.mono{font-family:var(--font-mono)}
+
+/* ===== fundo estelar com parallax ===== */
+#starfield-wrap{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+#starfield-wrap canvas{position:absolute;top:-5%;left:-5%;width:110%;height:110%;will-change:transform}
+
+/* ===== barra superior ===== */
+#topbar{
+  position:sticky;top:0;z-index:200;
+  display:flex;align-items:center;gap:18px;
+  padding:10px 22px;
+  background:linear-gradient(180deg, rgba(5,7,13,.96), rgba(5,7,13,.88));
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);
+}
+#brand{display:flex;flex-direction:column;line-height:1.15;min-width:210px}
+#brand .t{font-family:var(--font-title);font-weight:700;font-size:19px;letter-spacing:.4px;
+  background:linear-gradient(90deg,var(--cyan),var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
+#brand .s{font-size:11px;color:var(--txt-2);letter-spacing:.8px;text-transform:uppercase}
+#main-tabs{display:flex;gap:4px;flex-wrap:wrap}
+#main-tabs button{
+  background:transparent;border:1px solid transparent;color:var(--txt-1);
+  padding:7px 13px;border-radius:8px;font-size:13px;font-weight:500;
+  transition:all .18s ease;white-space:nowrap;
+}
+#main-tabs button:hover{color:var(--txt-0);background:var(--bg-2)}
+#main-tabs button.active{
+  color:var(--cyan);background:var(--cyan-dim);border-color:rgba(79,216,235,.35);
+}
+#topbar-right{margin-left:auto;display:flex;align-items:center;gap:14px}
+#search-box{position:relative}
+#search-input{
+  width:230px;padding:8px 12px 8px 34px;border-radius:9px;
+  background:var(--bg-2);border:1px solid var(--line);color:var(--txt-0);
+  font-family:var(--font-body);font-size:13px;outline:none;transition:all .2s;
+}
+#search-input:focus{border-color:rgba(79,216,235,.5);box-shadow:0 0 0 3px rgba(79,216,235,.12)}
+#search-box .icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--txt-2);font-size:13px;pointer-events:none}
+#search-results{
+  position:absolute;top:calc(100% + 6px);right:0;width:340px;max-height:400px;overflow-y:auto;
+  background:var(--panel-solid);border:1px solid var(--line-strong);border-radius:12px;
+  box-shadow:0 18px 50px rgba(0,0,0,.6);display:none;z-index:300;
+}
+#search-results.open{display:block}
+#search-results .sr-item{padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+#search-results .sr-item:last-child{border-bottom:none}
+#search-results .sr-item:hover,#search-results .sr-item.sel{background:var(--cyan-dim)}
+#search-results .sr-name{font-weight:600;font-size:13.5px}
+#search-results .sr-where{font-size:11px;color:var(--txt-2);white-space:nowrap}
+#search-results .sr-empty{padding:14px;color:var(--txt-2);font-size:13px;text-align:center}
+#progress-chip{
+  display:flex;align-items:center;gap:9px;padding:5px 12px 5px 6px;border-radius:999px;
+  background:var(--bg-2);border:1px solid var(--line);cursor:pointer;transition:border-color .2s;
+}
+#progress-chip:hover{border-color:var(--line-strong)}
+#progress-ring{width:30px;height:30px;transform:rotate(-90deg)}
+#progress-ring .track{fill:none;stroke:#1c2542;stroke-width:3.4}
+#progress-ring .bar{fill:none;stroke:url(#pgrad);stroke-width:3.4;stroke-linecap:round;transition:stroke-dashoffset .6s ease}
+#progress-chip .pct{font-family:var(--font-mono);font-size:12.5px;color:var(--cyan)}
+
+/* ===== layout das views ===== */
+.view{display:none;position:relative;z-index:1}
+.view.active{display:block;animation:viewfade .45s ease}
+@keyframes viewfade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ===== ZOOM CÓSMICO ===== */
+#view-zoom{height:calc(100vh - 57px);display:none}
+#view-zoom.active{display:grid}
+#view-zoom{
+  grid-template-columns:210px 1fr 360px;
+  grid-template-rows:1fr auto;
+  grid-template-areas:"lnav stage panel" "sbar sbar sbar";
+  gap:0;
+}
+#level-nav{
+  grid-area:lnav;border-right:1px solid var(--line);overflow-y:auto;
+  padding:14px 10px;display:flex;flex-direction:column;gap:4px;background:rgba(5,7,13,.5);
+}
+#level-nav .ln-head{font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--txt-2);padding:0 8px 8px}
+.ln-btn{
+  display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;
+  background:transparent;border:1px solid transparent;color:var(--txt-1);text-align:left;
+  transition:all .18s ease;position:relative;
+}
+.ln-btn:hover{background:var(--bg-2);color:var(--txt-0)}
+.ln-btn.active{background:linear-gradient(90deg,var(--cyan-dim),var(--violet-dim));border-color:rgba(79,216,235,.3);color:var(--txt-0)}
+.ln-btn .ln-exp{font-family:var(--font-mono);font-size:10.5px;color:var(--txt-2);min-width:44px}
+.ln-btn.active .ln-exp{color:var(--cyan)}
+.ln-btn .ln-name{font-size:12.8px;font-weight:500;line-height:1.25}
+.ln-btn .ln-visited{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:6px;height:6px;border-radius:50%;background:var(--ok);opacity:0;transition:opacity .3s}
+.ln-btn.visited .ln-visited{opacity:1}
+
+#stage{grid-area:stage;position:relative;overflow:hidden;background:transparent}
+#stage-viz{position:absolute;inset:0}
+#stage-viz .viz-layer{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .5s ease}
+#stage-viz .viz-layer.on{opacity:1;pointer-events:auto}
+#stage-viz canvas{width:100%;height:100%}
+.viz-hero{display:flex;align-items:center;justify-content:center;height:100%;padding:30px}
+.viz-hero img{max-width:min(78%,620px);max-height:78%;border-radius:14px;box-shadow:0 0 90px rgba(79,216,235,.10),0 24px 70px rgba(0,0,0,.55);object-fit:contain}
+.viz-hero .img-fail{
+  width:min(70%,520px);aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  border:1px dashed var(--line-strong);border-radius:14px;color:var(--txt-2);font-size:13px;text-align:center;padding:20px;
+}
+#stage-title{
+  position:absolute;top:18px;left:22px;z-index:5;pointer-events:none;max-width:60%;
+}
+#stage-title .lvl-tag{font-family:var(--font-mono);font-size:11.5px;color:var(--cyan);letter-spacing:1px}
+#stage-title h2{font-family:var(--font-title);font-size:30px;font-weight:700;letter-spacing:.3px;text-shadow:0 2px 18px rgba(0,0,0,.8)}
+#stage-title .sub{font-size:13px;color:var(--txt-1);text-shadow:0 1px 8px rgba(0,0,0,.9)}
+#stage-actions{position:absolute;top:20px;right:20px;z-index:6;display:flex;gap:8px}
+.act-btn{
+  padding:8px 14px;border-radius:9px;border:1px solid var(--line-strong);
+  background:rgba(10,14,26,.82);color:var(--txt-0);font-size:12.5px;font-weight:600;
+  backdrop-filter:blur(6px);transition:all .18s;
+}
+.act-btn:hover{border-color:var(--cyan);color:var(--cyan)}
+.act-btn.primary{background:linear-gradient(90deg,rgba(79,216,235,.2),rgba(139,123,244,.2));border-color:rgba(79,216,235,.45)}
+#viz-controls{
+  position:absolute;bottom:16px;left:50%;transform:translateX(-50%);z-index:6;
+  display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;
+  background:rgba(10,14,26,.85);border:1px solid var(--line);border-radius:12px;
+  padding:8px 14px;backdrop-filter:blur(8px);max-width:92%;
+}
+#viz-controls:empty{display:none}
+#viz-controls label{font-size:12px;color:var(--txt-1);display:flex;align-items:center;gap:6px}
+#viz-controls .seg{display:flex;border:1px solid var(--line-strong);border-radius:8px;overflow:hidden}
+#viz-controls .seg button{background:transparent;border:none;color:var(--txt-1);padding:5px 11px;font-size:12px;font-weight:600}
+#viz-controls .seg button.on{background:var(--cyan-dim);color:var(--cyan)}
+#viz-controls input[type=range]{accent-color:var(--cyan);width:130px}
+.compress-note{
+  font-family:var(--font-mono);font-size:10.5px;color:var(--warn);
+  border:1px solid rgba(240,180,92,.35);background:rgba(240,180,92,.08);
+  padding:3px 8px;border-radius:6px;white-space:nowrap;
+}
+.viz-hint{position:absolute;bottom:16px;right:16px;z-index:5;font-size:11px;color:var(--txt-2);background:rgba(10,14,26,.7);padding:4px 10px;border-radius:8px;pointer-events:none}
+
+/* painel de dados */
+#data-panel{
+  grid-area:panel;border-left:1px solid var(--line);overflow-y:auto;
+  background:rgba(8,11,20,.72);backdrop-filter:blur(6px);padding:20px 20px 40px;
+}
+#data-panel h3{font-family:var(--font-title);font-size:15px;letter-spacing:.6px;color:var(--cyan);margin:20px 0 10px;text-transform:uppercase;font-size:12.5px}
+#data-panel h3:first-child{margin-top:0}
+.facts-table{width:100%;border-collapse:collapse}
+.facts-table td{padding:6px 4px;border-bottom:1px solid var(--line);vertical-align:top;font-size:12.8px}
+.facts-table td.k{color:var(--txt-1);width:46%}
+.facts-table td.v{font-family:var(--font-mono);font-size:12px;color:var(--txt-0);text-align:right}
+.panel-img{width:100%;border-radius:10px;margin:4px 0 4px;display:block}
+.img-credit{font-size:10.5px;color:var(--txt-2);margin-bottom:8px;line-height:1.4}
+.panel-p{font-size:13px;color:var(--txt-1);margin-bottom:10px}
+.panel-p b{color:var(--txt-0)}
+.uncert{color:var(--txt-2)}
+
+/* barra de escala */
+#scalebar{
+  grid-area:sbar;border-top:1px solid var(--line);background:rgba(5,7,13,.92);
+  padding:10px 26px 14px;position:relative;z-index:5;
+}
+#scalebar .sb-head{display:flex;justify-content:space-between;font-size:10.5px;color:var(--txt-2);letter-spacing:.6px;margin-bottom:6px}
+#scalebar .sb-head .cur{font-family:var(--font-mono);color:var(--cyan);font-size:11.5px}
+#sb-track{position:relative;height:26px}
+#sb-line{position:absolute;top:12px;left:0;right:0;height:3px;border-radius:2px;
+  background:linear-gradient(90deg,#1c9fb5,#3b6fd4,#7b5fe0,#a44fd0)}
+.sb-tick{position:absolute;top:8px;width:1px;height:11px;background:rgba(150,170,220,.4)}
+.sb-tick span{position:absolute;top:12px;left:50%;transform:translateX(-50%);font-family:var(--font-mono);font-size:9px;color:var(--txt-2);white-space:nowrap}
+#sb-marker{
+  position:absolute;top:1px;width:14px;height:14px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#fff,var(--cyan));
+  box-shadow:0 0 12px var(--cyan),0 0 30px rgba(79,216,235,.5);
+  transform:translateX(-50%);transition:left .8s cubic-bezier(.6,.05,.2,1);
+}
+
+/* ===== seções temáticas ===== */
+.section-wrap{max-width:1180px;margin:0 auto;padding:34px 26px 90px}
+.section-wrap>h2{font-family:var(--font-title);font-size:30px;margin-bottom:6px;
+  background:linear-gradient(90deg,var(--cyan),var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
+.section-lead{color:var(--txt-1);max-width:820px;margin-bottom:26px;font-size:14.5px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:20px}
+.card h3{font-family:var(--font-title);font-size:17px;margin-bottom:10px;color:var(--txt-0)}
+.card h4{font-size:13.5px;color:var(--cyan);margin:12px 0 6px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:900px){.grid-2,.grid-3{grid-template-columns:1fr}}
+
+/* comparadores */
+.cmp-stage{position:relative;background:rgba(4,6,11,.85);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.cmp-stage canvas{width:100%}
+.cmp-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0}
+.cmp-toolbar .seg{display:flex;border:1px solid var(--line-strong);border-radius:8px;overflow:hidden}
+.cmp-toolbar .seg button{background:transparent;border:none;color:var(--txt-1);padding:6px 13px;font-size:12.5px;font-weight:600}
+.cmp-toolbar .seg button.on{background:var(--cyan-dim);color:var(--cyan)}
+.cmp-toolbar label{font-size:12.5px;color:var(--txt-1);display:flex;gap:7px;align-items:center}
+.cmp-toolbar input[type=range]{accent-color:var(--violet);width:180px}
+.bh-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:16px}
+.bh-item{background:var(--bg-2);border:1px solid var(--line);border-radius:11px;padding:13px 15px;cursor:pointer;transition:border-color .2s}
+.bh-item:hover,.bh-item.sel{border-color:rgba(139,123,244,.55)}
+.bh-item .bh-name{font-weight:600;font-size:14px;display:flex;justify-content:space-between;align-items:center}
+.bh-item .bh-class{font-size:10.5px;color:var(--violet);text-transform:uppercase;letter-spacing:.7px}
+.bh-item .bh-data{font-family:var(--font-mono);font-size:11.5px;color:var(--txt-1);margin-top:6px;line-height:1.7}
+
+/* conversor */
+.conv-row{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.conv-row label{font-size:13px;color:var(--txt-1)}
+.conv-row input[type=number],.conv-row select{
+  background:var(--bg-2);border:1px solid var(--line-strong);color:var(--txt-0);
+  border-radius:8px;padding:7px 10px;font-family:var(--font-mono);font-size:13px;outline:none;width:110px;
+}
+.conv-row select{width:auto;font-family:var(--font-body)}
+#conv-table{width:100%;border-collapse:collapse;margin-top:8px}
+#conv-table th{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--txt-2);text-align:left;padding:6px 8px;border-bottom:1px solid var(--line-strong)}
+#conv-table td{padding:7px 8px;border-bottom:1px solid var(--line);font-size:13px}
+#conv-table td.num{font-family:var(--font-mono);font-size:12.3px;color:var(--cyan)}
+#conv-table td.ref{color:var(--txt-1);font-size:12.3px}
+#conv-headline{font-size:14.5px;color:var(--txt-0);background:var(--violet-dim);border:1px solid rgba(139,123,244,.3);border-radius:10px;padding:12px 16px;margin-bottom:14px}
+
+/* calendário cósmico */
+#cal-canvas-wrap{position:relative;background:rgba(4,6,11,.85);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+#cal-tooltip{position:absolute;display:none;background:var(--panel-solid);border:1px solid var(--line-strong);border-radius:10px;padding:10px 13px;max-width:290px;pointer-events:none;z-index:10;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+#cal-tooltip .ct-date{font-family:var(--font-mono);font-size:11px;color:var(--cyan)}
+#cal-tooltip .ct-name{font-weight:600;font-size:13.5px;margin:2px 0}
+#cal-tooltip .ct-desc{font-size:12px;color:var(--txt-1)}
+.cal-event-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;margin-top:18px}
+.cal-ev{background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;font-size:12.6px}
+.cal-ev .d{font-family:var(--font-mono);color:var(--cyan);font-size:11px}
+.cal-ev .n{font-weight:600;margin:1px 0}
+.cal-ev .r{color:var(--txt-2);font-size:11.4px}
+
+/* glossário */
+.gloss-item{border-bottom:1px solid var(--line);padding:16px 4px}
+.gloss-item:last-child{border-bottom:none}
+.gloss-item dt{font-family:var(--font-title);font-weight:600;font-size:15.5px;color:var(--cyan);margin-bottom:4px}
+.gloss-item dd{color:var(--txt-1);font-size:13.5px}
+.gloss-item .gv{font-family:var(--font-mono);font-size:12px;color:var(--txt-0);background:var(--bg-2);border-radius:6px;padding:2px 8px;display:inline-block;margin-top:6px}
+
+/* quiz modal */
+#quiz-modal{position:fixed;inset:0;z-index:400;display:none;align-items:center;justify-content:center;background:rgba(3,4,8,.78);backdrop-filter:blur(6px)}
+#quiz-modal.open{display:flex}
+#quiz-box{width:min(640px,92vw);max-height:88vh;overflow-y:auto;background:var(--panel-solid);border:1px solid var(--line-strong);border-radius:16px;padding:26px 28px;box-shadow:0 30px 80px rgba(0,0,0,.7)}
+#quiz-box .q-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
+#quiz-box .q-level{font-size:11px;color:var(--violet);text-transform:uppercase;letter-spacing:1px}
+#quiz-box .q-count{font-family:var(--font-mono);font-size:12px;color:var(--txt-2)}
+#quiz-box h3{font-family:var(--font-title);font-size:19px;margin:8px 0 18px;line-height:1.4}
+.q-opt{display:block;width:100%;text-align:left;background:var(--bg-2);border:1px solid var(--line);color:var(--txt-0);border-radius:10px;padding:12px 15px;margin-bottom:9px;font-size:14px;transition:all .15s}
+.q-opt:hover:not(:disabled){border-color:var(--cyan)}
+.q-opt:disabled{cursor:default;opacity:.75}
+.q-opt.correct{border-color:var(--ok);background:rgba(79,224,163,.13);opacity:1}
+.q-opt.wrong{border-color:var(--err);background:rgba(240,122,122,.13);opacity:1}
+#quiz-expl{display:none;background:var(--bg-2);border-left:3px solid var(--cyan);border-radius:0 10px 10px 0;padding:12px 15px;font-size:13px;color:var(--txt-1);margin:12px 0}
+#quiz-expl.show{display:block;animation:viewfade .3s ease}
+#quiz-foot{display:flex;justify-content:space-between;align-items:center;margin-top:16px}
+#quiz-score{font-family:var(--font-mono);font-size:12.5px;color:var(--txt-1)}
+#quiz-next,#quiz-close-btn{padding:9px 20px;border-radius:9px;border:1px solid rgba(79,216,235,.45);background:var(--cyan-dim);color:var(--cyan);font-weight:600;font-size:13.5px}
+#quiz-close-x{background:none;border:none;color:var(--txt-2);font-size:20px;line-height:1;padding:4px}
+#quiz-close-x:hover{color:var(--txt-0)}
+.quiz-result-big{font-family:var(--font-title);font-size:40px;text-align:center;margin:18px 0 4px;color:var(--cyan)}
+.quiz-result-sub{text-align:center;color:var(--txt-1);margin-bottom:14px}
+
+/* tour */
+#tour-overlay{
+  position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:350;
+  width:min(720px,94vw);background:linear-gradient(180deg,rgba(15,21,38,.97),rgba(10,14,26,.97));
+  border:1px solid rgba(139,123,244,.4);border-radius:16px;padding:20px 24px;
+  box-shadow:0 24px 70px rgba(0,0,0,.7);display:none;
+}
+#tour-overlay.on{display:block;animation:viewfade .4s ease}
+#tour-overlay .t-step{font-family:var(--font-mono);font-size:11px;color:var(--violet);letter-spacing:1px}
+#tour-overlay h4{font-family:var(--font-title);font-size:18px;margin:4px 0 8px}
+#tour-overlay p{font-size:13.8px;color:var(--txt-1)}
+#tour-overlay .t-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+#tour-overlay .t-foot button{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;border:1px solid var(--line-strong);background:var(--bg-2);color:var(--txt-0)}
+#tour-overlay .t-foot button.primary{background:var(--violet-dim);border-color:rgba(139,123,244,.5);color:#c9c0ff}
+#tour-overlay .t-foot button:hover{border-color:var(--violet)}
+
+/* progresso view */
+.prog-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.prog-item{background:var(--bg-2);border:1px solid var(--line);border-radius:11px;padding:14px 16px}
+.prog-item .pi-name{font-weight:600;font-size:13.5px}
+.prog-item .pi-status{font-family:var(--font-mono);font-size:11.5px;margin-top:6px;color:var(--txt-2)}
+.prog-item .pi-status .done{color:var(--ok)}
+.big-pct{font-family:var(--font-title);font-size:56px;color:var(--cyan);line-height:1}
+#reset-progress{margin-top:14px;padding:8px 16px;border-radius:8px;border:1px solid rgba(240,122,122,.4);background:rgba(240,122,122,.08);color:var(--err);font-size:12.5px;font-weight:600}
+
+.flash-target{animation:flashpulse 2s ease}
+@keyframes flashpulse{0%,60%{box-shadow:0 0 0 3px rgba(79,216,235,.65)}100%{box-shadow:none}}
+
+.footer-note{max-width:1180px;margin:0 auto;padding:20px 26px 60px;color:var(--txt-2);font-size:11.5px;position:relative;z-index:1}
+
+@media(max-width:1100px){
+  #view-zoom{grid-template-columns:64px 1fr 300px}
+  .ln-btn .ln-name{display:none}
+  .ln-btn .ln-exp{min-width:auto}
+}
+@media(max-width:820px){
+  #view-zoom{grid-template-columns:56px 1fr;grid-template-areas:"lnav stage" "sbar sbar"}
+  #data-panel{display:none}
+  #search-input{width:140px}
+}
+</style>
+</head>
+<body>
+<div id="starfield-wrap"><canvas id="stars-far"></canvas><canvas id="stars-near"></canvas></div>
+
+<header id="topbar">
+  <div id="brand">
+    <span class="t">Escala do Universo</span>
+    <span class="s">de 10⁷ a 10²⁷ metros · onde estamos</span>
+  </div>
+  <nav id="main-tabs">
+    <button data-view="zoom" class="active">Zoom Cósmico</button>
+    <button data-view="bh">Buracos Negros</button>
+    <button data-view="sizes">Tamanhos</button>
+    <button data-view="time">Tempo Cósmico</button>
+    <button data-view="dist">Distâncias Humanas</button>
+    <button data-view="gloss">Glossário</button>
+    <button data-view="prog">Progresso</button>
+  </nav>
+  <div id="topbar-right">
+    <div id="search-box">
+      <span class="icon">⌕</span>
+      <input id="search-input" type="text" placeholder="Buscar objeto (ex.: TON 618)" autocomplete="off">
+      <div id="search-results"></div>
+    </div>
+    <div id="progress-chip" title="Ver progresso de estudo">
+      <svg id="progress-ring" viewBox="0 0 34 34">
+        <defs><linearGradient id="pgrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#4fd8eb"/><stop offset="1" stop-color="#8b7bf4"/>
+        </linearGradient></defs>
+        <circle class="track" cx="17" cy="17" r="14"></circle>
+        <circle class="bar" id="progress-bar-circle" cx="17" cy="17" r="14" stroke-dasharray="87.96" stroke-dashoffset="87.96"></circle>
+      </svg>
+      <span class="pct" id="progress-pct">0%</span>
+    </div>
+  </div>
+</header>
+
+<!-- ========================= VIEW: ZOOM CÓSMICO ========================= -->
+<section id="view-zoom" class="view active">
+  <aside id="level-nav">
+    <div class="ln-head">Níveis de escala</div>
+    <!-- botões gerados via JS -->
+  </aside>
+
+  <div id="stage">
+    <div id="stage-title">
+      <div class="lvl-tag" id="stage-lvl-tag"></div>
+      <h2 id="stage-h2"></h2>
+      <div class="sub" id="stage-sub"></div>
+    </div>
+    <div id="stage-actions">
+      <button class="act-btn" id="btn-tour">▶ Tour Guiado</button>
+      <button class="act-btn primary" id="btn-quiz">Quiz do nível</button>
+    </div>
+    <div id="stage-viz">
+      <div class="viz-layer" id="viz-hero"><div class="viz-hero" id="viz-hero-inner"></div></div>
+      <div class="viz-layer" id="viz-solar"></div>
+      <div class="viz-layer" id="viz-galaxy"></div>
+      <div class="viz-layer" id="viz-canvas2d"><canvas id="canvas2d"></canvas></div>
+    </div>
+    <div id="viz-controls"></div>
+    <div class="viz-hint" id="viz-hint"></div>
+  </div>
+
+  <aside id="data-panel"></aside>
+
+  <footer id="scalebar">
+    <div class="sb-head">
+      <span>ESCALA · metros (log₁₀)</span>
+      <span class="cur" id="sb-current"></span>
+      <span>10⁷ → 10²⁷ m</span>
+    </div>
+    <div id="sb-track">
+      <div id="sb-line"></div>
+      <div id="sb-marker"></div>
+    </div>
+  </footer>
+</section>
+
+<!-- ========================= VIEW: BURACOS NEGROS ========================= -->
+<section id="view-bh" class="view">
+  <div class="section-wrap">
+    <h2>Buracos Negros — comparador de massas e horizontes</h2>
+    <p class="section-lead">
+      O raio de Schwarzschild — o tamanho do horizonte de eventos de um buraco negro sem rotação —
+      cresce linearmente com a massa: <span class="mono">r<sub>s</sub> = 2GM/c² ≈ 2,953&nbsp;km × (M/M☉)</span>.
+      Compare abaixo, <b>em proporção real</b>, desde buracos negros estelares até os quasares ultramassivos.
+      A razão entre o menor (Cygnus X-1) e o maior (Phoenix A) é de cerca de <b>1 : 4,7 bilhões</b> —
+      use o zoom para atravessar essa diferença de escala.
+    </p>
+    <div class="cmp-toolbar">
+      <div class="seg" id="bh-mode-seg">
+        <button data-mode="real" class="on">Proporção real (zoom)</button>
+        <button data-mode="chart">Gráfico log de massas</button>
+      </div>
+      <label>Zoom <input type="range" id="bh-zoom" min="0" max="100" value="0" step="0.1"></label>
+      <span class="compress-note" id="bh-note" style="display:none"></span>
+    </div>
+    <div class="cmp-stage"><canvas id="bh-canvas" height="460"></canvas></div>
+    <div class="bh-list" id="bh-list"></div>
+    <div class="card" style="margin-top:20px">
+      <h3>Como ler este comparador</h3>
+      <p class="panel-p">No modo <b>proporção real</b>, os discos são desenhados com diâmetros exatamente proporcionais
+      aos raios de Schwarzschild. Em zoom mínimo, Phoenix A e TON 618 dominam a cena e Sagittarius A* já é um ponto;
+      só com zoom máximo Cygnus X-1 se torna visível — é exatamente essa a sensação de escala pretendida.
+      Para referência: o horizonte de TON 618 (~1.300 UA de raio) engoliria toda a heliosfera solar dezenas de vezes;
+      o de Cygnus X-1 caberia dentro da ilha de Santa Catarina.</p>
+      <p class="panel-p">Massas adotadas (literatura): Cygnus X-1 <span class="mono">21,2 ± 2,2 M☉</span> (Miller-Jones et al. 2021);
+      GW190521 <span class="mono">~142 M☉</span> (LIGO/Virgo 2020, primeiro buraco negro de massa intermediária confirmado);
+      Sagittarius A* <span class="mono">4,297 × 10⁶ M☉</span> (GRAVITY 2022); M87* <span class="mono">6,5 ± 0,7 × 10⁹ M☉</span> (EHT 2019);
+      TON 618 <span class="mono">~6,6 × 10¹⁰ M☉</span> (estimativa por reverberação/linhas largas — incerteza grande);
+      Phoenix A <span class="mono">~10¹¹ M☉</span> (estimado a partir do núcleo do Aglomerado da Fênix — valor indireto e debatido).</p>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= VIEW: COMPARADOR DE TAMANHOS ========================= -->
+<section id="view-sizes" class="view">
+  <div class="section-wrap">
+    <h2>Comparador de Tamanhos — da Lua a Stephenson 2-18</h2>
+    <p class="section-lead">
+      Sequência com <b>proporção real</b> entre os corpos. Ao avançar, a câmera se reajusta com uma transição
+      animada — repare como o corpo que dominava a tela vira um ponto no passo seguinte.
+      Stephenson 2-18, uma das maiores estrelas conhecidas, tem raio ~2.150 R☉: colocada no lugar do Sol,
+      sua superfície passaria da órbita de Saturno.
+    </p>
+    <div class="cmp-toolbar">
+      <div class="seg" id="sz-seg"></div>
+      <span class="compress-note" id="sz-note" style="display:none"></span>
+    </div>
+    <div class="cmp-stage"><canvas id="sz-canvas" height="440"></canvas></div>
+    <div class="card" style="margin-top:20px" id="sz-info"></div>
+  </div>
+</section>
+
+<!-- ========================= VIEW: TEMPO CÓSMICO ========================= -->
+<section id="view-time" class="view">
+  <div class="section-wrap">
+    <h2>Calendário Cósmico — 13,8 bilhões de anos em 1 ano</h2>
+    <p class="section-lead">
+      No Calendário Cósmico de Carl Sagan, toda a história do universo (13,787 ± 0,020 bilhões de anos, Planck 2018)
+      é comprimida em um único ano: o Big Bang ocorre à 0h de 1º de janeiro e o momento presente é a meia-noite de 31 de dezembro.
+      Nessa compressão, <b>1 segundo ≈ 437 anos</b>, 1 dia ≈ 37,8 milhões de anos.
+      Toda a história humana escrita cabe nos últimos ~11 segundos. Passe o mouse sobre os eventos; use a roda do mouse para
+      dar zoom em dezembro — quase tudo que nos importa aconteceu lá.
+    </p>
+    <div id="cal-canvas-wrap">
+      <canvas id="cal-canvas" height="360"></canvas>
+      <div id="cal-tooltip"></div>
+    </div>
+    <div class="cal-event-list" id="cal-list"></div>
+  </div>
+</section>
+
+<!-- ========================= VIEW: DISTÂNCIAS HUMANAS ========================= -->
+<section id="view-dist" class="view">
+  <div class="section-wrap">
+    <h2>Distâncias em Unidades Humanas</h2>
+    <p class="section-lead">
+      Reduza o Sol a um objeto do cotidiano e veja onde os demais corpos ficariam, mantendo todas as
+      proporções físicas exatas. Os valores são recalculados em tempo real a partir do diâmetro escolhido para o Sol
+      (diâmetro real: 1.391.400 km).
+    </p>
+    <div class="card">
+      <div class="conv-row">
+        <label>Se o Sol fosse:</label>
+        <select id="conv-preset">
+          <option value="22">uma bola de futebol (22 cm)</option>
+          <option value="6.7">uma laranja (6,7 cm)</option>
+          <option value="0.5">um grão de ervilha (5 mm)</option>
+          <option value="100">um globo de 1 m</option>
+          <option value="custom">tamanho personalizado…</option>
+        </select>
+        <label id="conv-custom-wrap" style="display:none">diâmetro <input type="number" id="conv-custom" value="22" min="0.01" step="0.5"> cm</label>
+        <label>em:</label>
+        <select id="conv-city">
+          <option value="bc">Balneário Camboriú (SC)</option>
+          <option value="sp">São Paulo (SP)</option>
+          <option value="generic">um ponto qualquer</option>
+        </select>
+      </div>
+      <div id="conv-headline"></div>
+      <table id="conv-table">
+        <thead><tr><th>Objeto</th><th>Distância / tamanho real</th><th>No modelo</th><th>Equivalente humano</th></tr></thead>
+        <tbody id="conv-tbody"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h3>Por que isso funciona</h3>
+      <p class="panel-p">O fator de escala é <span class="mono">s = D<sub>modelo</sub> / 1,3914×10⁹ m</span>. Toda distância real
+      é multiplicada pelo mesmo fator, preservando as razões. Com o Sol de 22 cm, a Terra é um grão de <b>2,0 mm a ~23,6 m</b> —
+      e a estrela mais próxima, Proxima Centauri, fica a <b>~6.300 km</b>: é preciso sair do continente para alcançá-la.
+      É por isso que sondas interestelares são um problema tão brutal: na escala em que Netuno está a alguns
+      minutos de caminhada, a estrela vizinha está do outro lado do oceano Atlântico.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= VIEW: GLOSSÁRIO ========================= -->
+<section id="view-gloss" class="view">
+  <div class="section-wrap">
+    <h2>Glossário Técnico</h2>
+    <p class="section-lead">Definições rigorosas dos termos usados neste estudo, com valores das constantes conforme IAU/CODATA.</p>
+    <div class="card"><dl id="gloss-list"></dl></div>
+  </div>
+</section>
+
+<!-- ========================= VIEW: PROGRESSO ========================= -->
+<section id="view-prog" class="view">
+  <div class="section-wrap">
+    <h2>Seu Progresso de Estudo</h2>
+    <p class="section-lead">O progresso fica salvo neste navegador (localStorage): 50% por visitar os 10 níveis, 50% por concluir os 10 quizzes.</p>
+    <div class="card" style="display:flex;gap:30px;align-items:center;flex-wrap:wrap">
+      <div class="big-pct" id="prog-big">0%</div>
+      <div>
+        <div id="prog-summary" style="color:var(--txt-1);font-size:14px"></div>
+        <button id="reset-progress">Zerar progresso</button>
+      </div>
+    </div>
+    <h3 style="font-family:var(--font-title);margin:8px 0 12px">Níveis</h3>
+    <div class="prog-grid" id="prog-grid"></div>
+  </div>
+</section>
+
+<div class="footer-note">
+  Estudo interativo gerado para fins educacionais. Dados: IAU, NASA/JPL, ESA/Planck 2018, GRAVITY Collaboration, Event Horizon Telescope, Tully et al. (2014).
+  Imagens: NASA / ESA / ESO / EHT — domínio público ou CC, carregadas de repositórios públicos; créditos junto a cada imagem.
+  Distâncias astronômicas carregam incertezas — os valores indicam a melhor estimativa atual da literatura.
+</div>
+
+<!-- ========================= MODAL: QUIZ ========================= -->
+<div id="quiz-modal">
+  <div id="quiz-box">
+    <div class="q-head">
+      <span class="q-level" id="quiz-level-name"></span>
+      <span style="display:flex;gap:10px;align-items:center">
+        <span class="q-count" id="quiz-count"></span>
+        <button id="quiz-close-x" title="Fechar">✕</button>
+      </span>
+    </div>
+    <div id="quiz-content"></div>
+    <div id="quiz-expl"></div>
+    <div id="quiz-foot">
+      <span id="quiz-score"></span>
+      <button id="quiz-next" style="display:none">Próxima →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========================= TOUR GUIADO ========================= -->
+<div id="tour-overlay">
+  <div class="t-step" id="tour-step"></div>
+  <h4 id="tour-title"></h4>
+  <p id="tour-text"></p>
+  <div class="t-foot">
+    <button id="tour-exit">Sair do tour</button>
+    <button id="tour-prev">← Anterior</button>
+    <button id="tour-next" class="primary">Avançar →</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* =====================================================================
+   DADOS — todos os valores numéricos seguem a literatura atual
+   (IAU 2015/2012, NASA/JPL, Planck 2018, GRAVITY 2019-22, EHT 2019-22,
+   Tully et al. 2014). Incertezas indicadas quando relevantes.
+   ===================================================================== */
+
+const CONST = {
+  AU_M: 1.495978707e11,        // unidade astronômica (definição exata IAU 2012)
+  LY_M: 9.4607304725808e15,    // ano-luz (exato: c * ano juliano)
+  PC_M: 3.0856775814913673e16, // parsec
+  SUN_R_M: 6.957e8,            // raio solar nominal (IAU 2015)
+  SUN_D_M: 1.3914e9,           // diâmetro solar
+  SUN_M_KG: 1.98892e30,
+  C: 299792458,
+  RS_KM_PER_MSUN: 2.953        // raio de Schwarzschild por massa solar, km
+};
+
+/* Cadeias de imagens: [primária NASA/ESA, alternativa Wikimedia Commons (mesma imagem, mirror estável)].
+   Se todas falharem, a UI mostra um cartão de crédito no lugar (nunca um ícone quebrado). */
+const IMGS = {
+  earth: {
+    srcs: [
+      'https://images-assets.nasa.gov/image/as17-148-22727/as17-148-22727~large.jpg',
+      'https://commons.wikimedia.org/wiki/Special:FilePath/The%20Earth%20seen%20from%20Apollo%2017.jpg?width=1200'
+    ],
+    alt: 'A Terra fotografada pela tripulação da Apollo 17 (Blue Marble, 1972)',
+    credit: 'NASA / Apollo 17 — "The Blue Marble", 7 dez 1972 (AS17-148-22727), domínio público'
+  },
+  sun: {
+    srcs: [
+      'https://images-assets.nasa.gov/image/GSFC_20171208_Archive_e000393/GSFC_20171208_Archive_e000393~medium.jpg',
+      'https://commons.wikimedia.org/wiki/Special:FilePath/The%20Sun%20by%20the%20Atmospheric%20Imaging%20Assembly%20of%20NASA%27s%20Solar%20Dynamics%20Observatory%20-%2020100819.jpg?width=1000'
+    ],
+    alt: 'O Sol em ultravioleta extremo visto pelo SDO/AIA',
+    credit: 'NASA / SDO / AIA — Solar Dynamics Observatory, domínio público'
+  },
+  alphacen: {
+    srcs: [
+      'https://commons.wikimedia.org/wiki/Special:FilePath/Alpha%2C%20Beta%20and%20Proxima%20Centauri%20%281%29.jpg?width=1100',
+      'https://commons.wikimedia.org/wiki/Special:FilePath/New%20shot%20of%20Proxima%20Centauri%2C%20our%20nearest%20neighbour.jpg?width=1000'
+    ],
+    alt: 'O sistema Alpha Centauri e Proxima Centauri',
+    credit: 'ESO / Digitized Sky Survey 2 (Alpha/Proxima Centauri) — CC BY 4.0 · ESA/Hubble'
+  },
+  orion: {
+    srcs: [
+      'https://images-assets.nasa.gov/image/GSFC_20171208_Archive_e001327/GSFC_20171208_Archive_e001327~medium.jpg',
+      'https://commons.wikimedia.org/wiki/Special:FilePath/Orion%20Nebula%20-%20Hubble%202006%20mosaic%2018000.jpg?width=1200'
+    ],
+    alt: 'Nebulosa de Órion (M42) — mosaico do Hubble, 2006',
+    credit: 'NASA / ESA / M. Robberto (STScI) e Hubble Space Telescope Orion Treasury Project Team, 2006 — domínio público'
+  },
+  milkyway: {
+    srcs: [
+      'https://photojournal.jpl.nasa.gov/jpeg/PIA10748.jpg',
+      'https://commons.wikimedia.org/wiki/Special:FilePath/Artist%27s%20impression%20of%20the%20Milky%20Way%20%28updated%20-%20annotated%29.jpg?width=1200'
+    ],
+    alt: 'Mapa anotado da Via Láctea (concepção científica, Spitzer/GLIMPSE)',
+    credit: 'NASA / JPL-Caltech / R. Hurt (SSC-Caltech) — mapa da Via Láctea baseado nos levantamentos Spitzer/GLIMPSE (PIA10748), domínio público'
+  },
+  sgra: {
+    srcs: [
+      'https://commons.wikimedia.org/wiki/Special:FilePath/EHT%20Saggitarius%20A%20black%20hole.tif?width=900',
+      'https://images-assets.nasa.gov/image/first-image-of-the-black-hole-at-the-center-of-the-milky-way/first-image-of-the-black-hole-at-the-center-of-the-milky-way~medium.jpg'
+    ],
+    alt: 'Sagittarius A* — imagem do Event Horizon Telescope (2022)',
+    credit: 'EHT Collaboration, 2022 — primeira imagem de Sagittarius A*, CC BY 4.0'
+  },
+  andromeda: {
+    srcs: [
+      'https://commons.wikimedia.org/wiki/Special:FilePath/Andromeda%20Galaxy%20%28with%20h-alpha%29.jpg?width=1200',
+      'https://photojournal.jpl.nasa.gov/jpeg/PIA04921.jpg'
+    ],
+    alt: 'Galáxia de Andrômeda (M31)',
+    credit: 'Adam Evans — M31, CC BY 2.0 · NASA/JPL-Caltech (GALEX)'
+  },
+  m87jet: {
+    srcs: [
+      'https://commons.wikimedia.org/wiki/Special:FilePath/M87%20jet.jpg?width=1100',
+      'https://commons.wikimedia.org/wiki/Special:FilePath/Messier%2087%20Hubble%20WikiSky.jpg?width=1000'
+    ],
+    alt: 'M87 e seu jato relativístico de 4.900 anos-luz (Hubble)',
+    credit: 'NASA / ESA e Hubble Heritage Team (STScI/AURA) — jato de M87, domínio público'
+  },
+  m87bh: {
+    srcs: [
+      'https://commons.wikimedia.org/wiki/Special:FilePath/Black%20hole%20-%20Messier%2087%20crop%20max%20res.jpg?width=900',
+      'https://images-assets.nasa.gov/image/black-hole-image-makes-history/black-hole-image-makes-history~medium.jpg'
+    ],
+    alt: 'M87* — primeira imagem de um buraco negro (EHT, 2019)',
+    credit: 'Event Horizon Telescope Collaboration, 10 abr 2019 — CC BY 4.0'
+  },
+  cmb: {
+    srcs: [
+      'https://commons.wikimedia.org/wiki/Special:FilePath/Ilc%209yr%20moll4096.png?width=1200',
+      'https://photojournal.jpl.nasa.gov/jpeg/PIA16874.jpg'
+    ],
+    alt: 'Radiação cósmica de fundo — mapa de 9 anos do WMAP',
+    credit: 'NASA / WMAP Science Team — mapa ILC de 9 anos da CMB, domínio público · ESA/Planck'
+  },
+  hudf: {
+    srcs: [
+      'https://commons.wikimedia.org/wiki/Special:FilePath/NASA-HS201427a-HubbleUltraDeepField2014-20140603.jpg?width=1100',
+      'https://commons.wikimedia.org/wiki/Special:FilePath/Hubble%20ultra%20deep%20field%20high%20rez%20edit1.jpg?width=1100'
+    ],
+    alt: 'Campo Ultraprofundo do Hubble — ~10.000 galáxias em um pedaço de céu do tamanho aparente de um grão de areia',
+    credit: 'NASA / ESA / STScI — Hubble Ultra Deep Field 2014, domínio público'
+  },
+  carina: {
+    srcs: [
+      'https://commons.wikimedia.org/wiki/Special:FilePath/Cosmic%20Cliffs%20in%20the%20Carina%20Nebula%20%28NIRCam%20Image%29.png?width=1200',
+      'https://commons.wikimedia.org/wiki/Special:FilePath/Carina%20Nebula.jpg?width=1100'
+    ],
+    alt: 'Penhascos Cósmicos na Nebulosa de Carina — JWST/NIRCam (2022)',
+    credit: 'NASA / ESA / CSA / STScI — Webb, Cosmic Cliffs (NGC 3324), domínio público'
+  },
+  magellanic: {
+    srcs: [
+      'https://commons.wikimedia.org/wiki/Special:FilePath/Magellanic%20Clouds%20%E2%80%95%20Irregular%20Dwarf%20Galaxies.jpg?width=1100',
+      'https://commons.wikimedia.org/wiki/Special:FilePath/Large.mc.arp.750pix.jpg?width=900'
+    ],
+    alt: 'As Nuvens de Magalhães sobre o observatório de Paranal',
+    credit: 'ESO / S. Brunier — Nuvens de Magalhães, CC BY 4.0'
+  }
+};
+
+/* ===================== NÍVEIS DE ESCALA ===================== */
+const LEVELS = [
+{
+  id:'terra', n:1, exp:7.1, sizeM:1.2742e7, name:'Terra',
+  tag:'NÍVEL 1 · ~10⁷ m', sub:'Nosso ponto de partida: um planeta rochoso de 12.742 km de diâmetro',
+  viz:'hero', img: IMGS.earth,
+  facts:[
+    ['Raio equatorial','6.378,137 km'],
+    ['Raio médio','6.371,0 km'],
+    ['Massa','5,9722 × 10²⁴ kg'],
+    ['Densidade média','5.514 kg/m³ (a maior do Sistema Solar)'],
+    ['Gravidade superficial','9,807 m/s²'],
+    ['Rotação sideral','23 h 56 min 4,1 s'],
+    ['Período orbital','365,256 dias'],
+    ['Distância média ao Sol','1 UA = 149.597.870,7 km'],
+    ['Velocidade orbital média','29,78 km/s'],
+    ['Inclinação do eixo','23,44°'],
+    ['Temperatura média','~288 K (15 °C)'],
+    ['Atmosfera','78,1% N₂ · 20,9% O₂ · 0,9% Ar · 0,04% CO₂'],
+    ['Satélite natural','Lua, a 384.400 km (média)']
+  ],
+  paras:[
+    'A Terra é o maior dos quatro planetas rochosos e o único corpo conhecido com água líquida estável na superfície e vida. A luz que sai daqui leva 1,28 s até a Lua e 8 min 19 s até o Sol.',
+    'Nossa posição orbital fica na chamada zona habitável do Sol — a faixa de distâncias em que a energia recebida permite água líquida. Neste estudo, a Terra é a régua: cada nível seguinte amplia o campo de visão em torno dela por fatores de 10 a 10.000 vezes.'
+  ],
+  tour:'Começamos em casa. A Terra parece imensa — 40.075 km de circunferência — mas guarde esta imagem: nos próximos nove passos, ela vai encolher até se tornar literalmente invisível em qualquer mapa. A viagem inteira cobre 20 ordens de grandeza, de 10⁷ a quase 10²⁷ metros.',
+  quiz:[
+    {q:'Qual é o raio médio da Terra?', o:['3.671 km','6.371 km','12.742 km','1.737 km'], a:1,
+     e:'O raio médio é 6.371 km; 12.742 km é o diâmetro, e 1.737 km é o raio da Lua.'},
+    {q:'Qual é a distância média Terra–Sol?', o:['384.400 km','1,5 milhão de km','149,6 milhões de km','9,46 trilhões de km'], a:2,
+     e:'149.597.870,7 km — exatamente 1 unidade astronômica (UA), fixada por definição pela IAU em 2012. 384.400 km é a distância da Lua.'},
+    {q:'A que velocidade média a Terra orbita o Sol?', o:['1,7 km/s','11,2 km/s','29,8 km/s','299.792 km/s'], a:2,
+     e:'29,78 km/s (~107.000 km/h). 11,2 km/s é a velocidade de escape da superfície terrestre.'},
+    {q:'Por que a Terra é ligeiramente achatada nos polos?', o:['Pela atração da Lua','Pela rotação do planeta','Pelo peso dos oceanos','Por impactos antigos'], a:1,
+     e:'A rotação gera aceleração centrífuga máxima no equador, produzindo um raio equatorial ~21 km maior que o polar.'},
+    {q:'Qual é o gás mais abundante da atmosfera terrestre?', o:['Oxigênio','Gás carbônico','Nitrogênio','Argônio'], a:2,
+     e:'O nitrogênio (N₂) responde por ~78% do volume; o oxigênio, por ~21%.'}
+  ]
+},
+{
+  id:'sistema-solar', n:2, exp:13, sizeM:1e13, name:'Sistema Solar',
+  tag:'NÍVEL 2 · ~10¹³ m', sub:'8 planetas, cinturões e a bolha do vento solar — arraste para orbitar, role para aproximar',
+  viz:'solar', img: IMGS.sun,
+  facts:[
+    ['Idade','4,567 bilhões de anos'],
+    ['Massa do Sol','1,989 × 10³⁰ kg (99,86% do sistema)'],
+    ['Diâmetro do Sol','1.391.400 km (109 Terras)'],
+    ['Mercúrio','0,387 UA · r 2.439,7 km · 87,97 d'],
+    ['Vênus','0,723 UA · r 6.051,8 km · 224,7 d'],
+    ['Terra','1,000 UA · r 6.371,0 km · 365,26 d'],
+    ['Marte','1,524 UA · r 3.389,5 km · 686,98 d'],
+    ['Júpiter','5,203 UA · r 69.911 km · 11,86 a'],
+    ['Saturno','9,537 UA · r 58.232 km · 29,46 a'],
+    ['Urano','19,19 UA · r 25.362 km · 84,02 a'],
+    ['Netuno','30,07 UA · r 24.622 km · 164,8 a'],
+    ['Cinturão de asteroides','2,2 – 3,2 UA'],
+    ['Cinturão de Kuiper','30 – 50 UA'],
+    ['Heliopausa','~120 UA (fronteira do vento solar)'],
+    ['Voyager 1','~167 UA (jul 2026) — objeto humano mais distante'],
+    ['Voyager 2','~140 UA (jul 2026)'],
+    ['Nuvem de Oort','~2.000 a ~100.000 UA (≈1,5 ano-luz)']
+  ],
+  paras:[
+    'O Sistema Solar não termina em Netuno. Depois do Cinturão de Kuiper vem a heliopausa (~120 UA), onde o vento solar cede ao meio interestelar — a Voyager 1 cruzou essa fronteira em 2012, a Voyager 2 em 2018. Muito além, a hipotética Nuvem de Oort, reservatório de cometas, estende-se até ~100.000 UA: metade do caminho até Proxima Centauri.',
+    'No modo "escala real", distâncias e tamanhos são proporcionais de verdade — os planetas somem, e é este o ponto: o Sistema Solar é essencialmente espaço vazio. No modo "escala visual", as distâncias são comprimidas logaritmicamente e os tamanhos ampliados para permitir leitura (o aviso de compressão fica visível).'
+  ],
+  tour:'Um salto de um milhão de vezes. O Sol concentra 99,86% de toda a massa; os oito planetas dividem quase todo o resto. Note as duas Voyager: lançadas em 1977, são os objetos mais distantes já construídos — e ainda estão, em escala cósmica, coladas em casa.',
+  quiz:[
+    {q:'Qual é o maior planeta do Sistema Solar?', o:['Saturno','Netuno','Júpiter','Urano'], a:2,
+     e:'Júpiter: raio de 69.911 km e massa de 1,9 × 10²⁷ kg — mais que o dobro da massa de todos os outros planetas somados.'},
+    {q:'Entre quais planetas fica o cinturão de asteroides?', o:['Terra e Marte','Marte e Júpiter','Júpiter e Saturno','Netuno e Plutão'], a:1,
+     e:'Entre Marte e Júpiter, de ~2,2 a 3,2 UA. Sua massa total é menor que a da Lua.'},
+    {q:'O que é a heliopausa?', o:['A superfície visível do Sol','O limite onde o vento solar cede ao meio interestelar','A órbita de Plutão','O centro do Cinturão de Kuiper'], a:1,
+     e:'A ~120 UA, a pressão do vento solar equilibra a do gás interestelar. As Voyager 1 (2012) e 2 (2018) já a cruzaram.'},
+    {q:'Qual é o objeto construído por humanos mais distante da Terra?', o:['New Horizons','Voyager 2','Pioneer 10','Voyager 1'], a:3,
+     e:'A Voyager 1, lançada em 1977, está a ~167 UA (25 bilhões de km) e se afasta ~3,6 UA por ano.'},
+    {q:'Até onde se estende a Nuvem de Oort?', o:['~50 UA','~120 UA','~1.000 UA','~100.000 UA (≈1,5 ano-luz)'], a:3,
+     e:'Estimativas situam sua borda externa perto de 100.000 UA — quase metade da distância até Proxima Centauri. É a origem dos cometas de longo período.'}
+  ]
+},
+{
+  id:'vizinhanca', n:3, exp:17, sizeM:1e17, name:'Vizinhança Estelar',
+  tag:'NÍVEL 3 · ~10¹⁷ m', sub:'As estrelas a até ~12 anos-luz do Sol, dentro da Bolha Local',
+  viz:'stars', img: IMGS.alphacen,
+  facts:[
+    ['1 ano-luz','9,4607 × 10¹² km'],
+    ['Proxima Centauri','4,246 al · anã vermelha M5,5V · planeta Proxima b'],
+    ['Alpha Centauri A/B','4,37 al · par tipo solar (G2V + K1V)'],
+    ['Estrela de Barnard','5,96 al · maior movimento próprio do céu'],
+    ['Wolf 359','7,86 al · anã vermelha'],
+    ['Lalande 21185','8,31 al'],
+    ['Sirius A/B','8,66 al · a estrela mais brilhante do céu noturno'],
+    ['Luyten 726-8 (UV Ceti)','8,79 al'],
+    ['Ross 154','9,70 al'],
+    ['Epsilon Eridani','10,45 al · possui disco de detritos'],
+    ['Procyon A/B','11,46 al'],
+    ['Tau Ceti','11,90 al · análoga solar'],
+    ['Bolha Local','cavidade de ~300 al escavada por supernovas']
+  ],
+  paras:[
+    'Num raio de ~12 anos-luz existem cerca de 30 estrelas, a maioria anãs vermelhas fracas demais para serem vistas a olho nu. A luz de Proxima Centauri que chega hoje partiu há 4 anos e 3 meses; a Voyager 1, na velocidade atual, levaria ~75.000 anos para cobrir essa distância.',
+    'Todo esse conjunto flutua dentro da Bolha Local, uma cavidade de gás rarefeito e quente com ~300 al de diâmetro, escavada por supernovas nos últimos 10–20 milhões de anos. O Sol a atravessa por acaso — entrou há ~5 milhões de anos e sairá dela em alguns milhões de anos.'
+  ],
+  tour:'Aqui a régua muda de quilômetros para anos-luz. Entre o Sol e Proxima Centauri não há nada além de vácuo: se o Sol fosse uma bola de futebol no litoral catarinense, a estrela vizinha seria outra bola... do outro lado do Atlântico. As estrelas são ilhas raras num oceano vazio.',
+  quiz:[
+    {q:'Qual é a estrela mais próxima do Sol?', o:['Sirius','Alpha Centauri A','Proxima Centauri','Estrela de Barnard'], a:2,
+     e:'Proxima Centauri, a 4,246 al — uma anã vermelha do sistema triplo Alpha Centauri, com o exoplaneta Proxima b na zona habitável.'},
+    {q:'Quanto vale, aproximadamente, 1 ano-luz?', o:['9,46 bilhões de km','9,46 trilhões de km','150 milhões de km','63.241 km'], a:1,
+     e:'9,46 × 10¹² km — a distância que a luz percorre em um ano juliano a 299.792,458 km/s.'},
+    {q:'Pelo que a Estrela de Barnard é famosa?', o:['Ser a mais quente da vizinhança','Ter o maior movimento próprio do céu','Ser visível a olho nu','Ter 10 planetas confirmados'], a:1,
+     e:'Ela desloca-se 10,4 segundos de arco por ano no céu — o maior movimento próprio conhecido, por estar próxima (5,96 al) e ter alta velocidade relativa.'},
+    {q:'O que é a Bolha Local?', o:['A heliosfera do Sol','Uma cavidade de gás quente de ~300 al criada por supernovas','Um aglomerado de anãs vermelhas','A zona habitável galáctica'], a:1,
+     e:'Uma região de gás rarefeito (~0,001 átomo/cm³) e quente escavada por explosões de supernovas nos últimos ~10–20 milhões de anos, dentro da qual o Sol viaja atualmente.'},
+    {q:'Por que Sirius é a estrela mais brilhante do céu noturno?', o:['É a maior estrela conhecida','É a mais próxima do Sol','Combina proximidade (8,6 al) com luminosidade ~25× solar','Está em explosão contínua'], a:2,
+     e:'Sirius A é ~25 vezes mais luminosa que o Sol e está a apenas 8,66 al — a combinação a torna a mais brilhante, ainda que não seja nem a mais próxima nem a mais luminosa.'}
+  ]
+},
+{
+  id:'orion', n:4, exp:19, sizeM:2e20, name:'Braço de Órion',
+  tag:'NÍVEL 4 · ~10¹⁹⁻²⁰ m', sub:'O "esporão" espiral onde o Sol vive, entre os braços de Sagitário e Perseu',
+  viz:'orionarm', img: IMGS.orion,
+  facts:[
+    ['Nome técnico','Braço (ou Esporão) de Órion–Cygnus / Braço Local'],
+    ['Comprimento','≥ 20.000 al (Reid et al. 2016)'],
+    ['Largura','~3.500 al'],
+    ['Posição do Sol','próximo à borda interna do braço'],
+    ['Braço interno vizinho','Sagitário–Carina'],
+    ['Braço externo vizinho','Perseu'],
+    ['Nebulosa de Órion (M42)','1.344 ± 20 al · berçário estelar mais próximo massivo'],
+    ['Aglomerado das Plêiades','~444 al'],
+    ['Nebulosa de Carina (NGC 3372)','~7.500 al (no braço Sagitário–Carina)'],
+    ['Cinturão de Gould','anel local de estrelas jovens, ~3.000 al'],
+    ['Densidade estelar local','~0,004 estrela/al³']
+  ],
+  paras:[
+    'O Sol não vive num braço espiral principal, mas num "esporão" — uma estrutura secundária, porém substancial, entre os braços de Sagitário e Perseu. Medições de paralaxe por rádio (projeto BeSSeL, Reid et al. 2016) mostraram que o Braço Local é maior do que se pensava: pelo menos 20.000 anos-luz de comprimento.',
+    'É a nossa vizinhança de formação estelar: a Nebulosa de Órion (M42), a 1.344 al, é o berçário massivo mais próximo, com ~2.000 estrelas em formação. A grande Nebulosa de Carina, ~7.500 al, tecnicamente já pertence ao braço vizinho de Sagitário–Carina — os Penhascos Cósmicos fotografados pelo JWST em 2022 ficam na sua borda (NGC 3324).'
+  ],
+  tour:'Zoom de mil vezes desde o nível anterior: as estrelas individuais viram poeira estatística. Este é o nosso bairro galáctico — um esporão de 20 mil anos-luz salpicado de nebulosas onde nascem estrelas. Tudo que você já viu a olho nu no céu noturno está contido neste nível.',
+  quiz:[
+    {q:'Em qual braço espiral está o Sistema Solar?', o:['Braço de Perseu','Braço de Sagitário','Braço de Órion (Braço Local)','Braço Escudo–Centauro'], a:2,
+     e:'Vivemos no Braço (Esporão) de Órion–Cygnus, uma estrutura com pelo menos 20.000 al de comprimento.'},
+    {q:'O Braço de Órion fica entre quais braços principais?', o:['Sagitário e Perseu','Escudo e Norma','Perseu e Cygnus','Carina e Escudo'], a:0,
+     e:'Ele é um esporão intermediário entre o braço de Sagitário–Carina (mais interno) e o de Perseu (mais externo).'},
+    {q:'A que distância está a Nebulosa de Órion (M42)?', o:['~44 al','~444 al','~1.344 al','~13.440 al'], a:2,
+     e:'1.344 ± 20 al (medida por paralaxe de rádio). 444 al é a distância das Plêiades.'},
+    {q:'O que são nebulosas como Órion e Carina?', o:['Galáxias pequenas','Nuvens de gás e poeira onde nascem estrelas','Restos de planetas destruídos','Buracos negros envoltos em gás'], a:1,
+     e:'São nuvens moleculares gigantes: o colapso gravitacional de seus núcleos frios forma novas estrelas e sistemas planetários.'},
+    {q:'Qual é o comprimento estimado do Braço de Órion?', o:['~200 al','~2.000 al','≥ 20.000 al','~200.000 al'], a:2,
+     e:'Medições do projeto BeSSeL (Reid et al. 2016) indicam pelo menos 20.000 al — bem maior do que as estimativas antigas de ~10.000 al.'}
+  ]
+},
+{
+  id:'via-lactea', n:5, exp:21, sizeM:9.5e20, name:'Via Láctea',
+  tag:'NÍVEL 5 · ~10²¹ m', sub:'Nossa galáxia espiral barrada: 100–400 bilhões de estrelas — arraste para girar o modelo 3D',
+  viz:'galaxy', img: IMGS.milkyway, img2: IMGS.sgra,
+  facts:[
+    ['Tipo morfológico','espiral barrada (SBbc)'],
+    ['Diâmetro do disco estelar','~100.000 al (87.400 ± 3.600 al no disco brilhante)'],
+    ['Espessura do disco fino','~1.000 al'],
+    ['Número de estrelas','100 – 400 bilhões'],
+    ['Massa total (com matéria escura)','~1,15 × 10¹² M☉'],
+    ['Distância Sol → centro','26.670 al (8,178 ± 0,026 kpc, GRAVITY 2019)'],
+    ['Velocidade orbital do Sol','~230 km/s'],
+    ['Ano galáctico','~230 milhões de anos'],
+    ['Voltas do Sol já completadas','~20 desde sua formação'],
+    ['Sagittarius A* — massa','4,297 ± 0,013 × 10⁶ M☉ (GRAVITY 2022)'],
+    ['Sagittarius A* — r. Schwarzschild','~12,7 milhões de km (0,085 UA)'],
+    ['Barra central','~27.000 al de comprimento'],
+    ['Halo estelar + aglomerados globulares','até ~100.000 al do centro (~150 globulares)']
+  ],
+  paras:[
+    'A Via Láctea é uma espiral barrada de porte médio-grande. O Sol orbita a 26.670 al do centro — cerca de 8,178 kpc, valor medido com precisão de 0,3% pelo interferômetro GRAVITY acompanhando estrelas em volta de Sagittarius A*. Uma volta completa (um "ano galáctico") leva ~230 milhões de anos: na última passagem do Sol por este ponto da órbita, os dinossauros estavam surgindo.',
+    'No centro exato mora Sagittarius A*, um buraco negro supermassivo de 4,3 milhões de massas solares, fotografado pelo EHT em 2022. Apesar de monstruoso, ele responde por menos de 0,001% da massa da galáxia — quem domina a dinâmica é o halo de matéria escura, invisível, com cerca de 90% da massa total.'
+  ],
+  tour:'Cem mil anos-luz de diâmetro, centenas de bilhões de estrelas — e a nossa posição: um subúrbio tranquilo a 26.670 anos-luz do centro, marcado no modelo 3D. Perto do núcleo, a densidade estelar é milhares de vezes maior e um buraco negro de 4,3 milhões de sóis espreita. Aqui, a luz que sai de uma borda leva 100 mil anos para chegar à outra.',
+  quiz:[
+    {q:'A que distância o Sol está do centro galáctico?', o:['~2.667 al','~26.670 al','~266.700 al','~100 al'], a:1,
+     e:'26.670 al (8,178 kpc), medido pela colaboração GRAVITY (2019) com precisão de 0,3% via órbitas de estrelas ao redor de Sagittarius A*.'},
+    {q:'Qual é a massa de Sagittarius A*?', o:['4,3 mil M☉','4,3 milhões de M☉','6,5 bilhões de M☉','66 bilhões de M☉'], a:1,
+     e:'4,297 × 10⁶ massas solares. 6,5 bilhões é M87*; 66 bilhões é TON 618.'},
+    {q:'Quanto dura um "ano galáctico" (órbita do Sol na galáxia)?', o:['~230 mil anos','~23 milhões de anos','~230 milhões de anos','~2,3 bilhões de anos'], a:2,
+     e:'A ~230 km/s, o Sol completa a órbita de ~26.670 al de raio em ~230 milhões de anos. Já completou ~20 voltas.'},
+    {q:'Qual é o tipo morfológico da Via Láctea?', o:['Elíptica gigante','Espiral barrada','Irregular','Lenticular'], a:1,
+     e:'Espiral barrada (classificação SBbc): possui uma barra central de ~27.000 al da qual partem os braços espirais.'},
+    {q:'Quantas estrelas tem a Via Láctea?', o:['~4 milhões','~400 milhões','100–400 bilhões','~100 trilhões'], a:2,
+     e:'As estimativas variam entre 100 e 400 bilhões, dependendo da contagem das anãs vermelhas mais fracas, que dominam em número.'}
+  ]
+},
+{
+  id:'grupo-local', n:6, exp:23, sizeM:9.5e22, name:'Grupo Local',
+  tag:'NÍVEL 6 · ~10²³ m', sub:'~10 milhões de anos-luz: a Via Láctea, Andrômeda e mais de 80 galáxias menores',
+  viz:'localgroup', img: IMGS.andromeda, img2: IMGS.magellanic,
+  facts:[
+    ['Diâmetro','~10 milhões de al'],
+    ['Número de galáxias','> 80 (a maioria anãs)'],
+    ['Massa total','~2 × 10¹² M☉'],
+    ['Andrômeda (M31)','2,537 milhões de al · ~10¹² estrelas · d ~220.000 al'],
+    ['Triângulo (M33)','2,73 milhões de al · 3ª maior do grupo'],
+    ['Grande Nuvem de Magalhães','163.000 al · satélite da Via Láctea'],
+    ['Pequena Nuvem de Magalhães','~200.000 al'],
+    ['Anã de Sagitário','~70.000 al · em fusão com a Via Láctea'],
+    ['Velocidade M31 → Via Láctea','~110 km/s de aproximação'],
+    ['Colisão VL–Andrômeda','em ~4,5 bilhões de anos'],
+    ['Baricentro do grupo','entre a Via Láctea e M31']
+  ],
+  paras:[
+    'O Grupo Local é a nossa "cidade" de galáxias: duas metrópoles (Via Láctea e Andrômeda), uma cidade média (M33) e dezenas de vilarejos — galáxias anãs como as Nuvens de Magalhães, visíveis a olho nu no hemisfério sul. Andrômeda, a 2,54 milhões de al, é o objeto mais distante visível a olho nu em céu escuro.',
+    'M31 aproxima-se de nós a ~110 km/s. Medições do Hubble e do Gaia indicam colisão em ~4,5 bilhões de anos: as duas espirais se fundirão numa galáxia elíptica gigante (apelidada "Milkomeda"). Colisões de estrelas serão raríssimas — o que colide são os halos de gás e de matéria escura; as órbitas estelares serão embaralhadas.'
+  ],
+  tour:'As galáxias substituem as estrelas como unidades da paisagem. Andrômeda, nossa gêmea maior, já está a caminho: em 4,5 bilhões de anos as duas espirais dançarão uma fusão que durará outros bilhões de anos. Mesmo assim, este grupo inteiro é apenas um grão no superaglomerado que vem a seguir.',
+  quiz:[
+    {q:'Qual é a maior galáxia do Grupo Local?', o:['Via Láctea','Triângulo (M33)','Andrômeda (M31)','Grande Nuvem de Magalhães'], a:2,
+     e:'Andrômeda: ~1 trilhão de estrelas e disco de ~220.000 al, contra 100–400 bilhões de estrelas da Via Láctea.'},
+    {q:'A que distância está a galáxia de Andrômeda?', o:['253.700 al','2,537 milhões de al','25,37 milhões de al','2,537 bilhões de al'], a:1,
+     e:'2,537 milhões de anos-luz (765 ± 28 kpc). A luz que vemos hoje saiu de lá quando os primeiros Homo habilis surgiam na África.'},
+    {q:'O que acontecerá entre a Via Láctea e Andrômeda?', o:['Andrômeda se afastará para sempre','Colisão e fusão em ~4,5 bilhões de anos','Colisão no próximo milhão de anos','Nada, estão gravitacionalmente desligadas'], a:1,
+     e:'M31 aproxima-se a ~110 km/s; simulações baseadas em dados do Hubble/Gaia indicam fusão iniciando em ~4,5 bilhões de anos, formando uma elíptica gigante.'},
+    {q:'O que são as Nuvens de Magalhães?', o:['Nebulosas dentro da Via Láctea','Galáxias anãs satélites da Via Láctea','Aglomerados globulares','Nuvens de poeira interestelar'], a:1,
+     e:'São duas galáxias anãs irregulares que orbitam a Via Láctea, a 163.000 al (Grande) e ~200.000 al (Pequena), visíveis a olho nu no hemisfério sul.'},
+    {q:'Qual é o diâmetro aproximado do Grupo Local?', o:['~100.000 al','~1 milhão de al','~10 milhões de al','~110 milhões de al'], a:2,
+     e:'Cerca de 10 milhões de anos-luz, contendo mais de 80 galáxias — a grande maioria anãs de baixa luminosidade.'}
+  ]
+},
+{
+  id:'virgem', n:7, exp:24, sizeM:1.04e24, name:'Superaglomerado de Virgem',
+  tag:'NÍVEL 7 · ~10²⁴ m', sub:'~110 milhões de anos-luz: centenas de grupos de galáxias em volta do Aglomerado de Virgem',
+  viz:'virgo', img: IMGS.m87bh, img2: IMGS.m87jet,
+  facts:[
+    ['Diâmetro','~110 milhões de al (33 Mpc)'],
+    ['Grupos e aglomerados','~100 (o Grupo Local é um deles)'],
+    ['Massa','~10¹⁵ M☉'],
+    ['Aglomerado de Virgem (centro)','a 53,8 milhões de al · ~1.300–2.000 galáxias'],
+    ['M87 (galáxia central de Virgem)','elíptica gigante · massa ~2,4 × 10¹² M☉'],
+    ['M87* (buraco negro)','6,5 ± 0,7 × 10⁹ M☉ · fotografado pelo EHT em 2019'],
+    ['Jato de M87','~4.900 al de extensão, relativístico'],
+    ['Posição do Grupo Local','na periferia, caindo em direção a Virgem'],
+    ['Virgocentric infall','o Grupo Local aproxima-se de Virgem a ~200–300 km/s']
+  ],
+  paras:[
+    'O Superaglomerado de Virgem (ou Superaglomerado Local) reúne cerca de cem grupos e aglomerados num volume de ~110 milhões de al. Nós vivemos na periferia; o coração é o Aglomerado de Virgem, a ~53,8 milhões de al, com mais de mil galáxias mergulhadas em gás a milhões de graus.',
+    'Sua galáxia dominante, a elíptica gigante M87, hospeda M87*: o buraco negro de 6,5 bilhões de massas solares cuja sombra foi revelada ao mundo em 10 de abril de 2019 pelo Event Horizon Telescope — a primeira imagem direta de um horizonte de eventos, obtida por uma rede de radiotelescópios do tamanho da Terra.'
+  ],
+  tour:'Nosso Grupo Local inteiro é um ponto na borda deste mapa. No centro, o Aglomerado de Virgem: mais de mil galáxias caindo umas sobre as outras, presididas pela elíptica gigante M87 e seu buraco negro de 6,5 bilhões de sóis — o primeiro a ter o retrato tirado, em 2019. E nós estamos lentamente caindo na direção dele.',
+  quiz:[
+    {q:'Qual aglomerado ocupa o centro do nosso superaglomerado?', o:['Aglomerado de Coma','Aglomerado de Virgem','Aglomerado de Norma','Aglomerado da Fênix'], a:1,
+     e:'O Aglomerado de Virgem, a ~53,8 milhões de al, com 1.300–2.000 galáxias — daí o nome Superaglomerado de Virgem.'},
+    {q:'Qual é a massa do buraco negro M87*?', o:['4,3 milhões M☉','65 milhões M☉','6,5 bilhões M☉','66 bilhões M☉'], a:2,
+     e:'6,5 ± 0,7 bilhões de massas solares — ~1.500 vezes mais massivo que Sagittarius A*.'},
+    {q:'Qual foi o primeiro buraco negro fotografado (EHT, 2019)?', o:['Sagittarius A*','Cygnus X-1','M87*','TON 618'], a:2,
+     e:'M87*, em 10/04/2019. Sagittarius A* veio depois, em 2022. A "foto" mostra a sombra do horizonte contra o disco de acreção brilhante.'},
+    {q:'Quantas galáxias tem o Aglomerado de Virgem?', o:['~13','~130','~1.300–2.000','~130.000'], a:2,
+     e:'Entre 1.300 e 2.000 galáxias catalogadas, imersas num halo de gás quente emissor de raios X.'},
+    {q:'Como o Grupo Local se move em relação a Virgem?', o:['Afasta-se com a expansão, sem desvio','Cai em direção a Virgem a ~200–300 km/s','Orbita Virgem em círculo fechado','Está parado'], a:1,
+     e:'É o "virgocentric infall": a gravidade do aglomerado freia localmente a expansão e puxa nosso grupo na sua direção.'}
+  ]
+},
+{
+  id:'laniakea', n:8, exp:25, sizeM:4.9e24, name:'Laniakea',
+  tag:'NÍVEL 8 · ~10²⁵ m', sub:'"Céus imensos": a bacia gravitacional de 520 milhões de anos-luz onde tudo flui para o Grande Atrator',
+  viz:'laniakea', img: null,
+  facts:[
+    ['Definição','Tully et al., Nature 513, 71 (2014)'],
+    ['Diâmetro','~520 milhões de al (160 Mpc)'],
+    ['Galáxias','~100.000 grandes'],
+    ['Massa','~10¹⁷ M☉'],
+    ['Critério','bacia de atração dos fluxos de velocidade peculiar'],
+    ['Grande Atrator','a ~150–250 milhões de al (região de Norma/ACO 3627)'],
+    ['Fluxo local','~600 km/s em direção ao Grande Atrator/Shapley'],
+    ['Componentes','superaglomerados de Virgem, Hidra–Centauro, Pavo–Indus'],
+    ['Vizinhos','Perseus–Pisces (oposto), Shapley, Coma, Hércules'],
+    ['Significado do nome','"céus imensos/incomensuráveis" em havaiano']
+  ],
+  paras:[
+    'Laniakea não é definida por uma fronteira visível, mas pelo movimento: subtraindo a expansão do universo, as velocidades restantes ("peculiares") das galáxias desenham linhas de fluxo, como rios. Tudo que escorre para a mesma bacia pertence a Laniakea — 100 mil galáxias, nós inclusive. O divisor de águas com o superaglomerado vizinho Perseus–Pisces é a fronteira.',
+    'O fundo da bacia é o Grande Atrator, uma concentração de massa na direção da constelação de Norma, a ~150–250 milhões de al (a incerteza é grande porque a poeira do disco da Via Láctea bloqueia a visão — a "Zona de Obscurecimento"). A própria região flui em direção ao ainda maior Superaglomerado de Shapley, sugerindo que Laniakea pode ser parte de uma estrutura maior.'
+  ],
+  tour:'Bem-vindo a Laniakea — "céus imensos" em havaiano. Aqui as galáxias são gotas d’água: seus movimentos desenham rios que escorrem todos para um mesmo vale, o Grande Atrator. Nosso superaglomerado de Virgem é só um afluente. Meio bilhão de anos-luz de ponta a ponta — e ainda não é a maior estrutura do universo.',
+  quiz:[
+    {q:'O que define os limites de Laniakea?', o:['A luz das galáxias mais brilhantes','As linhas de fluxo das velocidades peculiares das galáxias','Um muro de gás quente','O alcance do telescópio Hubble'], a:1,
+     e:'Tully et al. (2014) mapearam as velocidades peculiares: onde os fluxos convergem para a mesma bacia de atração, é Laniakea; onde divergem para outra bacia, começa o vizinho.'},
+    {q:'Qual é o diâmetro de Laniakea?', o:['~5,2 milhões de al','~52 milhões de al','~520 milhões de al','~5,2 bilhões de al'], a:2,
+     e:'Cerca de 520 milhões de anos-luz (160 Mpc), englobando ~100.000 galáxias grandes e massa de ~10¹⁷ M☉.'},
+    {q:'O que é o Grande Atrator?', o:['Um buraco negro de massa galáctica','Uma concentração de massa para onde convergem os fluxos locais','O centro exato do universo','Uma estrela hipermassiva'], a:1,
+     e:'É a região central da bacia gravitacional de Laniakea, associada ao aglomerado de Norma (ACO 3627), a ~150–250 Mal. Não é um objeto único, e sim um excesso difuso de massa.'},
+    {q:'Por que a distância ao Grande Atrator é tão incerta?', o:['Ele se move rápido demais','A poeira do disco da Via Láctea bloqueia a visão (Zona de Obscurecimento)','Ele é invisível por ser matéria escura pura','Nunca foi observado'], a:1,
+     e:'O Grande Atrator fica quase atrás do plano galáctico; gás e poeira da própria Via Láctea obscurecem a região, forçando observações em rádio, infravermelho e raios X.'},
+    {q:'O que significa "Laniakea"?', o:['"Rio de estrelas" em polinésio','"Céus imensos" em havaiano','"Grande muralha" em havaiano','"Casa distante" em maori'], a:1,
+     e:'Do havaiano lani (céu) + ākea (imenso, incomensurável) — homenagem aos navegadores polinésios que cruzavam o Pacífico guiados pelas estrelas.'}
+  ]
+},
+{
+  id:'teia', n:9, exp:26, sizeM:9.5e25, name:'Teia Cósmica',
+  tag:'NÍVEL 9 · ~10²⁶ m', sub:'Filamentos, muralhas e vazios: a espuma de matéria em maior escala',
+  viz:'web', img: IMGS.hudf,
+  facts:[
+    ['Estrutura','filamentos e muralhas cercando vazios'],
+    ['Filamentos típicos','160–260 milhões de al de comprimento'],
+    ['Void de Boötes','~330 milhões de al de diâmetro · a ~700 Mal'],
+    ['Galáxias no Void de Boötes','apenas ~60 conhecidas (esperadas: milhares)'],
+    ['Grande Muralha Hércules–Corona Borealis','~10 bilhões de al — maior estrutura conhecida'],
+    ['Sloan Great Wall','~1,38 bilhão de al'],
+    ['Escala BAO (régua padrão)','~490 milhões de al (150 Mpc)'],
+    ['Fração do volume em vazios','~80%'],
+    ['Origem','flutuações quânticas primordiais + gravidade da matéria escura'],
+    ['Homogeneidade','acima de ~1 bilhão de al o universo torna-se estatisticamente uniforme']
+  ],
+  paras:[
+    'Na maior escala, a matéria se organiza como espuma: paredes e filamentos de galáxias — esculpidos pela matéria escura — cercando vazios imensos que ocupam ~80% do volume. O Void de Boötes é o exemplo clássico: uma bolha de ~330 milhões de al quase sem galáxias. Se a Via Láctea estivesse no seu centro, só teríamos descoberto outras galáxias nos anos 1960.',
+    'A maior estrutura já mapeada é a Grande Muralha Hércules–Corona Borealis (~10 bilhões de al, identificada em 2013 pela concentração de surtos de raios gama) — tão grande que desafia o princípio cosmológico de homogeneidade. Essa arquitetura inteira nasceu de flutuações quânticas microscópicas, esticadas pela inflação e amplificadas por 13,8 bilhões de anos de gravidade.'
+  ],
+  tour:'Afaste-se o bastante e as galáxias viram pó aderido a uma teia de aranha tridimensional. Os fios são filamentos de matéria escura recobertos de galáxias; os buracos são vazios de centenas de milhões de anos-luz. Você, o planeta, a galáxia: todos moramos num desses fios finíssimos.',
+  quiz:[
+    {q:'Como a matéria se organiza nas maiores escalas?', o:['Uniformemente, como um gás','Em filamentos e muralhas cercando vazios','Em uma única espiral gigante','Em camadas concêntricas ao redor da Via Láctea'], a:1,
+     e:'A "teia cósmica": filamentos e muralhas de galáxias (traçando a matéria escura) envolvem vazios que dominam o volume do universo.'},
+    {q:'Qual é o diâmetro do Void de Boötes?', o:['~3,3 milhões de al','~33 milhões de al','~330 milhões de al','~3,3 bilhões de al'], a:2,
+     e:'~330 milhões de anos-luz, com só ~60 galáxias conhecidas — uma das maiores regiões subdensas já mapeadas.'},
+    {q:'Qual é a maior estrutura conhecida do universo?', o:['Laniakea','Sloan Great Wall','Grande Muralha Hércules–Corona Borealis','Aglomerado de Shapley'], a:2,
+     e:'Com ~10 bilhões de al, foi identificada em 2013 pela distribuição de surtos de raios gama; seu tamanho tensiona o princípio cosmológico.'},
+    {q:'O que ocupa a maior parte do volume do universo?', o:['Galáxias','Gás intergaláctico dos filamentos','Vazios (voids)','Buracos negros'], a:2,
+     e:'Os vazios respondem por ~80% do volume; a matéria luminosa concentra-se nos filamentos e nós da teia.'},
+    {q:'Qual é a origem da teia cósmica?', o:['Explosões de supernovas primordiais','Flutuações quânticas amplificadas pela gravidade da matéria escura','Colisões entre universos','Campos magnéticos primordiais'], a:1,
+     e:'Flutuações quânticas de densidade, esticadas a escalas macroscópicas pela inflação, cresceram por instabilidade gravitacional — com a matéria escura servindo de andaime.'}
+  ]
+},
+{
+  id:'universo', n:10, exp:26.94, sizeM:8.8e26, name:'Universo Observável',
+  tag:'NÍVEL 10 · 8,8 × 10²⁶ m', sub:'93 bilhões de anos-luz de diâmetro, ~2 trilhões de galáxias, 13,8 bilhões de anos',
+  viz:'hero', img: IMGS.cmb, img2: IMGS.hudf,
+  facts:[
+    ['Diâmetro','8,8 × 10²⁶ m = 93 bilhões de al'],
+    ['Raio comóvel','46,5 bilhões de al'],
+    ['Idade','13,787 ± 0,020 bilhões de anos (Planck 2018)'],
+    ['Galáxias','~2 × 10¹² (Conselice et al. 2016; estimativas seguem em revisão)'],
+    ['Temperatura da CMB','2,7255 ± 0,0006 K'],
+    ['Redshift da CMB','z ≈ 1.089 (recombinação, 380.000 anos após o Big Bang)'],
+    ['Energia escura','68,3% do conteúdo'],
+    ['Matéria escura','26,8%'],
+    ['Matéria bariônica (nós)','4,9%'],
+    ['H₀ (Planck, CMB)','67,4 ± 0,5 km/s/Mpc'],
+    ['H₀ (SH0ES, cefeidas+SNe)','73,0 ± 1,0 km/s/Mpc — a "tensão de Hubble"'],
+    ['Horizonte de partículas','limite do que a luz pôde nos alcançar']
+  ],
+  paras:[
+    'O universo observável é uma esfera centrada em nós — não por sermos especiais, mas porque a luz teve 13,8 bilhões de anos para viajar, e cada observador tem a sua esfera. O raio é de 46,5 bilhões de al (não 13,8!): enquanto a luz viajava, o espaço continuou expandindo, afastando as fontes originais. A fronteira absoluta é o horizonte de partículas.',
+    'A imagem mais antiga possível é a radiação cósmica de fundo (CMB): luz emitida 380.000 anos após o Big Bang, quando o plasma esfriou o bastante (z≈1.089) para ficar transparente. Hoje ela chega esticada a micro-ondas, a 2,7255 K, em todas as direções — o mapa acima (WMAP/Planck) mostra suas flutuações de ±0,0002 K, sementes de toda a teia cósmica. O conteúdo do universo: 68% energia escura, 27% matéria escura e apenas 5% de matéria comum — tudo que já vimos brilhar.'
+  ],
+  tour:'Fim da linha: a esfera de tudo que podemos, em princípio, observar. 93 bilhões de anos-luz de diâmetro, ~2 trilhões de galáxias — e 95% do conteúdo (matéria e energia escuras) ainda é um mistério. A Terra do nível 1 está para o universo observável assim como um átomo está para... nada familiar: a razão é de 10²⁰. Onde estamos? Num fio de uma teia, numa bacia chamada Laniakea, num braço menor de uma galáxia comum. E daqui, medimos tudo isso.',
+  quiz:[
+    {q:'Qual é o diâmetro do universo observável?', o:['13,8 bilhões de al','27,6 bilhões de al','93 bilhões de al','930 bilhões de al'], a:2,
+     e:'93 bilhões de al (8,8 × 10²⁶ m). É maior que 2×13,8 porque o espaço expandiu enquanto a luz viajava: o raio comóvel é 46,5 bilhões de al.'},
+    {q:'Qual é a idade do universo (Planck 2018)?', o:['4,567 bilhões de anos','10,0 bilhões de anos','13,787 bilhões de anos','93 bilhões de anos'], a:2,
+     e:'13,787 ± 0,020 bilhões de anos, ajustando o modelo ΛCDM aos dados da CMB do satélite Planck.'},
+    {q:'Qual é a temperatura atual da radiação cósmica de fundo?', o:['0 K','2,7255 K','273 K','5.772 K'], a:1,
+     e:'2,7255 K: a luz da recombinação (z≈1.089) esticada ~1.100 vezes pela expansão, do visível para micro-ondas.'},
+    {q:'Qual é a composição do universo?', o:['~68% energia escura, ~27% matéria escura, ~5% matéria comum','~90% estrelas, ~10% gás','~50% matéria, ~50% antimatéria','~99% hidrogênio'], a:0,
+     e:'Planck 2018: 68,3% energia escura, 26,8% matéria escura, 4,9% bariônica. Tudo que brilha soma menos de 5%.'},
+    {q:'Por que o raio observável (46,5 Gal) excede a distância que a luz percorreu (13,8 Gal)?', o:['A luz viajou mais rápido no passado','O espaço expandiu enquanto a luz viajava','Erro de medida ainda não resolvido','O universo é um holograma'], a:1,
+     e:'A expansão métrica do espaço afastou continuamente as fontes: a distância comóvel atual até elas é ~46,5 bilhões de al, sem nenhuma violação da relatividade — é o espaço que estica, não objetos se movendo através dele.'}
+  ]
+}
+];
+
+/* ===================== BURACOS NEGROS ===================== */
+const BLACKHOLES = [
+  {id:'cygx1', name:'Cygnus X-1', cls:'Estelar', m:21.2, um:'± 2,2',
+   d:'Binário de raios X a 7.240 al, primeiro candidato a buraco negro identificado (1971). Massa medida por Miller-Jones et al. (2021).'},
+  {id:'gw190521', name:'GW190521 (remanescente)', cls:'Massa intermediária', m:142, um:'+28/−16',
+   d:'Resultado da fusão de dois buracos negros detectada por ondas gravitacionais (LIGO/Virgo, 2019) — primeiro IMBH confirmado.'},
+  {id:'sgra', name:'Sagittarius A*', cls:'Supermassivo', m:4.297e6, um:'± 0,013 × 10⁶',
+   d:'Centro da Via Láctea, a 26.670 al. Massa via órbitas estelares (GRAVITY). Fotografado pelo EHT em 2022.'},
+  {id:'m87', name:'M87*', cls:'Supermassivo', m:6.5e9, um:'± 0,7 × 10⁹',
+   d:'Núcleo da elíptica gigante M87, a 53,5 milhões de al. Primeira imagem de um buraco negro (EHT, abril de 2019).'},
+  {id:'ton618', name:'TON 618', cls:'Ultramassivo', m:6.6e10, um:'incerteza ~×2',
+   d:'Quasar hiperluminoso a ~10,8 bilhões de al (z=2,219). Massa estimada pelas linhas largas de emissão — entre as maiores conhecidas.'},
+  {id:'phoenixa', name:'Phoenix A', cls:'Ultramassivo', m:1.0e11, um:'estimativa indireta, debatida',
+   d:'Núcleo da galáxia central do Aglomerado da Fênix, a ~5,7 bilhões de al. Estimativa a partir do núcleo estelar difuso — se confirmada, o maior buraco negro conhecido.'}
+];
+
+/* ===================== COMPARADOR DE TAMANHOS ===================== */
+const SIZEOBJS = [
+  {name:'Lua', r_km:1737.4, color:'#b9b9c0', tex:'moon',
+   info:'Raio 1.737,4 km. O único outro mundo pisado por seres humanos. Caberiam ~50 Luas dentro da Terra.'},
+  {name:'Terra', r_km:6371.0, color:'#5b8dd8', tex:'earth',
+   info:'Raio médio 6.371 km — nossa régua. Diâmetro 3,67× o da Lua.'},
+  {name:'Júpiter', r_km:69911, color:'#c8a87c', tex:'jupiter',
+   info:'Raio 69.911 km = 10,97 Terras. Mais de 1.300 Terras caberiam em seu volume.'},
+  {name:'Sol', r_km:695700, color:'#ffd27a', tex:'sun',
+   info:'Raio nominal IAU 695.700 km = 109 Terras de diâmetro. Contém 99,86% da massa do Sistema Solar.'},
+  {name:'Betelgeuse', r_km:764*695700, color:'#ff9a5c', tex:null,
+   info:'Supergigante vermelha em Órion, ~548 al. Raio 764 (+116/−62) R☉ (Joyce et al. 2020): no lugar do Sol, engoliria Mercúrio, Vênus, Terra, Marte e chegaria perto de Júpiter.'},
+  {name:'UY Scuti', r_km:1708*695700, color:'#ff7a4d', tex:null,
+   info:'Hipergigante vermelha, raio 1.708 ± 192 R☉ — por anos citada como a maior estrela conhecida; a incerteza da distância (Gaia) mantém debate.'},
+  {name:'Stephenson 2-18', r_km:2150*695700, color:'#ff6242', tex:null,
+   info:'Raio ~2.150 R☉ (limite superior das medições) — candidata a maior estrela conhecida. No lugar do Sol, sua superfície passaria da órbita de Saturno (9,5 UA).'}
+];
+
+/* ===================== CALENDÁRIO CÓSMICO ===================== */
+/* t = anos atrás; mapeado sobre 13,787 Ga → 365 dias. 1 s ≈ 437 anos. */
+const COSMIC_AGE = 1.3787e10;
+const CAL_EVENTS = [
+  {t:1.3787e10, name:'Big Bang', d:'1º jan, 00:00:00', desc:'Origem do espaço-tempo, energia e matéria. Inflação nos primeiros 10⁻³² s.'},
+  {t:1.3787e10-3.8e5, name:'Recombinação (CMB)', d:'1º jan, ~00:15', desc:'380.000 anos depois: o universo fica transparente; nasce a radiação cósmica de fundo.'},
+  {t:1.36e10, name:'Primeiras estrelas', d:'~6 jan', desc:'Fim da "idade das trevas": estrelas de População III reionizam o universo.'},
+  {t:1.32e10, name:'Galáxias primitivas', d:'~16 jan', desc:'Protogaláxias detectadas pelo JWST em z>10 se formam e se fundem.'},
+  {t:1.1e10, name:'Disco da Via Láctea', d:'~15 mar', desc:'O disco fino da nossa galáxia se estabelece (~11 Ga).'},
+  {t:4.567e9, name:'Nascimento do Sol', d:'1º set', desc:'Colapso de uma nuvem molecular forma o Sol e o disco protoplanetário.'},
+  {t:4.54e9, name:'Formação da Terra', d:'~2 set', desc:'Acreção do planeta; logo depois, o impacto que forma a Lua (~4,5 Ga).'},
+  {t:3.8e9, name:'Vida primitiva', d:'~21 set', desc:'Evidências químicas/fósseis das primeiras formas de vida (3,5–3,8 Ga).'},
+  {t:2.4e9, name:'Grande Oxidação', d:'~29 out', desc:'Cianobactérias enchem a atmosfera de O₂, transformando o planeta.'},
+  {t:2.0e9, name:'Células eucariontes', d:'~9 nov', desc:'Células com núcleo — o ancestral de plantas, fungos e animais.'},
+  {t:6.0e8, name:'Vida multicelular ampla', d:'~15 dez', desc:'Fauna de Ediacara: os primeiros organismos multicelulares grandes.'},
+  {t:5.39e8, name:'Explosão Cambriana', d:'~17 dez', desc:'Diversificação abrupta dos planos corporais animais (539 Ma).'},
+  {t:2.52e8, name:'Extinção Permo-Triássica', d:'~24 dez', desc:'"A Grande Morte": ~96% das espécies marinhas desaparecem.'},
+  {t:2.3e8, name:'Primeiros dinossauros', d:'~25 dez', desc:'Dinossauros surgem no Triássico (~230–240 Ma).'},
+  {t:6.6e7, name:'Impacto de Chicxulub', d:'30 dez, ~06:24', desc:'Asteroide de ~10 km extingue os dinossauros não-avianos (66 Ma).'},
+  {t:3.0e5, name:'Homo sapiens', d:'31 dez, 23:48:37', desc:'Nossa espécie surge na África (~300 mil anos).'},
+  {t:1.2e4, name:'Agricultura', d:'31 dez, 23:59:33', desc:'Revolução neolítica: primeiros cultivos e cidades (~12.000 anos).'},
+  {t:5.0e3, name:'Escrita', d:'31 dez, 23:59:49', desc:'Suméria e Egito registram a história (~5.000 anos). Toda a história escrita: os últimos 11 segundos.'},
+  {t:500, name:'Ciência moderna', d:'31 dez, 23:59:58,9', desc:'De Copérnico ao telescópio: os últimos ~500 anos ≈ 1,1 segundo do ano cósmico.'},
+  {t:0.5, name:'Agora', d:'31 dez, 24:00:00', desc:'Você, lendo isto: o último milissegundo do calendário.'}
+];
+
+/* ===================== GLOSSÁRIO ===================== */
+const GLOSSARY = [
+  {t:'Unidade astronômica (UA)', v:'1 UA = 149.597.870.700 m (exata, IAU 2012)',
+   d:'Distância média Terra–Sol, fixada por definição desde 2012. Régua natural para escalas planetárias.'},
+  {t:'Ano-luz (al)', v:'1 al = 9,4607 × 10¹⁵ m = 63.241 UA',
+   d:'Distância percorrida pela luz no vácuo em um ano juliano (365,25 dias) a c = 299.792.458 m/s. Não é unidade de tempo.'},
+  {t:'Parsec (pc)', v:'1 pc = 3,0857 × 10¹⁶ m = 3,2616 al',
+   d:'Distância à qual 1 UA subtende um ângulo de paralaxe de 1 segundo de arco. É a unidade profissional: kpc para galáxias, Mpc para cosmologia.'},
+  {t:'Redshift (z)', v:'z = (λ_obs − λ_emit) / λ_emit',
+   d:'Esticamento do comprimento de onda da luz. Em cosmologia mede a expansão do espaço durante a viagem da luz: a CMB tem z≈1.089; TON 618, z=2,219. Para z pequeno, v ≈ cz.'},
+  {t:'Magnitude aparente (m)', v:'escala logarítmica invertida: Δm = 5 → fator 100 em brilho',
+   d:'Brilho medido da Terra. Sol: −26,7; Sirius: −1,46; limite do olho nu: ~+6; limite do JWST: ~+34.'},
+  {t:'Magnitude absoluta (M)', v:'m − M = 5·log₁₀(d/10 pc)',
+   d:'Magnitude que o objeto teria a 10 pc — mede luminosidade intrínseca, permitindo comparar estrelas em distâncias diferentes. Sol: M = +4,83.'},
+  {t:'Raio de Schwarzschild (r_s)', v:'r_s = 2GM/c² ≈ 2,953 km × (M/M☉)',
+   d:'Raio do horizonte de eventos de um buraco negro sem rotação: a superfície da qual nem a luz escapa. Cresce linearmente com a massa.'},
+  {t:'Matéria escura', v:'26,8% do conteúdo do universo (Planck 2018)',
+   d:'Componente que interage por gravidade mas não emite luz. Evidências: curvas de rotação de galáxias, lentes gravitacionais, aglomerado da Bala e o espectro da CMB. Sua natureza é desconhecida — nenhuma partícula candidata foi detectada diretamente.'},
+  {t:'Energia escura', v:'68,3% do conteúdo · equação de estado w ≈ −1',
+   d:'Componente que acelera a expansão do universo, descoberta em 1998 com supernovas Ia (Nobel 2011). No modelo ΛCDM comporta-se como constante cosmológica: densidade constante no espaço e no tempo.'},
+  {t:'Constante de Hubble (H₀)', v:'67,4 ± 0,5 (Planck) vs 73,0 ± 1,0 km/s/Mpc (SH0ES)',
+   d:'Taxa atual de expansão: a cada megaparsec de distância, as galáxias afastam-se ~70 km/s mais rápido. A discrepância persistente entre o valor da CMB e o das cefeidas é a "tensão de Hubble" — possivelmente física nova.'},
+  {t:'Velocidade peculiar', v:'v_total = H₀·d + v_peculiar',
+   d:'Movimento próprio de uma galáxia descontada a expansão média. São essas velocidades que definem estruturas como Laniakea e o fluxo em direção ao Grande Atrator.'},
+  {t:'Princípio cosmológico', v:'homogeneidade + isotropia em grande escala',
+   d:'Hipótese de que, acima de ~1 bilhão de al, o universo é estatisticamente igual em todo lugar e direção. Estruturas como a Grande Muralha Hércules–Corona Borealis testam seus limites.'}
+];
+
+/* ===================== BUSCA ===================== */
+const SEARCH_INDEX = [
+  {k:'Terra', alias:'earth planeta', go:{view:'zoom', level:0}},
+  {k:'Lua', alias:'moon', go:{view:'sizes', size:0}},
+  {k:'Sol', alias:'sun estrela', go:{view:'zoom', level:1}},
+  {k:'Mercúrio', alias:'mercurio', go:{view:'zoom', level:1}},
+  {k:'Vênus', alias:'venus', go:{view:'zoom', level:1}},
+  {k:'Marte', alias:'mars', go:{view:'zoom', level:1}},
+  {k:'Júpiter', alias:'jupiter', go:{view:'zoom', level:1}},
+  {k:'Saturno', alias:'saturn', go:{view:'zoom', level:1}},
+  {k:'Urano', alias:'uranus', go:{view:'zoom', level:1}},
+  {k:'Netuno', alias:'neptune', go:{view:'zoom', level:1}},
+  {k:'Cinturão de Kuiper', alias:'kuiper', go:{view:'zoom', level:1}},
+  {k:'Nuvem de Oort', alias:'oort', go:{view:'zoom', level:1}},
+  {k:'Voyager 1', alias:'voyager', go:{view:'zoom', level:1}},
+  {k:'Voyager 2', alias:'voyager', go:{view:'zoom', level:1}},
+  {k:'Heliopausa', alias:'heliosfera vento solar', go:{view:'zoom', level:1}},
+  {k:'Proxima Centauri', alias:'proxima b', go:{view:'zoom', level:2}},
+  {k:'Alpha Centauri', alias:'alfa centauro', go:{view:'zoom', level:2}},
+  {k:'Estrela de Barnard', alias:'barnard', go:{view:'zoom', level:2}},
+  {k:'Sirius', alias:'sirio', go:{view:'zoom', level:2}},
+  {k:'Bolha Local', alias:'local bubble', go:{view:'zoom', level:2}},
+  {k:'Braço de Órion', alias:'orion arm esporao local', go:{view:'zoom', level:3}},
+  {k:'Nebulosa de Órion', alias:'m42', go:{view:'zoom', level:3}},
+  {k:'Nebulosa de Carina', alias:'ngc 3372 penhascos', go:{view:'zoom', level:3}},
+  {k:'Plêiades', alias:'pleiades m45', go:{view:'zoom', level:3}},
+  {k:'Via Láctea', alias:'milky way galaxia', go:{view:'zoom', level:4}},
+  {k:'Sagittarius A*', alias:'sgr a sagitario buraco negro central', go:{view:'bh', bh:'sgra'}},
+  {k:'Grupo Local', alias:'local group', go:{view:'zoom', level:5}},
+  {k:'Andrômeda', alias:'m31 andromeda', go:{view:'zoom', level:5}},
+  {k:'Triângulo', alias:'m33 triangulum', go:{view:'zoom', level:5}},
+  {k:'Nuvens de Magalhães', alias:'magellanic lmc smc', go:{view:'zoom', level:5}},
+  {k:'Superaglomerado de Virgem', alias:'virgo supercluster', go:{view:'zoom', level:6}},
+  {k:'Aglomerado de Virgem', alias:'virgo cluster', go:{view:'zoom', level:6}},
+  {k:'M87', alias:'messier 87 virgo a', go:{view:'zoom', level:6}},
+  {k:'M87*', alias:'m87 buraco negro eht foto', go:{view:'bh', bh:'m87'}},
+  {k:'Laniakea', alias:'laniakea superaglomerado', go:{view:'zoom', level:7}},
+  {k:'Grande Atrator', alias:'great attractor norma', go:{view:'zoom', level:7}},
+  {k:'Perseus-Pisces', alias:'perseu peixes', go:{view:'zoom', level:7}},
+  {k:'Teia cósmica', alias:'cosmic web filamentos', go:{view:'zoom', level:8}},
+  {k:'Void de Boötes', alias:'bootes vazio', go:{view:'zoom', level:8}},
+  {k:'Grande Muralha Hércules–Corona Borealis', alias:'hercules corona borealis great wall', go:{view:'zoom', level:8}},
+  {k:'Universo observável', alias:'observable universe', go:{view:'zoom', level:9}},
+  {k:'Radiação cósmica de fundo', alias:'cmb cosmic microwave', go:{view:'zoom', level:9}},
+  {k:'Cygnus X-1', alias:'cygnus cisne buraco negro estelar', go:{view:'bh', bh:'cygx1'}},
+  {k:'GW190521', alias:'ligo massa intermediaria', go:{view:'bh', bh:'gw190521'}},
+  {k:'TON 618', alias:'ton618 quasar', go:{view:'bh', bh:'ton618'}},
+  {k:'Phoenix A', alias:'fenix phoenix cluster', go:{view:'bh', bh:'phoenixa'}},
+  {k:'Betelgeuse', alias:'betelgeuse orion supergigante', go:{view:'sizes', size:4}},
+  {k:'UY Scuti', alias:'uy scuti', go:{view:'sizes', size:5}},
+  {k:'Stephenson 2-18', alias:'stephenson maior estrela', go:{view:'sizes', size:6}},
+  {k:'Calendário Cósmico', alias:'sagan tempo big bang', go:{view:'time'}},
+  {k:'Big Bang', alias:'origem', go:{view:'time'}},
+  {k:'Ano-luz', alias:'light year', go:{view:'gloss'}},
+  {k:'Parsec', alias:'pc', go:{view:'gloss'}},
+  {k:'Matéria escura', alias:'dark matter', go:{view:'gloss'}},
+  {k:'Energia escura', alias:'dark energy', go:{view:'gloss'}},
+  {k:'Conversor de distâncias', alias:'bola de futebol balneario camboriu', go:{view:'dist'}}
+];
+
+/* texturas reais (threex.planets, mapas NASA reprocessados; earth do repo three.js) */
+const TEX = {
+  base:'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/',
+  sun:'sunmap.jpg', mercury:'mercurymap.jpg', venus:'venusmap.jpg',
+  earth:'earthmap1k.jpg', mars:'marsmap1k.jpg', jupiter:'jupitermap.jpg',
+  saturn:'saturnmap.jpg', saturnring:'saturnringcolor.jpg',
+  uranus:'uranusmap.jpg', neptune:'neptunemap.jpg'
+};
+
+const PLANETS = [
+  {name:'Mercúrio', a:0.387, r_km:2439.7, T:87.97,  tex:'mercury', color:0x9c9490},
+  {name:'Vênus',    a:0.723, r_km:6051.8, T:224.70, tex:'venus',   color:0xd9b98a},
+  {name:'Terra',    a:1.000, r_km:6371.0, T:365.26, tex:'earth',   color:0x5b8dd8},
+  {name:'Marte',    a:1.524, r_km:3389.5, T:686.98, tex:'mars',    color:0xc06a4a},
+  {name:'Júpiter',  a:5.203, r_km:69911,  T:4332.6, tex:'jupiter', color:0xc8a87c},
+  {name:'Saturno',  a:9.537, r_km:58232,  T:10759,  tex:'saturn',  color:0xd8c49a, ring:true},
+  {name:'Urano',    a:19.191,r_km:25362,  T:30687,  tex:'uranus',  color:0x9ad4d8},
+  {name:'Netuno',   a:30.07, r_km:24622,  T:60190,  tex:'neptune', color:0x5a7fd8}
+];
+</script>
+
+<script>
+'use strict';
+/* =====================================================================
+   NÚCLEO DO APLICATIVO — estado, navegação, persistência, quiz, tour
+   ===================================================================== */
+
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const fmt = (n, d=0) => n.toLocaleString('pt-BR', {maximumFractionDigits:d, minimumFractionDigits:0});
+
+/* ---------- persistência ---------- */
+const STORE_KEY = 'escalaUniverso.v1';
+let store;
+try { store = JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch(e) { store = {}; }
+store.visited = store.visited || {};
+store.quiz = store.quiz || {};
+function saveStore(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(store)); }catch(e){} }
+
+function progressPct(){
+  const v = Object.keys(store.visited).length;
+  const q = Object.values(store.quiz).filter(x => x && x.done).length;
+  return Math.round((v/LEVELS.length*50) + (q/LEVELS.length*50));
+}
+function refreshProgressUI(){
+  const p = progressPct();
+  $('#progress-pct').textContent = p + '%';
+  const C = 2*Math.PI*14;
+  $('#progress-bar-circle').style.strokeDashoffset = (C*(1-p/100)).toFixed(2);
+  $('#prog-big').textContent = p + '%';
+  const v = Object.keys(store.visited).length;
+  const q = Object.values(store.quiz).filter(x=>x&&x.done).length;
+  $('#prog-summary').innerHTML =
+    `<b>${v}/10</b> níveis visitados · <b>${q}/10</b> quizzes concluídos`;
+  const grid = $('#prog-grid');
+  grid.innerHTML = '';
+  LEVELS.forEach((L,i)=>{
+    const qz = store.quiz[L.id];
+    const div = document.createElement('div');
+    div.className = 'prog-item';
+    div.innerHTML = `<div class="pi-name">${L.n}. ${L.name}</div>
+      <div class="pi-status">
+        ${store.visited[L.id] ? '<span class="done">✓ visitado</span>' : '○ não visitado'} ·
+        ${qz && qz.done ? `<span class="done">✓ quiz ${qz.score}/5</span>` : '○ quiz pendente'}
+      </div>`;
+    div.style.cursor = 'pointer';
+    div.addEventListener('click', ()=>{ switchView('zoom'); setLevel(i); });
+    grid.appendChild(div);
+  });
+  $$('#level-nav .ln-btn').forEach((b,i)=>{
+    b.classList.toggle('visited', !!store.visited[LEVELS[i].id]);
+  });
+}
+
+/* ---------- fallback de imagens ---------- */
+function makeImg(imgDef, className){
+  const img = document.createElement('img');
+  if (className) img.className = className;
+  img.alt = imgDef.alt || '';
+  img.loading = 'lazy';
+  img.referrerPolicy = 'no-referrer';
+  let idx = 0;
+  img.addEventListener('error', ()=>{
+    idx++;
+    if (idx < imgDef.srcs.length) { img.src = imgDef.srcs[idx]; }
+    else {
+      const fail = document.createElement('div');
+      fail.className = 'img-fail';
+      fail.innerHTML = `<div style="font-size:26px">✦</div>
+        <div><b>${imgDef.alt}</b></div>
+        <div style="font-size:11px">${imgDef.credit}<br>(imagem indisponível offline — verifique a conexão)</div>`;
+      if (img.parentNode) img.parentNode.replaceChild(fail, img);
+    }
+  });
+  img.src = imgDef.srcs[0];
+  return img;
+}
+
+/* ---------- troca de views ---------- */
+let currentView = 'zoom';
+function switchView(v){
+  currentView = v;
+  $$('#main-tabs button').forEach(b => b.classList.toggle('active', b.dataset.view === v));
+  $$('.view').forEach(sec => sec.classList.toggle('active', sec.id === 'view-'+v));
+  if (v === 'bh') BH.draw();
+  if (v === 'sizes') SZ.draw();
+  if (v === 'time') CAL.draw();
+  if (v === 'prog') refreshProgressUI();
+  if (v === 'zoom') resizeStage();
+}
+$$('#main-tabs button').forEach(b => b.addEventListener('click', ()=> switchView(b.dataset.view)));
+$('#progress-chip').addEventListener('click', ()=> switchView('prog'));
+
+/* ---------- navegação de níveis ---------- */
+let currentLevel = 0;
+const lnav = $('#level-nav');
+LEVELS.forEach((L,i)=>{
+  const b = document.createElement('button');
+  b.className = 'ln-btn';
+  const expLabel = L.id==='universo' ? '10²⁶·⁹' : '10' + String(Math.round(L.exp)).split('').map(c=>'⁰¹²³⁴⁵⁶⁷⁸⁹'[+c]).join('');
+  b.innerHTML = `<span class="ln-exp">${expLabel}m</span><span class="ln-name">${L.name}</span><span class="ln-visited"></span>`;
+  b.title = L.name;
+  b.addEventListener('click', ()=> setLevel(i));
+  lnav.appendChild(b);
+});
+
+function buildPanel(L){
+  const p = $('#data-panel');
+  p.innerHTML = '';
+  const h1 = document.createElement('h3'); h1.textContent = 'Dados'; p.appendChild(h1);
+  const tb = document.createElement('table'); tb.className='facts-table';
+  tb.innerHTML = L.facts.map(f=>`<tr><td class="k">${f[0]}</td><td class="v">${f[1]}</td></tr>`).join('');
+  p.appendChild(tb);
+  if (L.img){
+    const h2 = document.createElement('h3'); h2.textContent = 'Imagem real'; p.appendChild(h2);
+    p.appendChild(makeImg(L.img, 'panel-img'));
+    const c = document.createElement('div'); c.className='img-credit'; c.textContent = L.img.credit; p.appendChild(c);
+  }
+  if (L.img2){
+    p.appendChild(makeImg(L.img2, 'panel-img'));
+    const c2 = document.createElement('div'); c2.className='img-credit'; c2.textContent = L.img2.credit; p.appendChild(c2);
+  }
+  const h3 = document.createElement('h3'); h3.textContent = 'Contexto'; p.appendChild(h3);
+  L.paras.forEach(t=>{
+    const el = document.createElement('p'); el.className='panel-p'; el.innerHTML = t; p.appendChild(el);
+  });
+}
+
+const SB_MIN = 7, SB_MAX = 27;
+function buildScalebar(){
+  const track = $('#sb-track');
+  for(let e=SB_MIN; e<=SB_MAX; e+=2){
+    const t = document.createElement('div');
+    t.className = 'sb-tick';
+    t.style.left = ((e-SB_MIN)/(SB_MAX-SB_MIN)*100) + '%';
+    t.innerHTML = `<span>10${String(e).split('').map(c=>'⁰¹²³⁴⁵⁶⁷⁸⁹'[+c]).join('')}</span>`;
+    track.appendChild(t);
+  }
+}
+function updateScalebar(L){
+  const x = (Math.log10(L.sizeM)-SB_MIN)/(SB_MAX-SB_MIN)*100;
+  $('#sb-marker').style.left = Math.min(100,Math.max(0,x)) + '%';
+  $('#sb-current').textContent = `${L.name} ≈ ${L.sizeM.toExponential(2).replace('.',',').replace('e+','×10^')} m`;
+}
+
+/* camadas de visualização */
+function showVizLayer(id){
+  ['viz-hero','viz-solar','viz-galaxy','viz-canvas2d'].forEach(v=>{
+    $('#'+v).classList.toggle('on', v===id);
+  });
+}
+
+function setLevel(i, opts){
+  currentLevel = Math.max(0, Math.min(LEVELS.length-1, i));
+  const L = LEVELS[currentLevel];
+  $$('#level-nav .ln-btn').forEach((b,j)=> b.classList.toggle('active', j===currentLevel));
+  $('#stage-lvl-tag').textContent = L.tag;
+  $('#stage-h2').textContent = L.name;
+  $('#stage-sub').textContent = L.sub;
+  buildPanel(L);
+  updateScalebar(L);
+  $('#viz-controls').innerHTML = '';
+  $('#viz-hint').textContent = '';
+
+  if (L.viz === 'hero'){
+    const inner = $('#viz-hero-inner');
+    inner.innerHTML = '';
+    if (L.img) {
+      inner.appendChild(makeImg(L.img));
+      const cred = document.createElement('div');
+      cred.className = 'img-credit'; cred.style.position='absolute'; cred.style.bottom='10px'; cred.style.left='16px';
+      cred.style.maxWidth='55%';
+      cred.textContent = L.img.credit;
+      inner.appendChild(cred);
+    }
+    showVizLayer('viz-hero');
+  } else if (L.viz === 'solar'){
+    showVizLayer('viz-solar');
+    SOLAR.ensure();
+    SOLAR.buildControls();
+    $('#viz-hint').textContent = 'arraste: orbitar · roda: zoom · shift+arraste: pan';
+  } else if (L.viz === 'galaxy'){
+    showVizLayer('viz-galaxy');
+    GALAXY.ensure();
+    GALAXY.buildControls();
+    $('#viz-hint').textContent = 'arraste: girar · roda: zoom';
+  } else {
+    showVizLayer('viz-canvas2d');
+    VIZ2D.set(L.viz);
+    $('#viz-hint').textContent = 'arraste: mover · roda: zoom (com inércia)';
+  }
+
+  if (!store.visited[L.id]){
+    store.visited[L.id] = Date.now();
+    saveStore();
+  }
+  refreshProgressUI();
+  if (TOUR.active && !opts) TOUR.syncTo(currentLevel);
+}
+
+function resizeStage(){
+  VIZ2D.resize();
+  SOLAR.resize();
+  GALAXY.resize();
+}
+window.addEventListener('resize', ()=>{ resizeStage(); BH.draw(); SZ.draw(); CAL.draw(); });
+
+/* ---------- QUIZ ---------- */
+const QUIZ = {
+  level:null, idx:0, score:0, answered:false,
+  open(levelIdx){
+    this.level = LEVELS[levelIdx];
+    this.idx = 0; this.score = 0;
+    $('#quiz-modal').classList.add('open');
+    $('#quiz-level-name').textContent = `Quiz — Nível ${this.level.n}: ${this.level.name}`;
+    this.show();
+  },
+  show(){
+    const q = this.level.quiz[this.idx];
+    this.answered = false;
+    $('#quiz-count').textContent = `${this.idx+1} / ${this.level.quiz.length}`;
+    $('#quiz-score').textContent = `acertos: ${this.score}`;
+    $('#quiz-expl').className=''; $('#quiz-expl').id='quiz-expl';
+    $('#quiz-expl').classList.remove('show');
+    $('#quiz-next').style.display = 'none';
+    const c = $('#quiz-content');
+    c.innerHTML = `<h3>${q.q}</h3>`;
+    q.o.forEach((opt,i)=>{
+      const b = document.createElement('button');
+      b.className = 'q-opt'; b.textContent = opt;
+      b.addEventListener('click', ()=> this.answer(i, b));
+      c.appendChild(b);
+    });
+  },
+  answer(i, btn){
+    if (this.answered) return;
+    this.answered = true;
+    const q = this.level.quiz[this.idx];
+    const buttons = $$('#quiz-content .q-opt');
+    buttons.forEach(b=> b.disabled = true);
+    buttons[q.a].classList.add('correct');
+    if (i === q.a){ this.score++; }
+    else { btn.classList.add('wrong'); }
+    $('#quiz-score').textContent = `acertos: ${this.score}`;
+    const ex = $('#quiz-expl');
+    ex.innerHTML = `<b>${i===q.a ? '✓ Correto!' : '✗ Resposta: ' + q.o[q.a]}</b><br>${q.e}`;
+    ex.classList.add('show');
+    $('#quiz-next').style.display = 'inline-block';
+    $('#quiz-next').textContent = this.idx < this.level.quiz.length-1 ? 'Próxima →' : 'Ver resultado';
+  },
+  next(){
+    if (this.idx < this.level.quiz.length-1){ this.idx++; this.show(); }
+    else this.finish();
+  },
+  finish(){
+    const prev = store.quiz[this.level.id];
+    if (!prev || !prev.done || this.score > prev.score){
+      store.quiz[this.level.id] = {done:true, score:this.score, when:Date.now()};
+      saveStore();
+    }
+    refreshProgressUI();
+    $('#quiz-content').innerHTML = `
+      <div class="quiz-result-big">${this.score}/5</div>
+      <div class="quiz-result-sub">${
+        this.score===5 ? 'Impecável — domínio total deste nível!' :
+        this.score>=3 ? 'Bom resultado! Revise as explicações e tente o 5/5.' :
+        'Releia o painel de dados do nível e tente de novo — a escala do universo exige paciência.'}</div>`;
+    $('#quiz-expl').classList.remove('show');
+    $('#quiz-next').style.display = 'inline-block';
+    $('#quiz-next').textContent = 'Fechar';
+    this.idx = -1;
+  }
+};
+$('#btn-quiz').addEventListener('click', ()=> QUIZ.open(currentLevel));
+$('#quiz-next').addEventListener('click', ()=>{
+  if (QUIZ.idx === -1) $('#quiz-modal').classList.remove('open');
+  else QUIZ.next();
+});
+$('#quiz-close-x').addEventListener('click', ()=> $('#quiz-modal').classList.remove('open'));
+$('#quiz-modal').addEventListener('click', e=>{ if (e.target === $('#quiz-modal')) $('#quiz-modal').classList.remove('open'); });
+
+/* ---------- TOUR GUIADO ---------- */
+const TOUR = {
+  active:false, step:0,
+  start(){
+    this.active = true; this.step = 0;
+    switchView('zoom');
+    $('#tour-overlay').classList.add('on');
+    this.apply();
+  },
+  apply(){
+    const L = LEVELS[this.step];
+    setLevel(this.step, {fromTour:true});
+    $('#tour-step').textContent = `TOUR GUIADO — PASSO ${this.step+1} DE ${LEVELS.length}`;
+    $('#tour-title').textContent = `${L.n}. ${L.name} (${L.tag.split('·')[1].trim()})`;
+    $('#tour-text').textContent = L.tour;
+    $('#tour-prev').disabled = this.step===0;
+    $('#tour-next').textContent = this.step===LEVELS.length-1 ? 'Concluir ✓' : 'Avançar →';
+  },
+  syncTo(i){ this.step = i; this.apply(); },
+  next(){
+    if (this.step >= LEVELS.length-1){ this.exit(); return; }
+    this.step++; this.apply();
+  },
+  prev(){ if (this.step>0){ this.step--; this.apply(); } },
+  exit(){
+    this.active = false;
+    $('#tour-overlay').classList.remove('on');
+  }
+};
+$('#btn-tour').addEventListener('click', ()=> TOUR.start());
+$('#tour-next').addEventListener('click', ()=> TOUR.next());
+$('#tour-prev').addEventListener('click', ()=> TOUR.prev());
+$('#tour-exit').addEventListener('click', ()=> TOUR.exit());
+
+/* ---------- BUSCA ---------- */
+const searchInput = $('#search-input');
+const searchResults = $('#search-results');
+let searchSel = -1;
+function normalize(s){ return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+function doSearch(q){
+  q = normalize(q.trim());
+  searchResults.innerHTML = '';
+  searchSel = -1;
+  if (!q){ searchResults.classList.remove('open'); return; }
+  const hits = SEARCH_INDEX.filter(it =>
+    normalize(it.k).includes(q) || normalize(it.alias||'').includes(q)
+  ).slice(0,10);
+  if (!hits.length){
+    searchResults.innerHTML = '<div class="sr-empty">Nada encontrado. Tente "TON 618", "Andrômeda", "Voyager"…</div>';
+  } else {
+    hits.forEach(it=>{
+      const d = document.createElement('div');
+      d.className = 'sr-item';
+      const where =
+        it.go.view==='zoom' ? 'Nível '+(it.go.level+1)+' · '+LEVELS[it.go.level].name :
+        it.go.view==='bh' ? 'Buracos Negros' :
+        it.go.view==='sizes' ? 'Comparador de Tamanhos' :
+        it.go.view==='time' ? 'Tempo Cósmico' :
+        it.go.view==='dist' ? 'Distâncias Humanas' : 'Glossário';
+      d.innerHTML = `<span class="sr-name">${it.k}</span><span class="sr-where">${where}</span>`;
+      d.addEventListener('click', ()=> goTo(it));
+      searchResults.appendChild(d);
+    });
+  }
+  searchResults.classList.add('open');
+}
+function goTo(it){
+  searchResults.classList.remove('open');
+  searchInput.value = '';
+  switchView(it.go.view);
+  if (it.go.view==='zoom' && it.go.level!=null) setLevel(it.go.level);
+  if (it.go.view==='bh' && it.go.bh){ BH.select(it.go.bh); }
+  if (it.go.view==='sizes' && it.go.size!=null){ SZ.select(it.go.size); }
+}
+searchInput.addEventListener('input', ()=> doSearch(searchInput.value));
+searchInput.addEventListener('keydown', e=>{
+  const items = $$('#search-results .sr-item');
+  if (e.key==='ArrowDown'){ e.preventDefault(); searchSel = Math.min(items.length-1, searchSel+1); }
+  else if (e.key==='ArrowUp'){ e.preventDefault(); searchSel = Math.max(0, searchSel-1); }
+  else if (e.key==='Enter' && items.length){ (items[Math.max(0,searchSel)]).click(); return; }
+  else if (e.key==='Escape'){ searchResults.classList.remove('open'); return; }
+  items.forEach((el,i)=> el.classList.toggle('sel', i===searchSel));
+});
+document.addEventListener('click', e=>{
+  if (!$('#search-box').contains(e.target)) searchResults.classList.remove('open');
+});
+
+/* ---------- GLOSSÁRIO (render) ---------- */
+(function(){
+  const dl = $('#gloss-list');
+  GLOSSARY.forEach(g=>{
+    const w = document.createElement('div'); w.className='gloss-item';
+    w.innerHTML = `<dt>${g.t}</dt><dd>${g.d}</dd><span class="gv">${g.v}</span>`;
+    dl.appendChild(w);
+  });
+})();
+
+/* ---------- reset ---------- */
+$('#reset-progress').addEventListener('click', ()=>{
+  if (confirm('Zerar todo o progresso salvo neste navegador?')){
+    store = {visited:{}, quiz:{}};
+    saveStore(); refreshProgressUI();
+  }
+});
+
+/* ---------- fundo estelar com parallax ---------- */
+(function starfield(){
+  const far = $('#stars-far'), near = $('#stars-near');
+  function paint(cv, n, rmax, alpha){
+    const dpr = Math.min(2, window.devicePixelRatio||1);
+    cv.width = innerWidth*1.1*dpr; cv.height = innerHeight*1.1*dpr;
+    const ctx = cv.getContext('2d');
+    ctx.scale(dpr,dpr);
+    for(let i=0;i<n;i++){
+      const x = Math.random()*innerWidth*1.1, y = Math.random()*innerHeight*1.1;
+      const r = Math.random()*rmax + .2;
+      const hue = Math.random()<0.12 ? 265 : (Math.random()<0.5 ? 190 : 220);
+      ctx.fillStyle = `hsla(${hue},70%,${70+Math.random()*25}%,${alpha*(0.4+Math.random()*0.6)})`;
+      ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill();
+    }
+  }
+  function repaint(){ paint(far, 340, .9, .5); paint(near, 120, 1.5, .8); }
+  repaint();
+  let rt; window.addEventListener('resize', ()=>{ clearTimeout(rt); rt=setTimeout(repaint,300); });
+  let mx=0, my=0, tx=0, ty=0;
+  window.addEventListener('pointermove', e=>{
+    tx = (e.clientX/innerWidth - .5); ty = (e.clientY/innerHeight - .5);
+  });
+  (function anim(){
+    mx += (tx-mx)*0.03; my += (ty-my)*0.03;
+    far.style.transform = `translate(${-mx*8}px, ${-my*6}px)`;
+    near.style.transform = `translate(${-mx*20}px, ${-my*14}px)`;
+    requestAnimationFrame(anim);
+  })();
+})();
+</script>
+
+<script>
+'use strict';
+/* =====================================================================
+   FERRAMENTAS: buracos negros, tamanhos, calendário cósmico, conversor
+   ===================================================================== */
+
+function setupCanvas(cv, cssH){
+  const dpr = Math.min(2, window.devicePixelRatio||1);
+  const w = cv.parentElement.clientWidth || 800;
+  const h = cssH || parseInt(cv.getAttribute('height')) || 400;
+  cv.style.height = h+'px';
+  cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr);
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return {ctx, w, h};
+}
+function fmtKm(km){
+  if (km >= 1e9) return (km/1e9).toLocaleString('pt-BR',{maximumFractionDigits:2}) + ' bilhões de km';
+  if (km >= 1e6) return (km/1e6).toLocaleString('pt-BR',{maximumFractionDigits:2}) + ' milhões de km';
+  return fmt(Math.round(km)) + ' km';
+}
+
+/* ---------- BURACOS NEGROS ---------- */
+const BH = {
+  mode:'real', zoom:0, sel:'ton618', _anim:null,
+  rs(bh){ return CONST.RS_KM_PER_MSUN * bh.m; }, // km
+  init(){
+    const list = $('#bh-list');
+    BLACKHOLES.forEach(bh=>{
+      const rs = this.rs(bh);
+      const div = document.createElement('div');
+      div.className = 'bh-item'; div.dataset.id = bh.id;
+      div.innerHTML = `
+        <div class="bh-name">${bh.name}<span class="bh-class">${bh.cls}</span></div>
+        <div class="bh-data">M = ${bh.m>=1e6? bh.m.toExponential(3).replace('.',',').replace('e+',' × 10^') : fmt(bh.m)} M☉ <span style="color:var(--txt-2)">(${bh.um})</span><br>
+        r<sub>s</sub> = ${fmtKm(rs)}${rs>1.5e7 ? ' = '+ (rs/1.495978707e8).toLocaleString('pt-BR',{maximumFractionDigits:1}) + ' UA' : ''}</div>
+        <div style="font-size:11.6px;color:var(--txt-2);margin-top:5px">${bh.d}</div>`;
+      div.addEventListener('click', ()=> this.select(bh.id));
+      list.appendChild(div);
+    });
+    $$('#bh-mode-seg button').forEach(b=> b.addEventListener('click', ()=>{
+      this.mode = b.dataset.mode;
+      $$('#bh-mode-seg button').forEach(x=>x.classList.toggle('on', x===b));
+      $('#bh-zoom').parentElement.style.display = this.mode==='real' ? '' : 'none';
+      this.draw();
+    }));
+    $('#bh-zoom').addEventListener('input', e=>{ this.zoom = +e.target.value; this.draw(); });
+  },
+  select(id){
+    this.sel = id;
+    $$('#bh-list .bh-item').forEach(el=> el.classList.toggle('sel', el.dataset.id===id));
+    if (this.mode!=='real'){ this.draw(); return; }
+    // zoom-alvo: o BH selecionado com diâmetro = 55% da altura
+    const bh = BLACKHOLES.find(b=>b.id===id);
+    const {h} = this._dims || {h:460};
+    const fitScale = this.fitScale();
+    const target = (0.55*h/2) / this.rs(bh);            // px por km desejado
+    const zTarget = Math.max(0, Math.min(100, 100 * Math.log10(target/fitScale) / Math.log10(this.maxScale()/this.fitScale())));
+    const start = this.zoom, t0 = performance.now();
+    cancelAnimationFrame(this._anim);
+    const step = (t)=>{
+      const k = Math.min(1,(t-t0)/700), e = k<.5 ? 2*k*k : 1-Math.pow(-2*k+2,2)/2;
+      this.zoom = start + (zTarget-start)*e;
+      $('#bh-zoom').value = this.zoom;
+      this.draw();
+      if (k<1) this._anim = requestAnimationFrame(step);
+    };
+    this._anim = requestAnimationFrame(step);
+  },
+  fitScale(){ // px/km para caber Phoenix A
+    const {h} = this._dims || {h:460};
+    const rmax = this.rs(BLACKHOLES[BLACKHOLES.length-1]);
+    return (0.86*h/2) / rmax;
+  },
+  maxScale(){ // px/km para Cygnus X-1 ocupar 45% da altura
+    const {h} = this._dims || {h:460};
+    return (0.45*h/2) / this.rs(BLACKHOLES[0]);
+  },
+  draw(){
+    const cv = $('#bh-canvas'); if (!cv || !cv.parentElement.clientWidth) return;
+    const {ctx,w,h} = setupCanvas(cv, 460);
+    this._dims = {w,h};
+    ctx.clearRect(0,0,w,h);
+    if (this.mode === 'chart') return this.drawChart(ctx,w,h);
+    const s0 = this.fitScale(), s1 = this.maxScale();
+    const scale = s0 * Math.pow(s1/s0, this.zoom/100); // px por km
+    const cx = w/2, baseY = h-24;
+    const colors = ['#4fd8eb','#4fe0a3','#f0b45c','#f07a7a','#8b7bf4','#d85bc0'];
+    const sorted = [...BLACKHOLES].sort((a,b)=> b.m-a.m);
+    // discos aninhados, tangentes na base (proporção real)
+    sorted.forEach((bh)=>{
+      const i = BLACKHOLES.indexOf(bh);
+      const rpx = this.rs(bh)*scale;
+      const grd = ctx.createRadialGradient(cx, baseY-rpx, Math.max(1,rpx*0.2), cx, baseY-rpx, Math.max(1.001,rpx));
+      grd.addColorStop(0,'rgba(5,7,13,0.96)');
+      grd.addColorStop(1, colors[i]+'33');
+      ctx.beginPath(); ctx.arc(cx, baseY-rpx, Math.max(rpx,0.001), 0, 7);
+      ctx.fillStyle = grd; ctx.fill();
+      ctx.strokeStyle = colors[i]; ctx.lineWidth = bh.id===this.sel? 2.4 : 1.2;
+      ctx.stroke();
+    });
+    // legenda com raios em px
+    ctx.font = '11px JetBrains Mono, monospace'; ctx.textBaseline='middle';
+    BLACKHOLES.forEach((bh,i)=>{
+      const rpx = this.rs(bh)*scale;
+      const y = 22 + i*19;
+      ctx.fillStyle = colors[i];
+      ctx.fillRect(14, y-4, 9, 9);
+      ctx.fillStyle = bh.id===this.sel? '#e8ecf8' : '#aab4d4';
+      const vis = rpx < 0.5 ? ' — menor que 1 px neste zoom' : (2*rpx > 4*h ? ' — maior que a tela' : '');
+      ctx.fillText(`${bh.name}  ø ${rpx<0.5? '<1 px' : fmt(Math.round(2*rpx))+' px'}${vis}`, 30, y);
+    });
+    const kmPerPx = 1/scale;
+    $('#bh-note').style.display = '';
+    $('#bh-note').textContent = `proporção real · 1 px = ${fmtKm(kmPerPx)}`;
+    ctx.fillStyle = '#6b7699'; ctx.font = '10.5px Inter, sans-serif'; ctx.textAlign='center';
+    ctx.fillText('discos tangentes na base — diâmetros exatamente proporcionais aos raios de Schwarzschild', cx, h-8);
+    ctx.textAlign='left';
+  },
+  drawChart(ctx,w,h){
+    $('#bh-note').style.display = 'none';
+    const pad = 60, bw = (w-pad-30)/BLACKHOLES.length;
+    const lmin = Math.log10(10), lmax = Math.log10(2e11);
+    ctx.font = '10.5px JetBrains Mono, monospace';
+    for(let e=1; e<=11; e++){
+      const y = h-40 - (e-lmin+1)/(lmax-lmin+1)*(h-80);
+      ctx.strokeStyle = 'rgba(120,150,255,.10)';
+      ctx.beginPath(); ctx.moveTo(pad,y); ctx.lineTo(w-10,y); ctx.stroke();
+      ctx.fillStyle = '#6b7699';
+      ctx.fillText('10^'+e+' M☉', 6, y+3);
+    }
+    const colors = ['#4fd8eb','#4fe0a3','#f0b45c','#f07a7a','#8b7bf4','#d85bc0'];
+    BLACKHOLES.forEach((bh,i)=>{
+      const x = pad + i*bw + bw*0.18;
+      const hh = (Math.log10(bh.m)-lmin+1)/(lmax-lmin+1)*(h-80);
+      const y = h-40-hh;
+      const g = ctx.createLinearGradient(0,y,0,h-40);
+      g.addColorStop(0, colors[i]); g.addColorStop(1, colors[i]+'22');
+      ctx.fillStyle = g;
+      ctx.fillRect(x, y, bw*0.64, hh);
+      ctx.save();
+      ctx.translate(x+bw*0.32, h-26); ctx.rotate(0);
+      ctx.fillStyle = '#aab4d4'; ctx.textAlign = 'center'; ctx.font='10px Inter, sans-serif';
+      ctx.fillText(bh.name, 0, 0);
+      ctx.font = '10px JetBrains Mono, monospace'; ctx.fillStyle = colors[i];
+      ctx.fillText(bh.m>=1e6 ? bh.m.toExponential(1).replace('.',',') : fmt(bh.m), 0, 12);
+      ctx.restore(); ctx.textAlign='left';
+    });
+    ctx.fillStyle = '#6b7699'; ctx.font='10.5px Inter, sans-serif'; ctx.textAlign='center';
+    ctx.fillText('massas em escala logarítmica — cada linha de grade é um fator de 10', w/2, 14);
+    ctx.textAlign='left';
+  }
+};
+
+/* ---------- COMPARADOR DE TAMANHOS ---------- */
+const SZ = {
+  sel:3, scale:null, targetScale:null, offset:0, targetOffset:0, _raf:null,
+  init(){
+    const seg = $('#sz-seg');
+    SIZEOBJS.forEach((o,i)=>{
+      const b = document.createElement('button');
+      b.textContent = o.name;
+      b.addEventListener('click', ()=> this.select(i));
+      seg.appendChild(b);
+    });
+    this.select(3, true);
+  },
+  layout(scale, w, h){
+    // posições x com espaçamento proporcional ao tamanho na tela (mín. 26 px)
+    const xs = []; let x = 30;
+    SIZEOBJS.forEach(o=>{
+      const r = o.r_km*scale;
+      x += Math.max(r, 13);
+      xs.push(x);
+      x += Math.max(r, 13) + 26;
+    });
+    return xs;
+  },
+  select(i, instant){
+    this.sel = i;
+    $$('#sz-seg button').forEach((b,j)=> b.classList.toggle('on', j===i));
+    const cv = $('#sz-canvas');
+    const w = cv.parentElement.clientWidth || 900, h = 440;
+    const o = SIZEOBJS[i];
+    this.targetScale = (0.62*h/2) / o.r_km;
+    const xs = this.layout(this.targetScale, w, h);
+    this.targetOffset = xs[i] - w/2;
+    const info = $('#sz-info');
+    info.innerHTML = `<h3>${o.name}</h3>
+      <p class="panel-p">${o.info}</p>
+      <p class="panel-p mono" style="font-size:12px">raio = ${fmtKm(o.r_km)}${o.r_km>1e6 ? ' = '+(o.r_km/695700).toLocaleString('pt-BR',{maximumFractionDigits:0})+' R☉' : ''} · diâmetro/diâmetro da Lua = ${fmt(Math.round(o.r_km/1737.4))}×</p>`;
+    if (instant || this.scale==null){ this.scale = this.targetScale; this.offset = this.targetOffset; }
+    this.animate();
+  },
+  animate(){
+    cancelAnimationFrame(this._raf);
+    const step = ()=>{
+      // interpolação logarítmica para escala (transições suaves entre ordens de grandeza)
+      const ls = Math.log(this.scale), lt = Math.log(this.targetScale);
+      this.scale = Math.exp(ls + (lt-ls)*0.10);
+      this.offset += (this.targetOffset-this.offset)*0.10;
+      this.draw();
+      if (Math.abs(lt-Math.log(this.scale))>0.002 || Math.abs(this.targetOffset-this.offset)>0.5)
+        this._raf = requestAnimationFrame(step);
+      else { this.scale = this.targetScale; this.offset = this.targetOffset; this.draw(); }
+    };
+    this._raf = requestAnimationFrame(step);
+  },
+  draw(){
+    const cv = $('#sz-canvas'); if (!cv || !cv.parentElement.clientWidth) return;
+    const {ctx,w,h} = setupCanvas(cv, 440);
+    if (this.scale==null) return;
+    ctx.clearRect(0,0,w,h);
+    const baseY = h-64;
+    const xs = this.layout(this.scale, w, h);
+    ctx.strokeStyle = 'rgba(120,150,255,.15)';
+    ctx.beginPath(); ctx.moveTo(0,baseY); ctx.lineTo(w,baseY); ctx.stroke();
+    SIZEOBJS.forEach((o,i)=>{
+      const r = Math.max(o.r_km*this.scale, 0.4);
+      const x = xs[i]-this.offset;
+      if (x + r < -50 || x - r > w+50) return;
+      const cy = baseY - r;
+      const g = ctx.createRadialGradient(x-r*0.35, cy-r*0.35, r*0.1, x, cy, r);
+      g.addColorStop(0, o.color);
+      g.addColorStop(1, shade(o.color, -0.75));
+      ctx.beginPath(); ctx.arc(x, cy, r, 0, 7);
+      ctx.fillStyle = g; ctx.fill();
+      if (i===this.sel){ ctx.strokeStyle = '#4fd8eb'; ctx.lineWidth = 1.6; ctx.stroke(); }
+      ctx.fillStyle = i===this.sel ? '#e8ecf8' : '#6b7699';
+      ctx.font = (i===this.sel?'600 12.5px':'11px')+' Inter, sans-serif'; ctx.textAlign='center';
+      ctx.fillText(o.name, x, baseY+18);
+      ctx.font = '10px JetBrains Mono, monospace';
+      ctx.fillStyle = '#6b7699';
+      ctx.fillText(r<0.5? '<1 px' : fmt(Math.round(2*r))+' px', x, baseY+32);
+    });
+    ctx.textAlign='left';
+    $('#sz-note').style.display='';
+    $('#sz-note').textContent = `proporção real · 1 px = ${fmtKm(1/this.scale)}`;
+  }
+};
+function shade(hex, k){
+  const n = parseInt(hex.slice(1),16);
+  let r=(n>>16)&255,g=(n>>8)&255,b=n&255;
+  r=Math.round(r*(1+k)); g=Math.round(g*(1+k)); b=Math.round(b*(1+k));
+  return `rgb(${Math.max(0,r)},${Math.max(0,g)},${Math.max(0,b)})`;
+}
+
+/* ---------- CALENDÁRIO CÓSMICO ---------- */
+const CAL = {
+  d0:0, d1:365, drag:null,
+  dayOf(t){ return (1 - t/COSMIC_AGE)*365; },
+  init(){
+    const cv = $('#cal-canvas');
+    cv.addEventListener('wheel', e=>{
+      e.preventDefault();
+      const rect = cv.getBoundingClientRect();
+      const fx = (e.clientX-rect.left)/rect.width;
+      const span = this.d1-this.d0;
+      const k = e.deltaY>0 ? 1.18 : 1/1.18;
+      let ns = Math.min(365, Math.max(0.00005, span*k));
+      const pivot = this.d0 + fx*span;
+      this.d0 = Math.max(0, pivot - fx*ns);
+      this.d1 = Math.min(365, this.d0 + ns);
+      this.d0 = Math.max(0, this.d1 - ns);
+      this.draw();
+    }, {passive:false});
+    cv.addEventListener('pointerdown', e=>{ this.drag = {x:e.clientX, d0:this.d0, d1:this.d1}; cv.setPointerCapture(e.pointerId); });
+    cv.addEventListener('pointermove', e=>{
+      const rect = cv.getBoundingClientRect();
+      if (this.drag){
+        const dx = (e.clientX-this.drag.x)/rect.width * (this.drag.d1-this.drag.d0);
+        let d0 = this.drag.d0-dx, d1 = this.drag.d1-dx;
+        if (d0<0){ d1-=d0; d0=0; } if (d1>365){ d0-=d1-365; d1=365; }
+        this.d0=d0; this.d1=d1; this.draw();
+      } else this.hover(e.clientX-rect.left, e.clientY-rect.top);
+    });
+    cv.addEventListener('pointerup', ()=> this.drag=null);
+    cv.addEventListener('pointerleave', ()=>{ $('#cal-tooltip').style.display='none'; });
+    const list = $('#cal-list');
+    CAL_EVENTS.forEach(ev=>{
+      const d = document.createElement('div');
+      d.className='cal-ev';
+      const ago = ev.t>=1e9 ? (ev.t/1e9).toLocaleString('pt-BR',{maximumFractionDigits:2})+' bilhões de anos atrás'
+        : ev.t>=1e6 ? (ev.t/1e6).toLocaleString('pt-BR',{maximumFractionDigits:0})+' milhões de anos atrás'
+        : ev.t>=1 ? fmt(Math.round(ev.t))+' anos atrás' : 'agora';
+      d.innerHTML = `<div class="d">${ev.d}</div><div class="n">${ev.name}</div><div class="r">${ago}</div>`;
+      list.appendChild(d);
+    });
+  },
+  xOf(day,w){ return 20 + (day-this.d0)/(this.d1-this.d0)*(w-40); },
+  hover(mx,my){
+    const pts = this._pts||[];
+    const tip = $('#cal-tooltip');
+    let best=null, bd=18;
+    pts.forEach(p=>{ const dd=Math.hypot(mx-p.x,my-p.y); if (dd<bd){bd=dd;best=p;} });
+    if (best){
+      tip.style.display='block';
+      const wrap = $('#cal-canvas-wrap').getBoundingClientRect();
+      tip.style.left = Math.min(wrap.width-300, Math.max(6,best.x+12))+'px';
+      tip.style.top = (best.y+14)+'px';
+      tip.innerHTML = `<div class="ct-date">${best.ev.d}</div><div class="ct-name">${best.ev.name}</div><div class="ct-desc">${best.ev.desc}</div>`;
+    } else tip.style.display='none';
+  },
+  draw(){
+    const cv = $('#cal-canvas'); if (!cv || !cv.parentElement.clientWidth) return;
+    const {ctx,w,h} = setupCanvas(cv, 360);
+    ctx.clearRect(0,0,w,h);
+    const months = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+    const mdays = [31,28,31,30,31,30,31,31,30,31,30,31];
+    let acc=0;
+    ctx.textAlign='center';
+    for(let m=0;m<12;m++){
+      const x0=this.xOf(acc,w), x1=this.xOf(acc+mdays[m],w);
+      if (x1>0 && x0<w){
+        ctx.fillStyle = m%2? 'rgba(139,123,244,.05)':'rgba(79,216,235,.05)';
+        ctx.fillRect(x0, 40, x1-x0, h-110);
+        if (x1-x0 > 28){
+          ctx.fillStyle = '#6b7699'; ctx.font='11px Space Grotesk, sans-serif';
+          ctx.fillText(months[m], (Math.max(0,x0)+Math.min(w,x1))/2, 32);
+        }
+      }
+      acc += mdays[m];
+    }
+    // linha do tempo
+    const midY = h-64;
+    const grad = ctx.createLinearGradient(0,0,w,0);
+    grad.addColorStop(0,'#1c9fb5'); grad.addColorStop(1,'#a44fd0');
+    ctx.strokeStyle=grad; ctx.lineWidth=2.5;
+    ctx.beginPath(); ctx.moveTo(this.xOf(Math.max(0,this.d0),w), midY); ctx.lineTo(this.xOf(Math.min(365,this.d1),w), midY); ctx.stroke();
+    // eventos
+    this._pts = [];
+    ctx.font='11px Inter, sans-serif';
+    let lastX=-1e9, lane=0;
+    CAL_EVENTS.forEach(ev=>{
+      const day = this.dayOf(ev.t);
+      const x = this.xOf(day,w);
+      if (x<-30||x>w+30) return;
+      lane = (x-lastX < 90) ? (lane+1)%4 : 0;
+      lastX = x;
+      const y = midY - 34 - lane*54;
+      ctx.strokeStyle='rgba(150,170,220,.35)'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(x,midY); ctx.lineTo(x,y+12); ctx.stroke();
+      ctx.beginPath(); ctx.arc(x,midY,3.5,0,7);
+      ctx.fillStyle='#4fd8eb'; ctx.fill();
+      ctx.fillStyle='#e8ecf8'; ctx.font='600 11px Inter, sans-serif';
+      ctx.fillText(ev.name, x, y);
+      ctx.fillStyle='#6b7699'; ctx.font='9.5px JetBrains Mono, monospace';
+      ctx.fillText(ev.d, x, y+13);
+      this._pts.push({x, y:midY, ev});
+    });
+    // escala atual
+    const span = this.d1-this.d0;
+    const label = span>=365 ? 'ano inteiro — 1 dia ≈ 37,8 milhões de anos' :
+      span>=1 ? `janela de ${span.toLocaleString('pt-BR',{maximumFractionDigits:1})} dias` :
+      span*24>=1 ? `janela de ${(span*24).toLocaleString('pt-BR',{maximumFractionDigits:1})} horas cósmicas` :
+      `janela de ${(span*24*60).toLocaleString('pt-BR',{maximumFractionDigits:1})} minutos cósmicos (1 s ≈ 437 anos)`;
+    ctx.fillStyle='#6b7699'; ctx.font='11px Inter, sans-serif';
+    ctx.fillText(label + ' · role para dar zoom, arraste para navegar', w/2, h-14);
+    ctx.textAlign='left';
+  }
+};
+
+/* ---------- CONVERSOR DE DISTÂNCIAS ---------- */
+const CONV = {
+  objs:[
+    {n:'Terra (grão)', type:'size', v:1.2742e7, note:'diâmetro'},
+    {n:'Lua — distância da Terra', type:'dist', v:3.844e8},
+    {n:'Mercúrio', type:'dist', v:0.387*CONST.AU_M},
+    {n:'Vênus', type:'dist', v:0.723*CONST.AU_M},
+    {n:'Terra (órbita)', type:'dist', v:1.0*CONST.AU_M},
+    {n:'Marte', type:'dist', v:1.524*CONST.AU_M},
+    {n:'Júpiter', type:'dist', v:5.203*CONST.AU_M},
+    {n:'Saturno', type:'dist', v:9.537*CONST.AU_M},
+    {n:'Urano', type:'dist', v:19.191*CONST.AU_M},
+    {n:'Netuno', type:'dist', v:30.07*CONST.AU_M},
+    {n:'Cinturão de Kuiper (centro)', type:'dist', v:45*CONST.AU_M},
+    {n:'Heliopausa', type:'dist', v:120*CONST.AU_M},
+    {n:'Voyager 1', type:'dist', v:167*CONST.AU_M},
+    {n:'Nuvem de Oort (borda externa)', type:'dist', v:1e5*CONST.AU_M},
+    {n:'Proxima Centauri', type:'dist', v:4.2465*CONST.LY_M},
+    {n:'Sirius', type:'dist', v:8.66*CONST.LY_M},
+    {n:'Centro da Via Láctea', type:'dist', v:26670*CONST.LY_M},
+    {n:'Andrômeda (M31)', type:'dist', v:2.537e6*CONST.LY_M}
+  ],
+  refs:{
+    bc:[[30,'dentro de uma quadra de vôlei de praia'],[120,'o comprimento da Praia Central ainda nem começou'],[800,'um quarteirão da Av. Atlântica'],
+        [4000,'atravessar o centro de Balneário Camboriú'],[12000,'até Itajaí'],[90000,'até Florianópolis'],
+        [600000,'até Curitiba/São Paulo'],[2600000,'até Salvador'],[10000000,'até Lisboa (atravessando o Atlântico)'],
+        [19000000,'até Tóquio — o outro lado do planeta']],
+    sp:[[30,'dentro de uma sala de aula'],[120,'o vão livre do MASP'],[800,'alguns quarteirões da Paulista'],
+        [4000,'atravessar o centro de São Paulo'],[100000,'até Campinas'],[400000,'até o Rio de Janeiro'],
+        [1100000,'até Brasília'],[2900000,'até Manaus'],[8000000,'até Nova York'],[19000000,'até Tóquio — o outro lado do planeta']],
+    generic:[[30,'alguns passos'],[120,'um campo de futebol'],[800,'uma caminhada de 10 min'],[4000,'uma corrida leve'],
+        [12000,'uma cidade pequena'],[100000,'uma viagem de 1h de carro'],[600000,'uma viagem interestadual'],
+        [2900000,'atravessar o Brasil'],[10000000,'atravessar um oceano'],[19000000,'o outro lado do planeta']]
+  },
+  humanRef(m){
+    const city = $('#conv-city').value;
+    const table = this.refs[city] || this.refs.generic;
+    if (m <= 0.5) return 'na palma da mão';
+    for (const [max,label] of table){ if (m <= max*1.4) return label; }
+    if (m <= 4.0e7) return 'daria a volta na Terra';
+    if (m <= 4.5e8) return `${(m/3.844e8).toLocaleString('pt-BR',{maximumFractionDigits:1})}× a distância Terra–Lua`;
+    return 'nem cabe no sistema Terra–Lua: o modelo estoura o planeta';
+  },
+  fmtLen(m){
+    if (m < 0.001) return (m*1000).toLocaleString('pt-BR',{maximumFractionDigits:3})+' mm';
+    if (m < 0.01) return (m*1000).toLocaleString('pt-BR',{maximumFractionDigits:2})+' mm';
+    if (m < 1) return (m*100).toLocaleString('pt-BR',{maximumFractionDigits:1})+' cm';
+    if (m < 1000) return m.toLocaleString('pt-BR',{maximumFractionDigits:1})+' m';
+    if (m < 1e6) return (m/1000).toLocaleString('pt-BR',{maximumFractionDigits:1})+' km';
+    return fmt(Math.round(m/1000))+' km';
+  },
+  fmtReal(o){
+    if (o.type==='size') return fmt(Math.round(o.v/1000))+' km ('+o.note+')';
+    const m = o.v;
+    if (m < 1e10) return fmt(Math.round(m/1000))+' km';
+    if (m < 0.1*CONST.LY_M) return (m/CONST.AU_M).toLocaleString('pt-BR',{maximumFractionDigits:2})+' UA';
+    return (m/CONST.LY_M).toLocaleString('pt-BR',{maximumFractionDigits:2})+' anos-luz';
+  },
+  update(){
+    const preset = $('#conv-preset').value;
+    $('#conv-custom-wrap').style.display = preset==='custom' ? '' : 'none';
+    const Dcm = preset==='custom' ? Math.max(0.01, parseFloat($('#conv-custom').value)||22) : parseFloat(preset);
+    const s = (Dcm/100) / CONST.SUN_D_M;
+    const city = $('#conv-city').value;
+    const cityName = city==='bc' ? 'Balneário Camboriú' : city==='sp' ? 'na Av. Paulista' : 'no seu quintal';
+    const earthD = 1.2742e7*s, earthDist = CONST.AU_M*s, nept = 30.07*CONST.AU_M*s, prox = 4.2465*CONST.LY_M*s;
+    $('#conv-headline').innerHTML =
+      `Com o Sol medindo <b>${this.fmtLen(Dcm/100)}</b> ${cityName}: a Terra é um grão de <b>${this.fmtLen(earthD)}</b> a <b>${this.fmtLen(earthDist)}</b>, ` +
+      `Netuno fica a <b>${this.fmtLen(nept)}</b> (${this.humanRef(nept)}) e Proxima Centauri a <b>${this.fmtLen(prox)}</b> — ${this.humanRef(prox)}.`;
+    const tb = $('#conv-tbody');
+    tb.innerHTML = '';
+    this.objs.forEach(o=>{
+      const model = o.v*s;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${o.n}</td><td class="num">${this.fmtReal(o)}</td><td class="num">${this.fmtLen(model)}</td><td class="ref">${o.type==='size'? '—' : this.humanRef(model)}</td>`;
+      tb.appendChild(tr);
+    });
+  },
+  init(){
+    ['conv-preset','conv-city','conv-custom'].forEach(id=> $('#'+id).addEventListener('input', ()=>this.update()));
+    this.update();
+  }
+};
+</script>
+
+<script>
+'use strict';
+/* =====================================================================
+   VISUALIZAÇÕES 2D — mapas com pan/zoom e inércia
+   Diagramas de estrutura em escala real dentro de cada nível
+   ===================================================================== */
+
+function mulberry32(seed){
+  return function(){
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed>>>15, 1|seed);
+    t = t + Math.imul(t ^ t>>>7, 61|t) ^ t;
+    return ((t ^ t>>>14)>>>0)/4294967296;
+  };
+}
+
+/* pan/zoom com inércia sobre um canvas */
+class PanZoom {
+  constructor(canvas, drawFn, opts){
+    this.cv = canvas; this.drawFn = drawFn;
+    this.scale = (opts && opts.scale) || 1;
+    this.min = (opts && opts.min) || 1e-6;
+    this.max = (opts && opts.max) || 1e6;
+    this.tx = 0; this.ty = 0;
+    this.vx = 0; this.vy = 0;
+    this.dragging = false;
+    this._last = null; this._raf = null;
+    canvas.addEventListener('pointerdown', e=>{
+      this.dragging = true; this.vx = this.vy = 0;
+      this._last = {x:e.clientX, y:e.clientY, t:performance.now()};
+      canvas.setPointerCapture(e.pointerId);
+    });
+    canvas.addEventListener('pointermove', e=>{
+      if (!this.dragging) return;
+      const now = performance.now();
+      const dx = e.clientX-this._last.x, dy = e.clientY-this._last.y;
+      const dt = Math.max(1, now-this._last.t);
+      this.tx += dx; this.ty += dy;
+      this.vx = 0.8*this.vx + 0.2*(dx/dt*16);
+      this.vy = 0.8*this.vy + 0.2*(dy/dt*16);
+      this._last = {x:e.clientX, y:e.clientY, t:now};
+      this.request();
+    });
+    const end = ()=>{
+      if (!this.dragging) return;
+      this.dragging = false;
+      this.momentum();
+    };
+    canvas.addEventListener('pointerup', end);
+    canvas.addEventListener('pointercancel', end);
+    canvas.addEventListener('wheel', e=>{
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX-rect.left, my = e.clientY-rect.top;
+      const k = e.deltaY>0 ? 1/1.15 : 1.15;
+      const ns = Math.min(this.max, Math.max(this.min, this.scale*k));
+      const kk = ns/this.scale;
+      // zoom centrado no cursor
+      this.tx = mx - (mx-this.tx)*kk;
+      this.ty = my - (my-this.ty)*kk;
+      this.scale = ns;
+      this.request();
+    }, {passive:false});
+  }
+  momentum(){
+    const step = ()=>{
+      if (this.dragging) return;
+      this.vx *= 0.94; this.vy *= 0.94;
+      if (Math.abs(this.vx)<0.05 && Math.abs(this.vy)<0.05) return;
+      this.tx += this.vx; this.ty += this.vy;
+      this.request();
+      requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+  request(){
+    if (this._raf) return;
+    this._raf = requestAnimationFrame(()=>{ this._raf = null; this.drawFn(); });
+  }
+  center(w,h){ this.tx = w/2; this.ty = h/2; }
+  toScreen(x,y){ return [x*this.scale + this.tx, y*this.scale + this.ty]; }
+}
+
+const VIZ2D = {
+  mode:null, pz:null, ctx:null, w:0, h:0,
+  set(mode){
+    this.mode = mode;
+    this.resize(true);
+  },
+  resize(recenter){
+    const cv = $('#canvas2d');
+    const host = $('#viz-canvas2d');
+    if (!host.classList.contains('on') && !recenter) return;
+    const dpr = Math.min(2, window.devicePixelRatio||1);
+    const w = host.clientWidth || 800, h = host.clientHeight || 500;
+    cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr);
+    this.w = w; this.h = h;
+    this.ctx = cv.getContext('2d');
+    this.ctx.setTransform(dpr,0,0,dpr,0,0);
+    if (!this.pz){
+      this.pz = new PanZoom(cv, ()=>this.draw(), {min:0.02, max:400});
+    }
+    if (recenter && this.mode){
+      const conf = this.CONF[this.mode];
+      this.pz.scale = conf.scale0 * Math.min(w,h)/700;
+      this.pz.min = conf.min; this.pz.max = conf.max;
+      this.pz.center(w,h);
+    }
+    this.draw();
+  },
+  CONF:{
+    stars:{scale0:26, min:5, max:400},        // px por ano-luz
+    orionarm:{scale0:0.042, min:0.008, max:2},// px por al
+    localgroup:{scale0:0.115, min:0.02, max:8},  // px por kal
+    virgo:{scale0:5.4, min:1, max:100},       // px por Mal
+    laniakea:{scale0:1.05, min:0.2, max:20},  // px por Mal
+    web:{scale0:0.32, min:0.05, max:8}        // px por Mal
+  },
+  draw(){
+    if (!this.ctx || !this.mode) return;
+    const ctx = this.ctx, w = this.w, h = this.h;
+    ctx.clearRect(0,0,w,h);
+    this['draw_'+this.mode](ctx,w,h);
+    this.drawScaleRef(ctx,w,h);
+  },
+  drawScaleRef(ctx,w,h){
+    // régua dinâmica no canto
+    const unit = {stars:'al', orionarm:'al', localgroup:'mil al', virgo:'Mal', laniakea:'Mal', web:'Mal'}[this.mode];
+    const target = 120/this.pz.scale;
+    const pow = Math.pow(10, Math.floor(Math.log10(target)));
+    let nice = pow; for (const m of [1,2,5,10]) if (m*pow <= target) nice = m*pow;
+    const px = nice*this.pz.scale;
+    ctx.strokeStyle = '#4fd8eb'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(w-30-px, h-26); ctx.lineTo(w-30, h-26); ctx.stroke();
+    ctx.strokeStyle = 'rgba(79,216,235,.5)';
+    ctx.beginPath(); ctx.moveTo(w-30-px, h-31); ctx.lineTo(w-30-px, h-21);
+    ctx.moveTo(w-30, h-31); ctx.lineTo(w-30, h-21); ctx.stroke();
+    ctx.fillStyle = '#aab4d4'; ctx.font = '11px JetBrains Mono, monospace'; ctx.textAlign = 'center';
+    ctx.fillText(`${nice>=1000? fmt(nice) : nice.toLocaleString('pt-BR')} ${unit}`, w-30-px/2, h-36);
+    ctx.textAlign='left';
+  },
+  ring(ctx, r, label){
+    const [cx,cy] = this.pz.toScreen(0,0);
+    ctx.strokeStyle = 'rgba(120,150,255,.14)'; ctx.lineWidth = 1;
+    ctx.setLineDash([4,6]);
+    ctx.beginPath(); ctx.arc(cx,cy,r*this.pz.scale,0,7); ctx.stroke();
+    ctx.setLineDash([]);
+    if (label){
+      ctx.fillStyle = '#6b7699'; ctx.font = '10px JetBrains Mono, monospace';
+      ctx.fillText(label, cx + r*this.pz.scale*0.7071 + 4, cy - r*this.pz.scale*0.7071 - 4);
+    }
+  },
+  dot(ctx, x, y, r, color, glow){
+    const [sx,sy] = this.pz.toScreen(x,y);
+    if (sx<-60||sx>this.w+60||sy<-60||sy>this.h+60) return [sx,sy,false];
+    if (glow){
+      const g = ctx.createRadialGradient(sx,sy,0,sx,sy,r*3.2);
+      g.addColorStop(0,color); g.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(sx,sy,r*3.2,0,7); ctx.fill();
+    }
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(sx,sy,r,0,7); ctx.fill();
+    return [sx,sy,true];
+  },
+  label(ctx, sx, sy, text, sub, dim){
+    ctx.font = '600 11.5px Inter, sans-serif';
+    ctx.fillStyle = dim? '#6b7699' : '#e8ecf8';
+    ctx.fillText(text, sx+9, sy-3);
+    if (sub){
+      ctx.font = '9.5px JetBrains Mono, monospace';
+      ctx.fillStyle = '#6b7699';
+      ctx.fillText(sub, sx+9, sy+9);
+    }
+  },
+
+  /* --- NÍVEL 3: vizinhança estelar (distâncias reais, direções aproximadas) --- */
+  STARS:[
+    {n:'Sol', d:0, ang:0, c:'#ffd27a', r:5},
+    {n:'Proxima Centauri', d:4.2465, ang:215, c:'#ff8d6b', r:2.2, sub:'4,25 al'},
+    {n:'Alpha Centauri A/B', d:4.37, ang:219, c:'#ffe9b0', r:3.4, sub:'4,37 al'},
+    {n:'Estrela de Barnard', d:5.96, ang:100, c:'#ff9d7a', r:2.2, sub:'5,96 al'},
+    {n:'Wolf 359', d:7.86, ang:160, c:'#ff8d6b', r:2, sub:'7,86 al'},
+    {n:'Lalande 21185', d:8.31, ang:140, c:'#ffa98a', r:2.1, sub:'8,31 al'},
+    {n:'Sirius A/B', d:8.66, ang:285, c:'#cfe4ff', r:3.8, sub:'8,66 al'},
+    {n:'Luyten 726-8', d:8.79, ang:330, c:'#ff8d6b', r:2, sub:'8,79 al'},
+    {n:'Ross 154', d:9.70, ang:75, c:'#ff8d6b', r:2, sub:'9,70 al'},
+    {n:'Epsilon Eridani', d:10.45, ang:305, c:'#ffc98a', r:2.6, sub:'10,45 al'},
+    {n:'Procyon A/B', d:11.46, ang:265, c:'#f2ecd8', r:3.2, sub:'11,46 al'},
+    {n:'Tau Ceti', d:11.90, ang:345, c:'#ffe2a8', r:2.6, sub:'11,90 al'}
+  ],
+  draw_stars(ctx,w,h){
+    [5,10,15].forEach(r=> this.ring(ctx, r, r+' al'));
+    // Bolha Local (borda a ~150 al — só aparece afastando bastante o zoom)
+    const [cx,cy] = this.pz.toScreen(0,0);
+    ctx.strokeStyle = 'rgba(139,123,244,.25)'; ctx.lineWidth = 2; ctx.setLineDash([10,8]);
+    ctx.beginPath(); ctx.ellipse(cx,cy,150*this.pz.scale,125*this.pz.scale, 0.5, 0, 7); ctx.stroke();
+    ctx.setLineDash([]);
+    if (150*this.pz.scale < Math.max(w,h)){
+      ctx.fillStyle = 'rgba(139,123,244,.7)'; ctx.font='11px Inter, sans-serif';
+      ctx.fillText('Bolha Local (~300 al de diâmetro)', cx + 106*this.pz.scale*0.7, cy - 106*this.pz.scale*0.7);
+    }
+    this.STARS.forEach(s=>{
+      const a = s.ang*Math.PI/180;
+      const x = Math.cos(a)*s.d, y = Math.sin(a)*s.d;
+      const [sx,sy,vis] = this.dot(ctx, x, y, s.r, s.c, true);
+      if (vis) this.label(ctx, sx, sy, s.n, s.sub, false);
+    });
+    ctx.fillStyle = '#6b7699'; ctx.font='10.5px Inter, sans-serif';
+    ctx.fillText('projeção 2D: distâncias ao Sol em escala real; direções aproximadas (projetadas no plano)', 14, h-14);
+  },
+
+  /* --- NÍVEL 4: braço de Órion (top-down, unidades em al) --- */
+  draw_orionarm(ctx,w,h){
+    const S = this.pz.scale;
+    // arcos dos braços: círculos centrados no centro galáctico (a ~26.670 al "abaixo")
+    const GC = 26670; // al
+    const arms = [
+      {r:GC-6500, w:2600, c:'rgba(240,180,92,.16)', n:'Braço de Sagitário–Carina', lr:GC-6500},
+      {r:GC-300, w:1750, c:'rgba(79,216,235,.16)', n:'Braço de Órion (nós)', lr:GC-300},
+      {r:GC+6800, w:3000, c:'rgba(139,123,244,.16)', n:'Braço de Perseu', lr:GC+6800}
+    ];
+    const [gx,gy] = this.pz.toScreen(0, GC);
+    arms.forEach(a=>{
+      ctx.strokeStyle = a.c; ctx.lineWidth = Math.max(2, a.w*S);
+      ctx.beginPath(); ctx.arc(gx, gy, a.r*S, Math.PI*1.28, Math.PI*1.72); ctx.stroke();
+      const ang = Math.PI*1.30;
+      const lx = gx + Math.cos(ang)*a.lr*S, ly = gy + Math.sin(ang)*a.lr*S;
+      ctx.fillStyle = a.c.replace('.16','.85');
+      ctx.font = '600 12px Inter, sans-serif';
+      ctx.fillText(a.n, lx, ly);
+    });
+    // objetos (posições aproximadas em torno do Sol, distâncias reais)
+    const objs = [
+      {n:'Sol', x:0, y:0, c:'#ffd27a', r:4.5, sub:''},
+      {n:'Plêiades (M45)', x:-320, y:310, c:'#bfd9ff', r:3, sub:'444 al'},
+      {n:'Nebulosa de Órion (M42)', x:220, y:1326, c:'#ff9ad0', r:4, sub:'1.344 al'},
+      {n:'Complexo Orion OB1', x:420, y:1240, c:'rgba(255,154,208,.5)', r:8, sub:''},
+      {n:'Nebulosa de Carina (NGC 3372)', x:-6900, y:-2900, c:'#ffb08a', r:5, sub:'~7.500 al · braço de Sagitário–Carina'},
+      {n:'Nebulosa Roseta', x:1900, y:4800, c:'#ff9ad0', r:3.5, sub:'~5.200 al'},
+      {n:'Deneb / Cygnus X', x:-1400, y:-800, c:'#cfe4ff', r:3.5, sub:'~1.400 al'}
+    ];
+    objs.forEach(o=>{
+      const [sx,sy,vis] = this.dot(ctx, o.x, o.y, o.r, o.c, true);
+      if (vis) this.label(ctx, sx, sy, o.n, o.sub);
+    });
+    [1000,5000,10000].forEach(r=> this.ring(ctx, r, fmt(r)+' al'));
+    ctx.fillStyle = '#6b7699'; ctx.font='10.5px Inter, sans-serif';
+    ctx.fillText('vista de cima do plano galáctico · centro da galáxia para baixo · distâncias em escala real, posições angulares aproximadas', 14, h-14);
+  },
+
+  /* --- NÍVEL 6: Grupo Local (unidades: milhares de al) --- */
+  LG:[
+    {n:'Via Láctea', x:0, y:0, c:'#4fd8eb', r:7, sub:'nós', spiral:true},
+    {n:'Grande Nuvem de Magalhães', x:-90, y:136, c:'#9ad4ff', r:3, sub:'163 mil al'},
+    {n:'Pequena Nuvem de Magalhães', x:-150, y:132, c:'#9ad4ff', r:2.4, sub:'~200 mil al'},
+    {n:'Anã de Sagitário', x:50, y:-49, c:'#8b96b8', r:2, sub:'70 mil al'},
+    {n:'Andrômeda (M31)', x:1500, y:-2046, c:'#c9b8ff', r:9, sub:'2,54 milhões de al', spiral:true},
+    {n:'Triângulo (M33)', x:2100, y:-1745, c:'#a9c4ff', r:5, sub:'2,73 milhões de al'},
+    {n:'NGC 6822', x:-1400, y:800, c:'#8b96b8', r:2.6, sub:'1,63 milhão de al'},
+    {n:'IC 1613', x:2200, y:-800, c:'#8b96b8', r:2.4, sub:'2,38 milhões de al'},
+    {n:'Leo A', x:-1900, y:-1700, c:'#8b96b8', r:2.2, sub:'2,60 milhões de al'},
+    {n:'WLM', x:1100, y:2700, c:'#8b96b8', r:2.4, sub:'3,04 milhões de al'}
+  ],
+  draw_localgroup(ctx,w,h){
+    [1000,2000,3000].forEach(r=> this.ring(ctx, r, (r/1000).toLocaleString('pt-BR')+' Mal'));
+    // seta de aproximação M31 -> VL
+    const m31 = this.LG[4];
+    const [ax,ay] = this.pz.toScreen(m31.x, m31.y);
+    const [bx,by] = this.pz.toScreen(0,0);
+    const t = 0.28;
+    ctx.strokeStyle = 'rgba(240,122,122,.6)'; ctx.lineWidth = 1.6; ctx.setLineDash([6,5]);
+    ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(ax+(bx-ax)*t, ay+(by-ay)*t); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(240,122,122,.85)'; ctx.font='10.5px Inter, sans-serif';
+    ctx.fillText('aproximação ~110 km/s → colisão em ~4,5 bilhões de anos', ax+(bx-ax)*t*0.5, ay+(by-ay)*t*0.5 - 8);
+    this.LG.forEach(g=>{
+      const [sx,sy,vis] = this.dot(ctx, g.x, g.y, g.r, g.c, true);
+      if (vis){
+        if (g.spiral){
+          ctx.strokeStyle = g.c; ctx.lineWidth = 1; ctx.globalAlpha = 0.5;
+          ctx.beginPath(); ctx.ellipse(sx, sy, g.r*2.6, g.r*1.1, 0.6, 0, 7); ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
+        this.label(ctx, sx, sy, g.n, g.sub);
+      }
+    });
+    ctx.fillStyle = '#6b7699'; ctx.font='10.5px Inter, sans-serif';
+    ctx.fillText('distâncias à Via Láctea em escala real; posições angulares aproximadas (projeção 2D)', 14, h-14);
+  },
+
+  /* --- NÍVEL 7: Superaglomerado de Virgem (unidades: Mal) --- */
+  draw_virgo(ctx,w,h){
+    [20,40,60].forEach(r=> this.ring(ctx, r, r+' Mal'));
+    const rng = mulberry32(42);
+    // nuvem de galáxias do aglomerado de Virgem
+    const VX = 12, VY = -52.4; // ~53,8 Mal
+    for(let i=0;i<160;i++){
+      const a = rng()*7, rr = Math.pow(rng(),0.6)*7;
+      this.dot(ctx, VX+Math.cos(a)*rr, VY+Math.sin(a)*rr*0.85, 1+rng()*1.4, 'rgba(201,184,255,.55)');
+    }
+    const objs = [
+      {n:'Grupo Local (nós)', x:0, y:0, c:'#4fd8eb', r:5, sub:''},
+      {n:'Aglomerado de Virgem', x:VX, y:VY, c:'#c9b8ff', r:7, sub:'53,8 Mal · 1.300–2.000 galáxias'},
+      {n:'M87 (e M87*)', x:VX+1.5, y:VY+1.2, c:'#ffd27a', r:3.4, sub:'53,5 Mal'},
+      {n:'Aglomerado de Fornax', x:-20, y:59, c:'#a9c4ff', r:4.5, sub:'~62 Mal'},
+      {n:'Nuvem de Ursa Maior', x:-42, y:-38, c:'#8b96b8', r:4, sub:'~55 Mal'},
+      {n:'Grupo M81', x:-11, y:-10.5, c:'#8b96b8', r:2.8, sub:'~12 Mal'},
+      {n:'Grupo Centaurus A', x:9, y:11, c:'#8b96b8', r:2.8, sub:'~12 Mal'}
+    ];
+    objs.forEach(o=>{
+      const [sx,sy,vis] = this.dot(ctx, o.x, o.y, o.r, o.c, true);
+      if (vis) this.label(ctx, sx, sy, o.n, o.sub);
+    });
+    // seta de queda em direção a Virgem
+    const [lx,ly] = this.pz.toScreen(0,0);
+    const [vx2,vy2] = this.pz.toScreen(VX*0.35, VY*0.35);
+    ctx.strokeStyle='rgba(79,216,235,.55)'; ctx.lineWidth=1.6; ctx.setLineDash([5,5]);
+    ctx.beginPath(); ctx.moveTo(lx,ly); ctx.lineTo(vx2,vy2); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle='rgba(79,216,235,.85)'; ctx.font='10.5px Inter, sans-serif';
+    ctx.fillText('virgocentric infall: ~200–300 km/s', (lx+vx2)/2+8, (ly+vy2)/2);
+    ctx.fillStyle = '#6b7699';
+    ctx.fillText('o Grupo Local fica na periferia — todo o nível 6 cabe no ponto ciano', 14, h-14);
+  },
+
+  /* --- NÍVEL 8: Laniakea — fluxos para o Grande Atrator (unidades: Mal) --- */
+  draw_laniakea(ctx,w,h){
+    const GA = {x:-95, y:-190};   // Grande Atrator ~210 Mal (150–250 Mal)
+    const rng = mulberry32(7);
+    // linhas de fluxo: galáxias escorrendo para o GA
+    for(let i=0;i<230;i++){
+      let x = (rng()-0.5)*560, y = (rng()-0.5)*560;
+      const boundary = (x*0.55 + y*-0.35) > 235; // divisor com Perseus-Pisces
+      ctx.beginPath();
+      let [sx,sy] = this.pz.toScreen(x,y);
+      ctx.moveTo(sx,sy);
+      for(let s2=0;s2<26;s2++){
+        const tgt = boundary ? {x:330, y:210} : GA;
+        const dx = tgt.x-x, dy = tgt.y-y;
+        const dd = Math.hypot(dx,dy)+8;
+        x += dx/dd*7 + (rng()-0.5)*2.2;
+        y += dy/dd*7 + (rng()-0.5)*2.2;
+        const p = this.pz.toScreen(x,y);
+        ctx.lineTo(p[0],p[1]);
+        if (dd<16) break;
+      }
+      ctx.strokeStyle = boundary ? 'rgba(240,122,122,.14)' : 'rgba(79,216,235,.15)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+    // fronteira (divisor de águas)
+    ctx.strokeStyle = 'rgba(240,180,92,.5)'; ctx.lineWidth = 2; ctx.setLineDash([12,9]);
+    const b0 = this.pz.toScreen(160,-290), b1 = this.pz.toScreen(330,90), b2 = this.pz.toScreen(260,330);
+    ctx.beginPath(); ctx.moveTo(b0[0],b0[1]); ctx.quadraticCurveTo(b1[0],b1[1],b2[0],b2[1]); ctx.stroke();
+    ctx.setLineDash([]);
+    const marks = [
+      {n:'Grande Atrator', x:GA.x, y:GA.y, c:'#f0b45c', r:9, sub:'~150–250 Mal (Zona de Obscurecimento)'},
+      {n:'Superaglomerado de Virgem (nós)', x:0, y:0, c:'#4fd8eb', r:5.5, sub:'todo o nível 7 cabe aqui'},
+      {n:'Hidra–Centauro', x:-60, y:-120, c:'#c9b8ff', r:5, sub:''},
+      {n:'Pavo–Indus', x:-40, y:150, c:'#c9b8ff', r:4.5, sub:''},
+      {n:'→ Shapley (mais além)', x:-190, y:-262, c:'#8b96b8', r:4, sub:'~650 Mal'},
+      {n:'Perseus–Pisces (bacia vizinha)', x:295, y:185, c:'#f07a7a', r:5.5, sub:'fluxos divergem na fronteira'}
+    ];
+    marks.forEach(o=>{
+      const [sx,sy,vis] = this.dot(ctx, o.x, o.y, o.r, o.c, true);
+      if (vis) this.label(ctx, sx, sy, o.n, o.sub);
+    });
+    const bl = this.pz.toScreen(285,-40);
+    ctx.fillStyle = 'rgba(240,180,92,.85)'; ctx.font='10.5px Inter, sans-serif';
+    ctx.fillText('fronteira de Laniakea', bl[0]-60, bl[1]);
+    ctx.fillStyle = '#6b7699';
+    ctx.fillText('linhas = fluxos de velocidade peculiar (Tully et al. 2014) · diâmetro total ~520 Mal', 14, h-14);
+  },
+
+  /* --- NÍVEL 9: teia cósmica (unidades: Mal) --- */
+  _web:null,
+  buildWeb(){
+    const rng = mulberry32(2024);
+    const nodes = [];
+    for(let i=0;i<90;i++){
+      nodes.push({x:(rng()-0.5)*2600, y:(rng()-0.5)*2600});
+    }
+    // vazios: empurra nós para fora de círculos
+    const voids = [
+      {x:150, y:-260, r:165, n:'Void de Boötes (~330 Mal)'},
+      {x:-700, y:300, r:230, n:''},
+      {x:600, y:550, r:200, n:''},
+      {x:-350, y:-700, r:180, n:''},
+      {x:900, y:-500, r:210, n:''},
+      {x:-100, y:850, r:190, n:''},
+      {x:-1000, y:-300, r:200, n:''}
+    ];
+    nodes.forEach(nd=>{
+      voids.forEach(v=>{
+        const dx = nd.x-v.x, dy = nd.y-v.y, dd = Math.hypot(dx,dy);
+        if (dd < v.r){ const k = (v.r+22)/(dd+1); nd.x = v.x+dx*k; nd.y = v.y+dy*k; }
+      });
+    });
+    // arestas: vizinhos próximos
+    const edges = [];
+    for(let i=0;i<nodes.length;i++){
+      const cand = [];
+      for(let j=0;j<nodes.length;j++){
+        if (i===j) continue;
+        const d = Math.hypot(nodes[i].x-nodes[j].x, nodes[i].y-nodes[j].y);
+        cand.push([d,j]);
+      }
+      cand.sort((a,b)=>a[0]-b[0]);
+      for(let k2=0;k2<3;k2++){
+        const j = cand[k2][1];
+        if (cand[k2][0] < 620 && !edges.some(e=>(e[0]===j&&e[1]===i)))
+          edges.push([i,j]);
+      }
+    }
+    // galáxias ao longo das arestas
+    const gals = [];
+    edges.forEach(([i,j])=>{
+      const n1 = nodes[i], n2 = nodes[j];
+      const num = 26;
+      for(let k2=0;k2<num;k2++){
+        const t = rng();
+        const jx = (rng()-0.5)*36, jy = (rng()-0.5)*36;
+        gals.push({x:n1.x+(n2.x-n1.x)*t+jx, y:n1.y+(n2.y-n1.y)*t+jy, s:rng()});
+      }
+    });
+    this._web = {nodes, edges, gals, voids};
+  },
+  draw_web(ctx,w,h){
+    if (!this._web) this.buildWeb();
+    const {nodes, edges, gals, voids} = this._web;
+    // filamentos (brilho difuso)
+    edges.forEach(([i,j])=>{
+      const a = this.pz.toScreen(nodes[i].x, nodes[i].y);
+      const b = this.pz.toScreen(nodes[j].x, nodes[j].y);
+      ctx.strokeStyle = 'rgba(90,120,220,.10)';
+      ctx.lineWidth = Math.max(2, 9*this.pz.scale);
+      ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke();
+    });
+    gals.forEach(g=>{
+      const [sx,sy] = this.pz.toScreen(g.x,g.y);
+      if (sx<-10||sx>w+10||sy<-10||sy>h+10) return;
+      ctx.fillStyle = g.s>0.93 ? 'rgba(255,220,170,.9)' : `rgba(160,190,255,${0.25+g.s*0.5})`;
+      const r = g.s>0.93? 1.6 : 0.9;
+      ctx.fillRect(sx-r/2, sy-r/2, r, r);
+    });
+    // nós = aglomerados
+    nodes.forEach((nd,i)=>{
+      if (i%4) return;
+      this.dot(ctx, nd.x, nd.y, 2.6, 'rgba(255,235,200,.75)', true);
+    });
+    // vazio de Boötes
+    const v = voids[0];
+    const [vx2,vy2] = this.pz.toScreen(v.x,v.y);
+    ctx.strokeStyle = 'rgba(240,180,92,.4)'; ctx.setLineDash([8,8]); ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.arc(vx2,vy2, v.r*this.pz.scale, 0, 7); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle='rgba(240,180,92,.9)'; ctx.font='600 12px Inter, sans-serif'; ctx.textAlign='center';
+    ctx.fillText(v.n, vx2, vy2);
+    ctx.font='10px Inter, sans-serif'; ctx.fillStyle='#6b7699';
+    ctx.fillText('~60 galáxias onde caberiam milhares', vx2, vy2+16);
+    ctx.textAlign='left';
+    // posição da nossa região
+    const [hx,hy] = this.pz.toScreen(-320,120);
+    ctx.fillStyle='#4fd8eb';
+    ctx.beginPath(); ctx.arc(hx,hy,4,0,7); ctx.fill();
+    this.label(ctx,hx,hy,'Laniakea (nós)','~520 Mal — um nó da teia');
+    ctx.fillStyle = '#6b7699'; ctx.font='10.5px Inter, sans-serif';
+    ctx.fillText('diagrama em escala: filamentos típicos de 160–260 Mal; vazios dominam ~80% do volume', 14, h-14);
+  }
+};
+</script>
+
+<script>
+'use strict';
+/* =====================================================================
+   3D — Sistema Solar e Via Láctea (Three.js r128)
+   Carregamento: cdnjs com fallback para o build oficial (raw.githubusercontent).
+   Controles orbitais implementados manualmente (r128 não inclui OrbitControls).
+   ===================================================================== */
+
+let THREE_READY = false;
+const THREE_QUEUE = [];
+(function loadThree(){
+  const urls = [
+    'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js',
+    'https://raw.githubusercontent.com/mrdoob/three.js/r128/build/three.min.js'
+  ];
+  let i = 0;
+  function tryNext(){
+    if (i >= urls.length){
+      console.warn('Three.js indisponível — visualizações 3D desativadas; demais módulos seguem funcionais.');
+      return;
+    }
+    const s = document.createElement('script');
+    s.src = urls[i++];
+    s.onload = ()=>{ THREE_READY = true; THREE_QUEUE.splice(0).forEach(fn=>fn()); };
+    s.onerror = ()=>{ s.remove(); tryNext(); };
+    document.head.appendChild(s);
+  }
+  tryNext();
+})();
+function whenThree(fn){ if (THREE_READY) fn(); else THREE_QUEUE.push(fn); }
+
+/* controles orbitais com inércia (arrastar = orbitar, roda = zoom, shift = pan) */
+class SimpleOrbit {
+  constructor(camera, dom, opts){
+    this.cam = camera; this.dom = dom;
+    this.target = (opts && opts.target) || new THREE.Vector3();
+    this.minR = (opts && opts.minR) || 1;
+    this.maxR = (opts && opts.maxR) || 500;
+    const off = camera.position.clone().sub(this.target);
+    this.radius = off.length();
+    this.theta = Math.atan2(off.x, off.z);
+    this.phi = Math.acos(Math.min(1,Math.max(-1,off.y/this.radius)));
+    this.vTheta = 0; this.vPhi = 0;
+    this.drag = null;
+    dom.addEventListener('pointerdown', e=>{
+      this.drag = {x:e.clientX, y:e.clientY, pan:e.shiftKey};
+      dom.setPointerCapture(e.pointerId);
+    });
+    dom.addEventListener('pointermove', e=>{
+      if (!this.drag) return;
+      const dx = e.clientX-this.drag.x, dy = e.clientY-this.drag.y;
+      this.drag.x = e.clientX; this.drag.y = e.clientY;
+      if (this.drag.pan){
+        const s = this.radius*0.0012;
+        const right = new THREE.Vector3().setFromMatrixColumn(this.cam.matrix,0).multiplyScalar(-dx*s);
+        const up = new THREE.Vector3().setFromMatrixColumn(this.cam.matrix,1).multiplyScalar(dy*s);
+        this.target.add(right).add(up);
+      } else {
+        this.vTheta = -dx*0.006; this.vPhi = -dy*0.006;
+        this.theta += this.vTheta; this.phi += this.vPhi;
+      }
+    });
+    const end = ()=>{ this.drag = null; };
+    dom.addEventListener('pointerup', end);
+    dom.addEventListener('pointercancel', end);
+    dom.addEventListener('wheel', e=>{
+      e.preventDefault();
+      this.radius *= (e.deltaY>0 ? 1.12 : 1/1.12);
+      this.radius = Math.min(this.maxR, Math.max(this.minR, this.radius));
+    }, {passive:false});
+  }
+  update(){
+    if (!this.drag){ // inércia
+      this.theta += this.vTheta; this.phi += this.vPhi;
+      this.vTheta *= 0.92; this.vPhi *= 0.92;
+    }
+    this.phi = Math.min(Math.PI-0.05, Math.max(0.05, this.phi));
+    const sp = Math.sin(this.phi);
+    this.cam.position.set(
+      this.target.x + this.radius*sp*Math.sin(this.theta),
+      this.target.y + this.radius*Math.cos(this.phi),
+      this.target.z + this.radius*sp*Math.cos(this.theta)
+    );
+    this.cam.lookAt(this.target);
+  }
+}
+
+function makeLabel(host, text, cls){
+  const el = document.createElement('span');
+  el.textContent = text;
+  el.style.cssText = 'position:absolute;font:600 11px Inter,sans-serif;color:#cfe0ff;text-shadow:0 1px 6px #000;pointer-events:none;white-space:nowrap;transform:translate(-50%,-140%);'+(cls||'');
+  host.appendChild(el);
+  return el;
+}
+function projectLabel(el, pos, camera, w, h){
+  const v = pos.clone().project(camera);
+  if (v.z > 1 || v.x<-1.15 || v.x>1.15 || v.y<-1.15 || v.y>1.15){ el.style.display='none'; return; }
+  el.style.display='block';
+  el.style.left = ((v.x+1)/2*w)+'px';
+  el.style.top = ((1-v.y)/2*h)+'px';
+}
+
+/* ---------------- SISTEMA SOLAR 3D ---------------- */
+const SOLAR = {
+  ready:false, mode:'visual', speed:8, t:0, _labels:[],
+  ensure(){ whenThree(()=>{ if (!this.ready) this.init(); }); },
+  rOf(a){ return this.mode==='visual' ? 18*Math.log10(1+a*3) : a*1.2; },
+  planetR(p){
+    if (this.mode==='real') return p.r_km/1.495978707e8*1.2;
+    return Math.max(0.5, 1.5*Math.log10(p.r_km/2000));
+  },
+  sunR(){ return this.mode==='real' ? 695700/1.495978707e8*1.2 : 3.0; },
+  init(){
+    this.ready = true;
+    const host = $('#viz-solar');
+    host.innerHTML = '';
+    const w = host.clientWidth||800, h = host.clientHeight||520;
+    this.renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+    this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio||1));
+    this.renderer.setSize(w,h);
+    this.renderer.outputEncoding = THREE.sRGBEncoding;
+    host.appendChild(this.renderer.domElement);
+    this.labelHost = document.createElement('div');
+    this.labelHost.style.cssText = 'position:absolute;inset:0;pointer-events:none;overflow:hidden';
+    host.appendChild(this.labelHost);
+    this.scene = new THREE.Scene();
+    this.camera = new THREE.PerspectiveCamera(55, w/h, 0.01, 4000);
+    this.camera.position.set(0, 26, 44);
+    this.orbit = new SimpleOrbit(this.camera, this.renderer.domElement, {minR:2, maxR:900});
+    this.scene.add(new THREE.AmbientLight(0x334, 0.9));
+    const sunLight = new THREE.PointLight(0xfff2dd, 1.6, 0, 2);
+    this.scene.add(sunLight);
+
+    const loader = new THREE.TextureLoader();
+    loader.setCrossOrigin('anonymous');
+    const tex = name => {
+      const t = loader.load(TEX.base + name);
+      t.encoding = THREE.sRGBEncoding;
+      return t;
+    };
+
+    // Sol — textura real (mapa SDO reprocessado)
+    this.sun = new THREE.Mesh(
+      new THREE.SphereGeometry(1, 48, 32),
+      new THREE.MeshBasicMaterial({map: tex(TEX.sun)})
+    );
+    this.scene.add(this.sun);
+    const glow = new THREE.Mesh(
+      new THREE.SphereGeometry(1.25, 32, 24),
+      new THREE.MeshBasicMaterial({color:0xffcc66, transparent:true, opacity:0.16, side:THREE.BackSide})
+    );
+    this.sun.add(glow);
+    this._labels.push({el:makeLabel(this.labelHost,'Sol'), obj:this.sun});
+
+    // planetas com texturas reais
+    this.planets = PLANETS.map(p=>{
+      const m = new THREE.Mesh(
+        new THREE.SphereGeometry(1, 40, 26),
+        new THREE.MeshLambertMaterial({map: tex(TEX[p.tex])})
+      );
+      m.userData = p;
+      if (p.ring){
+        const rg = new THREE.RingGeometry(1.24, 2.27, 96);
+        // uv radial para a textura do anel
+        const pos = rg.attributes.position, uv = rg.attributes.uv;
+        for (let i=0;i<pos.count;i++){
+          const r = Math.hypot(pos.getX(i), pos.getY(i));
+          uv.setXY(i, (r-1.24)/(2.27-1.24), 0.5);
+        }
+        const ring = new THREE.Mesh(rg, new THREE.MeshBasicMaterial({
+          map: tex(TEX.saturnring), side:THREE.DoubleSide, transparent:true, opacity:0.88
+        }));
+        ring.rotation.x = Math.PI/2 - 0.47;
+        m.add(ring);
+      }
+      this.scene.add(m);
+      this._labels.push({el:makeLabel(this.labelHost, p.name), obj:m});
+      p.phase = Math.random()*Math.PI*2;
+      return m;
+    });
+
+    // marcadores em modo real (planetas < 1 px)
+    const mg = new THREE.BufferGeometry();
+    mg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(PLANETS.length*3),3));
+    this.markers = new THREE.Points(mg, new THREE.PointsMaterial({color:0x9fd8ff, size:5, sizeAttenuation:false, transparent:true, opacity:0.95}));
+    this.markers.visible = false;
+    this.scene.add(this.markers);
+
+    // órbitas
+    this.orbitLines = PLANETS.map(p=>{
+      const line = new THREE.LineLoop(new THREE.BufferGeometry(),
+        new THREE.LineBasicMaterial({color:0x3d5a9e, transparent:true, opacity:0.55}));
+      this.scene.add(line);
+      return line;
+    });
+
+    // cinturão de asteroides e Kuiper (a real + ângulo fixo por partícula)
+    const rng = mulberry32(99);
+    this.beltData = [];
+    for(let i=0;i<1400;i++) this.beltData.push({a:2.2+rng()*1.0, th:rng()*Math.PI*2, z:(rng()-0.5)*0.35});
+    this.kuiperData = [];
+    for(let i=0;i<1800;i++) this.kuiperData.push({a:30+rng()*20, th:rng()*Math.PI*2, z:(rng()-0.5)*2.4});
+    const mkPts = (n,color,size)=>{
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n*3),3));
+      const pts = new THREE.Points(g, new THREE.PointsMaterial({color, size, sizeAttenuation:false, transparent:true, opacity:0.5}));
+      this.scene.add(pts); return pts;
+    };
+    this.belt = mkPts(this.beltData.length, 0x8a7f6a, 1.6);
+    this.kuiper = mkPts(this.kuiperData.length, 0x6a8fd8, 1.6);
+
+    // heliopausa
+    this.helio = new THREE.LineLoop(new THREE.BufferGeometry(),
+      new THREE.LineBasicMaterial({color:0xf0b45c, transparent:true, opacity:0.5}));
+    this.scene.add(this.helio);
+    this.helioLabel = makeLabel(this.labelHost, 'heliopausa ~120 UA', 'color:#f0b45c;font-weight:400;font-size:10px');
+
+    // Voyagers (posições aproximadas em jul/2026)
+    this.voyagers = [
+      {name:'Voyager 1 · ~167 UA', a:167.5, th:0.61, y:0.35},
+      {name:'Voyager 2 · ~140 UA', a:140.1, th:3.85, y:-0.30}
+    ].map(v=>{
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(new Float32Array([0,0,0]),3));
+      const pt = new THREE.Points(g, new THREE.PointsMaterial({color:0x4fe0a3, size:6, sizeAttenuation:false}));
+      pt.userData = v;
+      this.scene.add(pt);
+      this._labels.push({el:makeLabel(this.labelHost, v.name, 'color:#4fe0a3;font-size:10px'), obj:pt});
+      return pt;
+    });
+
+    this.applyMode();
+    this.resize();
+    this.loop();
+  },
+  applyMode(){
+    // órbitas
+    PLANETS.forEach((p,i)=>{
+      const r = this.rOf(p.a);
+      const pts = [];
+      for(let k=0;k<=127;k++){
+        const a2 = k/127*Math.PI*2;
+        pts.push(new THREE.Vector3(Math.cos(a2)*r, 0, Math.sin(a2)*r));
+      }
+      this.orbitLines[i].geometry.dispose();
+      this.orbitLines[i].geometry = new THREE.BufferGeometry().setFromPoints(pts);
+      const s = this.planetR(p);
+      this.planets[i].scale.setScalar(s);
+    });
+    this.sun.scale.setScalar(this.sunR());
+    const fill = (pts, data)=>{
+      const arr = pts.geometry.attributes.position.array;
+      data.forEach((d,i)=>{
+        const r = this.rOf(d.a);
+        arr[i*3] = Math.cos(d.th)*r; arr[i*3+1] = d.z; arr[i*3+2] = Math.sin(d.th)*r;
+      });
+      pts.geometry.attributes.position.needsUpdate = true;
+    };
+    fill(this.belt, this.beltData);
+    fill(this.kuiper, this.kuiperData);
+    const hr = this.rOf(120);
+    const hp = [];
+    for(let k=0;k<=127;k++){ const a2=k/127*Math.PI*2; hp.push(new THREE.Vector3(Math.cos(a2)*hr,0,Math.sin(a2)*hr)); }
+    this.helio.geometry.dispose();
+    this.helio.geometry = new THREE.BufferGeometry().setFromPoints(hp);
+    this.voyagers.forEach(v=>{
+      const d = v.userData, r = this.rOf(d.a);
+      v.position.set(Math.cos(d.th)*r, d.y*3, Math.sin(d.th)*r);
+    });
+    this.markers.visible = this.mode==='real';
+    // nota de escala
+    const note = $('#solar-note');
+    if (note){
+      note.textContent = this.mode==='visual'
+        ? 'escala comprimida: distâncias log₁₀ (região interna expandida até ×13) · tamanhos ampliados ×10³–10⁴'
+        : 'proporção real 1:1 — nesta escala os planetas medem menos de 1 px (pontos indicam a posição)';
+    }
+    if (this.mode==='real' && this.orbit) this.orbit.radius = Math.max(this.orbit.radius, 60);
+  },
+  buildControls(){
+    const c = $('#viz-controls');
+    c.innerHTML = `
+      <div class="seg" id="solar-mode">
+        <button data-m="visual" class="${this.mode==='visual'?'on':''}">Escala visual</button>
+        <button data-m="real" class="${this.mode==='real'?'on':''}">Escala real</button>
+      </div>
+      <label>velocidade <input type="range" id="solar-speed" min="0" max="60" value="${this.speed}"></label>
+      <span class="compress-note" id="solar-note"></span>`;
+    $$('#solar-mode button').forEach(b=> b.addEventListener('click', ()=>{
+      this.mode = b.dataset.m;
+      $$('#solar-mode button').forEach(x=>x.classList.toggle('on', x===b));
+      if (this.ready) this.applyMode();
+    }));
+    $('#solar-speed').addEventListener('input', e=> this.speed = +e.target.value);
+    if (this.ready) this.applyMode(); else whenThree(()=>{});
+  },
+  resize(){
+    if (!this.ready) return;
+    const host = $('#viz-solar');
+    const w = host.clientWidth||800, h = host.clientHeight||500;
+    this.renderer.setSize(w,h);
+    this.camera.aspect = w/h; this.camera.updateProjectionMatrix();
+  },
+  loop(){
+    requestAnimationFrame(()=>this.loop());
+    if (!$('#viz-solar').classList.contains('on') || currentView!=='zoom') return;
+    this.t += this.speed; // dias simulados por frame
+    const mArr = this.markers.geometry.attributes.position.array;
+    PLANETS.forEach((p,i)=>{
+      const th = p.phase + this.t/p.T*Math.PI*2;
+      const r = this.rOf(p.a);
+      const x = Math.cos(th)*r, z = Math.sin(th)*r;
+      this.planets[i].position.set(x,0,z);
+      this.planets[i].rotation.y += 0.004;
+      mArr[i*3]=x; mArr[i*3+1]=0; mArr[i*3+2]=z;
+    });
+    this.markers.geometry.attributes.position.needsUpdate = true;
+    this.sun.rotation.y += 0.0008;
+    this.orbit.update();
+    const host = $('#viz-solar');
+    const w = host.clientWidth, h = host.clientHeight;
+    this._labels.forEach(l=> projectLabel(l.el, l.obj.position, this.camera, w, h));
+    const hr = this.rOf(120);
+    projectLabel(this.helioLabel, new THREE.Vector3(hr*0.7071,0,-hr*0.7071), this.camera, w, h);
+    this.renderer.render(this.scene, this.camera);
+  }
+};
+
+/* ---------------- VIA LÁCTEA 3D ---------------- */
+const GALAXY = {
+  ready:false, spin:true, _labels:[],
+  ensure(){ whenThree(()=>{ if (!this.ready) this.init(); }); },
+  init(){
+    this.ready = true;
+    const host = $('#viz-galaxy');
+    host.innerHTML = '';
+    const w = host.clientWidth||800, h = host.clientHeight||520;
+    this.renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+    this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio||1));
+    this.renderer.setSize(w,h);
+    host.appendChild(this.renderer.domElement);
+    this.labelHost = document.createElement('div');
+    this.labelHost.style.cssText = 'position:absolute;inset:0;pointer-events:none;overflow:hidden';
+    host.appendChild(this.labelHost);
+    this.scene = new THREE.Scene();
+    this.group = new THREE.Group();
+    this.scene.add(this.group);
+    this.camera = new THREE.PerspectiveCamera(55, w/h, 0.1, 2000);
+    this.camera.position.set(0, 52, 92);
+    this.orbit = new SimpleOrbit(this.camera, this.renderer.domElement, {minR:8, maxR:400});
+
+    /* nuvem de partículas — estrutura: bojo+barra, 4 braços espirais, halo.
+       unidades: 1 = 1.000 anos-luz; disco de raio 50 (100 mil al) */
+    const rng = mulberry32(314159);
+    const gauss = ()=> (rng()+rng()+rng()+rng()-2)/1.2;
+    const N_DISK=17000, N_BULGE=3600, N_HALO=1400;
+    const total = N_DISK+N_BULGE+N_HALO;
+    const posArr = new Float32Array(total*3);
+    const colArr = new Float32Array(total*3);
+    let idx=0;
+    const put = (x,y,z,r,g,b)=>{
+      posArr[idx*3]=x; posArr[idx*3+1]=y; posArr[idx*3+2]=z;
+      colArr[idx*3]=r; colArr[idx*3+1]=g; colArr[idx*3+2]=b;
+      idx++;
+    };
+    // disco com braços espirais logarítmicos (4 braços)
+    for(let i=0;i<N_DISK;i++){
+      const r = 2.5 + 47.5*Math.pow(rng(),0.62);
+      const arm = i%4;
+      const spread = 0.42/(0.6+r*0.045);
+      const th = arm*Math.PI/2 + Math.log(r/2.5)/Math.tan(0.24) + gauss()*spread*2.6;
+      const x = Math.cos(th)*r + gauss()*1.1;
+      const zc = Math.sin(th)*r + gauss()*1.1;
+      const y = gauss()*0.55*(1-r/70);
+      const t = rng();
+      if (t<0.06 && r>8){ put(x,y,zc, 1.0,0.55,0.75); }        // regiões HII
+      else if (t<0.45){ put(x,y,zc, 0.62,0.75,1.0); }          // jovens azuis
+      else { const k=0.75+rng()*0.25; put(x,y,zc, 0.95*k,0.93*k,0.85*k); }
+    }
+    // bojo + barra (~27 mil al de comprimento)
+    for(let i=0;i<N_BULGE;i++){
+      const bar = rng()<0.55;
+      let x,y2,zc;
+      if (bar){
+        x = gauss()*6.8; zc = gauss()*2.1; y2 = gauss()*1.7;
+        const rot = 0.44; // barra inclinada ~25°
+        const xr = x*Math.cos(rot)-zc*Math.sin(rot), zr = x*Math.sin(rot)+zc*Math.cos(rot);
+        x = xr; zc = zr;
+      } else { x = gauss()*3.4; zc = gauss()*3.4; y2 = gauss()*2.4; }
+      const k = 0.8+rng()*0.2;
+      put(x,y2,zc, 1.0*k, 0.83*k, 0.55*k);
+    }
+    // halo + aglomerados globulares
+    for(let i=0;i<N_HALO;i++){
+      const rr = 12 + Math.pow(rng(),1.6)*55;
+      const u = rng()*2-1, ph = rng()*Math.PI*2;
+      const sq = Math.sqrt(1-u*u);
+      const k = 0.5+rng()*0.3;
+      put(rr*sq*Math.cos(ph), rr*u*0.8, rr*sq*Math.sin(ph), 0.9*k,0.85*k,1.0*k);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(posArr,3));
+    geo.setAttribute('color', new THREE.BufferAttribute(colArr,3));
+    const pts = new THREE.Points(geo, new THREE.PointsMaterial({
+      size:0.42, vertexColors:true, transparent:true, opacity:0.85,
+      depthWrite:false, blending:THREE.AdditiveBlending, sizeAttenuation:true
+    }));
+    this.group.add(pts);
+
+    // Sagittarius A*
+    const sgr = new THREE.Points(
+      new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array([0,0,0]),3)),
+      new THREE.PointsMaterial({color:0xffffff, size:7, sizeAttenuation:false})
+    );
+    this.group.add(sgr);
+    this._labels.push({el:makeLabel(this.labelHost,'Sagittarius A* · 4,3×10⁶ M☉','color:#f0b45c'), obj:sgr, world:new THREE.Vector3()});
+
+    // posição do Sol: 26,67 mil al do centro
+    const SUN_R = 26.67;
+    const sunTh = Math.PI/2 + Math.log(SUN_R/2.5)/Math.tan(0.24) - 0.18; // borda interna do braço de Órion
+    this.sunPos = new THREE.Vector3(Math.cos(sunTh)*SUN_R, 0.06, Math.sin(sunTh)*SUN_R);
+    const sunPt = new THREE.Points(
+      new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array([0,0,0]),3)),
+      new THREE.PointsMaterial({color:0x4fd8eb, size:9, sizeAttenuation:false})
+    );
+    sunPt.position.copy(this.sunPos);
+    this.group.add(sunPt);
+    this.sunObj = sunPt;
+    this._labels.push({el:makeLabel(this.labelHost,'☉ VOCÊ ESTÁ AQUI — 26.670 al do centro','color:#4fd8eb;font-size:12px'), obj:sunPt, world:new THREE.Vector3()});
+
+    // órbita do Sol
+    const orbPts = [];
+    for(let k=0;k<=180;k++){ const a2=k/180*Math.PI*2; orbPts.push(new THREE.Vector3(Math.cos(a2)*SUN_R, 0, Math.sin(a2)*SUN_R)); }
+    const orb = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(orbPts),
+      new THREE.LineBasicMaterial({color:0x4fd8eb, transparent:true, opacity:0.28}));
+    this.group.add(orb);
+
+    this.resize();
+    this.loop();
+  },
+  buildControls(){
+    const c = $('#viz-controls');
+    c.innerHTML = `
+      <label><input type="checkbox" id="gal-spin" ${this.spin?'checked':''}> rotação automática</label>
+      <span class="compress-note">modelo: disco 100 mil al · Sol a 26,67 mil al — proporções radiais reais</span>`;
+    $('#gal-spin').addEventListener('change', e=> this.spin = e.target.checked);
+  },
+  resize(){
+    if (!this.ready) return;
+    const host = $('#viz-galaxy');
+    const w = host.clientWidth||800, h = host.clientHeight||500;
+    this.renderer.setSize(w,h);
+    this.camera.aspect = w/h; this.camera.updateProjectionMatrix();
+  },
+  loop(){
+    requestAnimationFrame(()=>this.loop());
+    if (!$('#viz-galaxy').classList.contains('on') || currentView!=='zoom') return;
+    if (this.spin) this.group.rotation.y += 0.0006;
+    this.orbit.update();
+    const host = $('#viz-galaxy');
+    const w = host.clientWidth, h = host.clientHeight;
+    this.group.updateMatrixWorld();
+    this._labels.forEach(l=>{
+      l.world.copy(l.obj.position).applyMatrix4(this.group.matrixWorld);
+      projectLabel(l.el, l.world, this.camera, w, h);
+    });
+    this.renderer.render(this.scene, this.camera);
+  }
+};
+
+/* ---------------- INICIALIZAÇÃO ---------------- */
+buildScalebar();
+BH.init();
+SZ.init();
+CAL.init();
+CONV.init();
+setLevel(0);
+refreshProgressUI();
+</script>
+
+</body>
+</html>
