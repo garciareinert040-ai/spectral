@@ -155,17 +155,146 @@ export const LST_SUMMARY =
   'espalhando como raios de roda nos 40×40. Parar quando a floração engatar (~semana 5); depois só escorar. Se rachar, enrolar fita — cicatriza em dias.';
 
 // -----------------------------------------------------------------------------
+// FLORAÇÃO OBSERVADA (âncora real de uma autoflorescente)
+// -----------------------------------------------------------------------------
+// Autoflorescente não segue calendário: ela floresce quando quer. Quando a data
+// de início da floração (primeiros pistilos) é informada, o app passa a guiar
+// por ESTA âncora em vez das semanas fixas do guia.
+// Duração típica da floração, contada dos primeiros pistilos até a colheita:
+export const FLOWER_MIN_DAYS = 49;   // ~7 semanas — mais cedo que isso é raro
+export const FLOWER_MAX_DAYS = 70;   // ~10 semanas — limite superior comum
+export const FLOWER_MID_DAYS = 56;   // ~8 semanas — usado nas estimativas
+
+// Guia semana-a-semana DA FLORAÇÃO (semana 1 = primeiros pistilos).
+export const FLOWER_SCHEDULE = [
+  {
+    week: 1, stage: 'flower', phase: 'Floração · stretch inicial',
+    do: 'Só água, pelo peso do vaso. Não treinar, não desfolhar — a planta está redirecionando tudo pra flor. Manter a luz na distância certa conforme ela sobe.',
+    observe: 'É agora que vem o estirão: a altura pode dobrar. Novos topos podem aparecer — isso ainda soma no yield final.',
+    light: '~30–33 cm',
+  },
+  {
+    week: 2, stage: 'flower', phase: 'Floração · stretch final',
+    do: 'Só água. Top-dress leve de húmus se as folhas estiverem clareando. Acertar a altura da luz pra altura FINAL da planta.',
+    observe: 'Pistilos por toda parte; os sites viram cachos definidos. O estirão desacelera no fim desta semana.',
+    light: '~30 cm',
+  },
+  {
+    week: 3, stage: 'flower', phase: 'Floração · início da engorda',
+    do: 'Exaustor + filtro 24/7 (o cheiro aparece agora). Baixar a umidade pra 40–50%. Só água.',
+    observe: 'Buds começam a ganhar volume. Ar circulando é o que evita mofo daqui pra frente.',
+    light: '~30 cm',
+  },
+  {
+    week: 4, stage: 'flower', phase: 'Floração · engorda',
+    do: 'Só água; umidade baixa (40–50%). Escorar qualquer galho que entorte com o peso.',
+    observe: 'Cheque os buds mais densos por dentro (mofo = algodão cinza). Tricomas ainda transparentes.',
+    light: '~30 cm',
+  },
+  {
+    week: 5, stage: 'flower', phase: 'Floração · engorda plena',
+    do: 'Só água; manter umidade baixa. Começar a olhar tricomas com a lupa (mesmo que ainda transparentes).',
+    observe: 'Primeiros tricomas leitosos aparecem. Pistilos começam a alaranjar nas pontas.',
+    light: '~30 cm',
+  },
+  {
+    week: 6, stage: 'mature', phase: 'Maturação inicial',
+    do: 'Só água. Conferir tricomas com lupa a cada 1–2 dias.',
+    observe: 'Boa parte dos pistilos alaranjando; tricomas virando leitosos. Vigiar mofo nos buds densos.',
+    light: '~30 cm',
+  },
+  {
+    week: 7, stage: 'mature', phase: 'Maturação',
+    do: 'Só água — estes são os últimos ~7–10 dias. Checar tricomas TODO dia.',
+    observe: 'Leitoso + ~10–20% âmbar = quase no ponto. Ainda transparente = espere mais.',
+    light: '~30 cm',
+  },
+  {
+    week: 8, stage: 'mature', phase: 'Janela de colheita',
+    do: 'Colher quando a maioria dos tricomas estiver leitosa + ~10–20% âmbar. Depois: bucking → trim (wet) → secagem → cura.',
+    observe: 'Quem manda é o tricoma, não o calendário. Mais âmbar = mais relaxante; menos = mais "cabeça".',
+    light: '~30 cm',
+  },
+  {
+    week: 9, stage: 'mature', phase: 'Colheita (passou do previsto)',
+    do: 'Se os tricomas já estão leitosos com âmbar, pode colher. Passar muito do ponto degrada os tricomas.',
+    observe: 'Muito âmbar = efeito bem sedativo. Sem pressa, mas sem esquecer.',
+    light: '~30 cm',
+  },
+];
+
+// -----------------------------------------------------------------------------
+// REGA POR TAMANHO DA PLANTA (não só por fase)
+// -----------------------------------------------------------------------------
+// O guia original assume uma planta que chega perto de 100 cm. Numa planta
+// pequena, o volume do guia vira ENCHARCAMENTO (o erro nº 1). Aqui o volume
+// acompanha o porte real: vaso de 12 L com planta de 10 cm bebe pouco.
+export const SIZE_WATERING = [
+  { maxHeight: 15,  label: '~200–350 ml', mid: 300, where: 'círculo próximo ao caule — deixe o resto do vaso secar' },
+  { maxHeight: 30,  label: '~350–500 ml', mid: 425, where: 'círculo médio, ampliando aos poucos' },
+  { maxHeight: 50,  label: '~500–700 ml', mid: 600, where: 'molhando mais área do vaso' },
+  { maxHeight: 999, label: '~700 ml–1 L', mid: 850, where: 'até pingar ~10–20% pelo fundo' },
+];
+
+// Recomendação de rega a partir da altura registrada (cm).
+export function waterForHeight(cm) {
+  const h = Number(cm);
+  if (!h || Number.isNaN(h)) return null;
+  return SIZE_WATERING.find((r) => h <= r.maxHeight) || SIZE_WATERING[SIZE_WATERING.length - 1];
+}
+
+// -----------------------------------------------------------------------------
+// PLANTA ANÃ / FLORAÇÃO PRECOCE
+// -----------------------------------------------------------------------------
+// Autoflorescente que engata a floração muito cedo (antes de ter porte) trava a
+// altura: o que vier depois vem do estirão, não de treino. Abaixo desta altura,
+// com a floração já iniciada, o app muda o tom da orientação.
+export const DWARF_MAX_HEIGHT = 20;
+
+export const DWARF_GUIDANCE = {
+  title: 'Planta anã / floração precoce',
+  what: 'Ela entrou em floração antes de ganhar porte. Isso trava a altura: daqui pra frente o crescimento vem do estirão da floração, não de treino.',
+  do: [
+    'Não treinar mais (LST/topping): em floração, dobrar só estressa e custa yield.',
+    'Não desfolhar: com pouca massa foliar, cada folha é fábrica de açúcar pro bud.',
+    'Regar POUCO e pelo peso: vaso de 12 L com planta pequena demora muito a secar.',
+    'Manter a luz no ponto (30–35 cm): perto demais branqueia um topo que você não tem de sobra.',
+    'Top-dress leve de húmus se as folhas clarearem — sem exagero, solo já é adubo.',
+  ],
+  expect: 'O yield vai ser modesto — é característica desse ciclo, não erro seu. O aprendizado (genética, timing, ambiente) é o retorno real deste primeiro grow.',
+};
+
+// Estimativa GROSSEIRA de rendimento seco pela altura. Não é promessa — serve
+// só pra calibrar expectativa contra a meta.
+export const YIELD_ESTIMATE = [
+  { maxHeight: 15,  label: '~5–15 g' },
+  { maxHeight: 25,  label: '~10–25 g' },
+  { maxHeight: 40,  label: '~20–40 g' },
+  { maxHeight: 60,  label: '~35–60 g' },
+  { maxHeight: 999, label: '~50–80 g' },
+];
+
+export function yieldForHeight(cm) {
+  const h = Number(cm);
+  if (!h || Number.isNaN(h)) return null;
+  return (YIELD_ESTIMATE.find((r) => h <= r.maxHeight) || YIELD_ESTIMATE[YIELD_ESTIMATE.length - 1]).label;
+}
+
+// -----------------------------------------------------------------------------
 // CHECKBOXES RÁPIDAS do registro diário — só aparecem na janela de dias relevante.
+// `hideWhenFlowering` some assim que a floração começa (treino não se faz mais).
 // -----------------------------------------------------------------------------
 export const QUICK_CHECKS = [
-  { key: 'lst',       label: 'Fiz dobra de LST',        fromDay: 15, toDay: 35 },
-  { key: 'topdress',  label: 'Fiz top-dress de húmus',  fromDay: 29, toDay: 45 },
-  { key: 'trichomes', label: 'Checei tricomas com lupa', fromDay: 50, toDay: 999 },
-  { key: 'support',   label: 'Escorei galho',           fromDay: 36, toDay: 999 },
+  { key: 'lst',       label: 'Fiz dobra de LST',        fromDay: 15, toDay: 35, hideWhenFlowering: true },
+  { key: 'topdress',  label: 'Fiz top-dress de húmus',  fromDay: 29, toDay: 999 },
+  { key: 'trichomes', label: 'Checei tricomas com lupa', fromDay: 50, toDay: 999, fromFlowerWeek: 4 },
+  { key: 'support',   label: 'Escorei galho',           fromDay: 36, toDay: 999, fromFlowerWeek: 2 },
 ];
 
 // A partir de que dia o seletor de tricomas aparece no registro (início da floração).
 export const TRICHOME_FROM_DAY = 36;
+// Com floração observada, o seletor aparece a partir desta semana de floração.
+export const TRICHOME_FROM_FLOWER_WEEK = 3;
 
 // Aviso legal — igual ao guia em PDF (rodapé de todas as telas).
 export const LEGAL_NOTICE =

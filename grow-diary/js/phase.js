@@ -5,7 +5,10 @@
 // Dia 1 = o próprio dia do plantio.
 // =============================================================================
 
-import { SCHEDULE, GROW, STAGE_LABEL } from './data.js';
+import {
+  SCHEDULE, GROW, STAGE_LABEL,
+  FLOWER_SCHEDULE, FLOWER_MIN_DAYS, FLOWER_MAX_DAYS, FLOWER_MID_DAYS,
+} from './data.js';
 
 // Converte uma string 'YYYY-MM-DD' num Date local à meia-noite (evita bug de fuso).
 export function parseDate(str) {
@@ -54,15 +57,82 @@ export function weekForDay(day) {
   return SCHEDULE[SCHEDULE.length - 1];
 }
 
+// Semana de floração (1 = semana dos primeiros pistilos) a partir do dia de floração.
+export function flowerWeekForDay(flowerDay) {
+  const w = Math.ceil(Math.max(1, flowerDay) / 7);
+  return Math.min(Math.max(w, 1), FLOWER_SCHEDULE.length);
+}
+
+// Estado da FLORAÇÃO OBSERVADA. Só existe quando `floweringStart` foi informado.
+// Esta é a âncora correta pra autoflorescente — ela floresce quando quer, não
+// quando o calendário do guia manda.
+export function computeFlower(floweringStart, forDate = new Date()) {
+  if (!floweringStart) return null;
+  const start = parseDate(floweringStart);
+  const ref = new Date(forDate.getFullYear(), forDate.getMonth(), forDate.getDate());
+  const elapsed = Math.floor((ref - start) / MS_DAY);
+  if (elapsed < 0) return null;             // data de floração ainda no futuro
+
+  const flowerDay = elapsed + 1;            // dia dos primeiros pistilos = dia 1
+  const week = flowerWeekForDay(flowerDay);
+  const schedule = FLOWER_SCHEDULE[week - 1];
+
+  // Janela estimada de colheita, contada da floração (o tricoma é quem decide).
+  const harvestFrom = addDays(start, FLOWER_MIN_DAYS - 1);
+  const harvestTo = addDays(start, FLOWER_MAX_DAYS - 1);
+  const harvestMid = addDays(start, FLOWER_MID_DAYS - 1);
+  const daysToHarvest = Math.max(0, Math.floor((harvestMid - ref) / MS_DAY));
+
+  return {
+    startDate: floweringStart,
+    flowerDay,
+    week,
+    schedule,
+    stage: schedule.stage,
+    phase: schedule.phase,
+    harvestFrom: fmtDate(harvestFrom),
+    harvestTo: fmtDate(harvestTo),
+    daysToHarvest,
+    // Janela de colheita aberta a partir de ~7 semanas de floração.
+    harvestReady: flowerDay >= FLOWER_MIN_DAYS,
+  };
+}
+
+function addDays(date, n) {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  d.setDate(d.getDate() + n);
+  return d;
+}
+
 // Pacote completo do "estado atual" do cultivo — o coração do dashboard.
-export function computeStatus(plantingDate, forDate = new Date(), offset = 0) {
+// Quando `floweringStart` é informado, a fase/luz/colheita passam a vir da
+// floração OBSERVADA; o cronograma fixo do guia vira só referência.
+export function computeStatus(plantingDate, forDate = new Date(), offset = 0, floweringStart = null) {
   const day = dayNumber(plantingDate, forDate, offset);
   const wk = weekForDay(day);
-  const totalDays = GROW.cycleDays;
-  const daysToHarvest = Math.max(0, totalDays - day);
-  const progress = Math.min(100, Math.max(0, (day / totalDays) * 100));
-  const harvestReady = day >= 64;           // janela de colheita (semana 10)
-  const postHarvest = day > totalDays;      // passou do ciclo → foco em secagem/cura
+  const flower = computeFlower(floweringStart, forDate);
+
+  // Sem floração observada → comportamento original (calendário do guia).
+  let totalDays = GROW.cycleDays;
+  let daysToHarvest = Math.max(0, totalDays - day);
+  let harvestReady = day >= 64;
+  let stage = wk.stage;
+  let phase = wk.phase;
+  let schedule = wk;
+
+  if (flower) {
+    // Dia do cultivo em que a floração começou → base do ciclo estimado real.
+    const flowerStartDay = dayNumber(plantingDate, parseDate(floweringStart), offset);
+    totalDays = flowerStartDay + FLOWER_MID_DAYS - 1;
+    daysToHarvest = flower.daysToHarvest;
+    harvestReady = flower.harvestReady;
+    stage = flower.stage;
+    phase = flower.phase;
+    schedule = flower.schedule;
+  }
+
+  const progress = Math.min(100, Math.max(0, (day / Math.max(1, totalDays)) * 100));
+  const postHarvest = day > totalDays;
 
   return {
     day,
@@ -71,11 +141,13 @@ export function computeStatus(plantingDate, forDate = new Date(), offset = 0) {
     progress,
     harvestReady,
     postHarvest,
-    week: wk.week,
-    stage: wk.stage,
-    stageLabel: STAGE_LABEL[wk.stage],
-    phase: wk.phase,
-    schedule: wk,
+    week: wk.week,               // semana do guia (referência)
+    stage,
+    stageLabel: STAGE_LABEL[stage],
+    phase,
+    schedule,
+    guideWeek: wk,               // cronograma fixo, pra aba Guia
+    flower,                      // null quando a floração ainda não foi marcada
   };
 }
 

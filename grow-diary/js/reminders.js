@@ -9,6 +9,7 @@
 // =============================================================================
 
 import { computeStatus } from './phase.js';
+import { waterForHeight, DWARF_MAX_HEIGHT } from './data.js';
 
 // --- 1) Lembretes por dia/fase -----------------------------------------------
 // `day` = dia do cultivo em que o lembrete começa a valer.
@@ -23,11 +24,37 @@ export const DATE_REMINDERS = [
   { day: 64, window: 7, kind: 'harvest',   icon: '✂️', text: 'Janela de colheita: quem manda é o tricoma (maioria leitoso + ~10–20% âmbar), não o calendário.' },
 ];
 
+// Lembretes por data que deixam de fazer sentido quando a floração já começou
+// (treino/LST não se faz em flor; o resto passa a ser guiado pela floração).
+const OBSOLETE_WHEN_FLOWERING = ['lst', 'topdress'];
+
 // Retorna os lembretes por data ativos para o dia atual do cultivo.
 export function dateReminders(status) {
   const d = status.day;
+  const flowering = !!status.flower;
   return DATE_REMINDERS
     .filter((r) => d >= r.day && d <= r.day + r.window)
+    // Com floração observada, os gatilhos de calendário viram ruído: a
+    // orientação certa passa a vir da semana de floração.
+    .filter((r) => !(flowering && OBSOLETE_WHEN_FLOWERING.includes(r.kind)))
+    .map((r) => ({ level: 'info', icon: r.icon, text: r.text }));
+}
+
+// --- 1b) Lembretes ancorados na FLORAÇÃO observada ---------------------------
+// `week` = semana de floração em que o aviso passa a valer (janela de 7 dias).
+export const FLOWER_REMINDERS = [
+  { week: 1, icon: '📏', text: 'Stretch: a altura pode dobrar agora. Confira a distância da luz a cada 2 dias e pare qualquer treino.' },
+  { week: 3, icon: '💨', text: 'Exaustor + filtro 24/7 (o cheiro aparece agora) e umidade em 40–50%.' },
+  { week: 5, icon: '🔬', text: 'Comece a olhar os tricomas com a lupa — mesmo que ainda estejam transparentes.' },
+  { week: 7, icon: '💧', text: 'Reta final: só água e tricoma todo dia.' },
+  { week: 8, icon: '✂️', text: 'Janela de colheita aberta: maioria leitoso + ~10–20% âmbar. Quem manda é o tricoma, não o calendário.' },
+];
+
+export function flowerReminders(status) {
+  if (!status.flower) return [];
+  const w = status.flower.week;
+  return FLOWER_REMINDERS
+    .filter((r) => w === r.week)
     .map((r) => ({ level: 'info', icon: r.icon, text: r.text }));
 }
 
@@ -63,8 +90,10 @@ export function derivedAlerts(status, entriesByDate) {
     });
   }
 
-  // (c) Umidade > 55% durante a floração (semana 6+) → risco de mofo.
-  if (status.week >= 6) {
+  // (c) Umidade > 55% durante a floração → risco de mofo.
+  // Agora ancorado na floração OBSERVADA (antes era semana 6 do calendário).
+  const isFlowering = !!status.flower || status.week >= 6;
+  if (isFlowering) {
     const lastHum = latestNumeric(entries, 'humidity');
     if (lastHum != null && lastHum > 55) {
       alerts.push({
@@ -74,14 +103,48 @@ export function derivedAlerts(status, entriesByDate) {
     }
   }
 
+  // (d) Rega desproporcional ao PORTE da planta (não à fase do guia).
+  // Numa planta pequena em vaso de 12 L, o volume "de semana 5" encharca.
+  const lastHeight = latestNumeric(entries, 'plantHeight');
+  const rec = waterForHeight(lastHeight);
+  if (rec) {
+    const lastWater = lastWateredVolume(entries);
+    if (lastWater != null && lastWater > rec.mid * 2) {
+      alerts.push({
+        level: 'warn', icon: '🪣',
+        text: `Você regou ${lastWater} ml numa planta de ${lastHeight} cm. Pro porte atual, ${rec.label} já basta (${rec.where}). Excesso é o erro nº 1.`,
+      });
+    }
+  }
+
+  // (e) Planta anã em floração → expectativa e manejo mudam de figura.
+  if (status.flower && lastHeight != null && lastHeight < DWARF_MAX_HEIGHT) {
+    alerts.push({
+      level: 'info', icon: '🌱',
+      text: `Planta pequena (${lastHeight} cm) já em floração: a altura praticamente travou. Daqui pra frente é só stretch — nada de treino ou desfolha, e rega curta pelo peso.`,
+    });
+  }
+
   return alerts;
 }
 
-// Junta lembretes por data + alertas derivados (dashboard mostra tudo junto).
-// `offset` = mesmo ajuste de dias usado no resto do app (ver phase.js).
-export function allReminders(plantingDate, entriesByDate, forDate = new Date(), offset = 0) {
-  const status = computeStatus(plantingDate, forDate, offset);
-  return [...derivedAlerts(status, entriesByDate), ...dateReminders(status)];
+// Volume da rega mais recente em que houve rega de fato.
+function lastWateredVolume(entries) {
+  const sorted = entries
+    .filter((e) => e.watered && e.waterMl != null && e.waterMl !== '')
+    .sort((a, b) => (a.date < b.date ? 1 : -1));
+  return sorted.length ? Number(sorted[0].waterMl) : null;
+}
+
+// Junta alertas derivados + lembretes de floração + lembretes por data.
+// `offset` = ajuste de dias; `floweringStart` = data dos primeiros pistilos.
+export function allReminders(plantingDate, entriesByDate, forDate = new Date(), offset = 0, floweringStart = null) {
+  const status = computeStatus(plantingDate, forDate, offset, floweringStart);
+  return [
+    ...derivedAlerts(status, entriesByDate),
+    ...flowerReminders(status),
+    ...dateReminders(status),
+  ];
 }
 
 // --- helpers -----------------------------------------------------------------

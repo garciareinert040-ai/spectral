@@ -6,7 +6,7 @@
 // por aqui — o próprio Firestore cuida do offline com IndexedDB.
 // Ao mudar arquivos do app, suba o número da versão pra forçar atualização.
 // =============================================================================
-const VERSION = 'cultivo-v2';
+const VERSION = 'cultivo-v3';
 const APP_SHELL = [
   './',
   './index.html',

@@ -15,7 +15,9 @@ import {
 import {
   GROW, SCHEDULE, STAGE_LABEL, WATERING_REF, WATERING_GOLDEN,
   LIGHT_REF, LIGHT_NOTE, TROUBLESHOOTING, LST_SUMMARY,
-  QUICK_CHECKS, TRICHOME_FROM_DAY, LEGAL_NOTICE,
+  QUICK_CHECKS, TRICHOME_FROM_DAY, TRICHOME_FROM_FLOWER_WEEK, LEGAL_NOTICE,
+  FLOWER_SCHEDULE, SIZE_WATERING, waterForHeight, yieldForHeight,
+  DWARF_MAX_HEIGHT, DWARF_GUIDANCE,
 } from './data.js';
 import {
   computeStatus, weekForDay, dayNumber, todayStr, fmtBR, daysSince,
@@ -40,6 +42,34 @@ const root = () => document.getElementById('root');
 // Ajuste de dias configurável (ex.: germinação antes da semana 1). Só afeta o
 // CÁLCULO de dia/semana/fase — nunca os registros (que são guardados por data).
 const OFFSET = () => Number((S.config && S.config.dayOffset) || 0);
+
+// Data dos primeiros pistilos. Quando definida, vira a âncora real do ciclo
+// (autoflorescente floresce quando quer, não quando o calendário manda).
+const FLOWER_START = () => (S.config && S.config.floweringStart) || null;
+
+// Estado atual completo, já com offset e floração observada aplicados.
+const STATUS = (forDate = new Date()) =>
+  computeStatus(S.config.plantingDate, forDate, OFFSET(), FLOWER_START());
+
+// Altura mais recente registrada — base da rega por porte e da estimativa.
+function latestHeight() {
+  const withH = Object.values(S.entries)
+    .filter((e) => e.plantHeight != null && e.plantHeight !== '')
+    .sort((a, b) => (a.date < b.date ? 1 : -1));
+  return withH.length ? Number(withH[0].plantHeight) : null;
+}
+
+// Sugere a data de início da floração varrendo as notas já registradas.
+// Usa as SUAS palavras ("pistilo", "pré floração", "floração") pra achar o
+// primeiro dia em que você notou os sinais.
+function suggestFloweringStart() {
+  const re = /pistilo|pré[\s-]?flora|pre[\s-]?flora|floraç/i;
+  const hits = Object.values(S.entries)
+    .filter((e) => e.notes && re.test(e.notes))
+    .map((e) => e.date)
+    .sort();
+  return hits.length ? hits[0] : null;
+}
 
 // ------------------------------- helpers ------------------------------------
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) =>
@@ -252,7 +282,7 @@ function renderOnboarding() {
 // =============================================================================
 function renderApp() {
   if (!S.config || !S.config.plantingDate) { renderOnboarding(); return; }
-  const status = computeStatus(S.config.plantingDate, new Date(), OFFSET());
+  const status = STATUS();
   const activeCls = status.stage === 'veg' ? 'veg' : status.stage === 'mature' ? 'mature' : '';
 
   root().innerHTML = `
@@ -260,7 +290,7 @@ function renderApp() {
       <header class="topbar">
         <div class="grow-name">
           <b>${esc(S.config.name || 'Cultivo')}</b>
-          <span class="mono">Dia ${status.day} · Sem ${status.week} · ${esc(status.phase)}</span>
+          <span class="mono">${esc(topbarLine(status))}</span>
         </div>
         <div id="sync-ind" class="sync"><span class="dot"></span><span class="txt">…</span></div>
         <button class="icon-btn" id="menu-btn" aria-label="Menu">⋯</button>
@@ -283,6 +313,14 @@ function renderApp() {
   renderView();
 }
 
+// Linha do cabeçalho: com floração marcada mostra a semana DE FLOR (a semana do
+// guia deixa de significar algo quando a planta saiu do calendário).
+function topbarLine(status) {
+  return status.flower
+    ? `Dia ${status.day} · Flor sem ${status.flower.week} · ${status.phase}`
+    : `Dia ${status.day} · Sem ${status.week} · ${status.phase}`;
+}
+
 function tabBtn(tab, ico, label, activeCls) {
   const active = S.tab === tab ? `active ${activeCls}` : '';
   return `<button class="${active}" data-tab="${tab}"><span class="ico">${ico}</span>${label}</button>`;
@@ -294,9 +332,9 @@ function rerender() {
   // se o shell não existe ainda, monta tudo
   if (!document.getElementById('view')) { renderApp(); return; }
   // atualiza a linha do topo e re-renderiza a view atual
-  const status = computeStatus(S.config.plantingDate, new Date(), OFFSET());
+  const status = STATUS();
   const sub = document.querySelector('.grow-name span');
-  if (sub) sub.textContent = `Dia ${status.day} · Sem ${status.week} · ${status.phase}`;
+  if (sub) sub.textContent = topbarLine(status);
   renderView();
 }
 
@@ -337,9 +375,9 @@ function renderView() {
 //  VIEW: HOJE (dashboard)
 // =============================================================================
 function viewToday() {
-  const status = computeStatus(S.config.plantingDate, new Date(), OFFSET());
+  const status = STATUS();
   const wk = status.schedule;
-  const reminders = allReminders(S.config.plantingDate, S.entries, new Date(), OFFSET());
+  const reminders = allReminders(S.config.plantingDate, S.entries, new Date(), OFFSET(), FLOWER_START());
   const today = todayStr();
   const hasToday = !!S.entries[today];
 
@@ -354,19 +392,61 @@ function viewToday() {
       <button class="btn btn-sm" id="go-harvest" style="margin-top:12px">Abrir módulo de colheita →</button>
     </div>` : '';
 
+  // --- Linha da floração observada (âncora real do ciclo) --------------------
+  const f = status.flower;
+  const flowerLine = f
+    ? `<div class="to-harvest" style="color:var(--magenta)">🌸 Floração · dia ${f.flowerDay} (semana ${f.week}) · desde ${fmtBR(f.startDate)}</div>`
+    : '';
+
+  // Convite pra marcar a floração — o ajuste mais importante pra uma auto.
+  const suggestion = suggestFloweringStart();
+  const flowerPrompt = !f ? `
+    <div class="reminder warn">
+      <span class="ico">🌸</span>
+      <div>
+        <b>Marque o início da floração.</b> Autoflorescente não segue calendário —
+        com a data dos primeiros pistilos, o app passa a guiar pela floração real
+        em vez das semanas fixas do guia.
+        ${suggestion ? `<br><span class="mono" style="font-size:12px">Sugestão pelas suas notas: ${fmtBR(suggestion)}</span>` : ''}
+        <br><button class="btn btn-sm" id="set-flower" style="margin-top:10px">Definir data da floração</button>
+      </div>
+    </div>` : '';
+
+  // --- Rega pelo PORTE da planta (não pela semana do guia) -------------------
+  const h = latestHeight();
+  const rec = waterForHeight(h);
+  const waterVal = rec ? rec.label : wk.water;
+  const waterNote = rec
+    ? `pra ${h} cm · ${rec.where}`
+    : 'pelo peso do vaso';
+
+  // --- Card de planta anã ----------------------------------------------------
+  const dwarf = f && h != null && h < DWARF_MAX_HEIGHT ? `
+    <div class="card accent" style="border-left-color:var(--amber)">
+      <div class="card-label mature">🌱 ${esc(DWARF_GUIDANCE.title)}</div>
+      <p style="margin-bottom:10px">${esc(DWARF_GUIDANCE.what)}</p>
+      <ul style="margin:0 0 10px 18px;font-size:14px;line-height:1.6">
+        ${DWARF_GUIDANCE.do.map((t) => `<li>${esc(t)}</li>`).join('')}
+      </ul>
+      <p style="font-size:13px;color:var(--muted)">${esc(DWARF_GUIDANCE.expect)}</p>
+    </div>` : '';
+
   return `
     <div class="hero">
       <div class="day-num">${status.day}<small> / ~${status.totalDays}</small></div>
-      <div class="phase-line ${stageCls}">Semana ${status.week} · ${esc(status.phase)}</div>
+      <div class="phase-line ${stageCls}">${f ? '' : `Semana ${status.week} · `}${esc(status.phase)}</div>
+      ${flowerLine}
       <div class="to-harvest">${status.postHarvest
         ? 'Ciclo concluído — foco em secagem e cura.'
-        : `~${status.daysToHarvest} dias até a colheita`}</div>
+        : `~${status.daysToHarvest} dias até a colheita${f ? ` · janela ${fmtBR(f.harvestFrom)} – ${fmtBR(f.harvestTo)}` : ''}`}</div>
       <div class="progress"><span class="${barColor}" style="width:${status.progress}%"></span></div>
       <div class="progress-legend"><span>Plantio</span><span>${STAGE_LABEL[status.stage]}</span><span>Colheita</span></div>
     </div>
 
+    ${flowerPrompt}
     ${reminders.map(reminderHtml).join('')}
     ${harvestCard}
+    ${dwarf}
 
     <div class="card accent">
       <div class="card-label">Fazer hoje</div>
@@ -385,7 +465,8 @@ function viewToday() {
       </div>
       <div class="mini">
         <div class="card-label veg">💧 Rega</div>
-        <div class="mono-val" style="font-size:15px">${esc(wk.water)}</div>
+        <div class="mono-val" style="font-size:15px">${esc(waterVal)}</div>
+        <p style="font-size:12px;color:var(--muted);margin-top:4px">${esc(waterNote)}</p>
       </div>
     </div>
 
@@ -402,6 +483,8 @@ function mountToday() {
   if (add) add.onclick = () => openEntryForm(todayStr());
   const gh = document.getElementById('go-harvest');
   if (gh) gh.onclick = () => { S.tab = 'harvest'; renderView(); };
+  const sf = document.getElementById('set-flower');
+  if (sf) sf.onclick = openEditConfig;
 }
 
 // =============================================================================
@@ -418,8 +501,11 @@ function openEntryForm(date) {
 function renderEntryForm() {
   const v = document.getElementById('view');
   const date = S._entryDate || todayStr();
-  const day = dayNumber(S.config.plantingDate, new Date(date + 'T12:00:00'), OFFSET());
-  const wk = weekForDay(day);
+  const refDate = new Date(date + 'T12:00:00');
+  const st = STATUS(refDate);
+  const day = st.day;
+  const wk = st.schedule;                       // guia OU semana de floração
+  const fw = st.flower ? st.flower.week : null; // semana de floração, se marcada
   const existing = S.entries[date] || null;
 
   formState = {
@@ -428,15 +514,22 @@ function renderEntryForm() {
     newFiles: [],
   };
 
-  const checks = QUICK_CHECKS.filter((c) => day >= c.fromDay && day <= c.toDay);
-  const showTrich = day >= TRICHOME_FROM_DAY;
+  // Checkboxes relevantes: com floração marcada, some o que é de treino (LST) e
+  // aparecem as de flor pela SEMANA DE FLORAÇÃO, não pelo dia do calendário.
+  const checks = QUICK_CHECKS.filter((c) => {
+    if (fw && c.hideWhenFlowering) return false;
+    if (fw && c.fromFlowerWeek) return fw >= c.fromFlowerWeek;
+    return day >= c.fromDay && day <= c.toDay;
+  });
+  const showTrich = fw ? fw >= TRICHOME_FROM_FLOWER_WEEK : day >= TRICHOME_FROM_DAY;
   const ec = existing || {};
   const tri = ec.trichomes || {};
+  const recWater = waterForHeight(ec.plantHeight ?? latestHeight());
 
   v.innerHTML = `
     <button class="btn btn-ghost btn-sm" id="back-btn" style="margin-bottom:14px">← Voltar</button>
     <h2 class="section-title">${existing ? 'Editar registro' : 'Registrar dia'}</h2>
-    <div class="section-sub">Dia ${day} · Semana ${wk.week} · ${esc(wk.phase)}</div>
+    <div class="section-sub">Dia ${day}${fw ? ` · Floração dia ${st.flower.flowerDay} (sem ${fw})` : ` · Semana ${st.week}`} · ${esc(st.phase)}</div>
 
     <form id="entry-form">
       <div class="field">
@@ -456,19 +549,20 @@ function renderEntryForm() {
       <div class="form-row">
         <div class="field">
           <label>Volume (ml)</label>
-          <input type="number" id="e-waterml" inputmode="numeric" value="${ec.waterMl ?? ''}" placeholder="${wk.waterMl}">
+          <input type="number" id="e-waterml" inputmode="numeric" value="${ec.waterMl ?? ''}" placeholder="${recWater ? recWater.mid : (wk.waterMl || 300)}">
+          ${recWater ? `<div class="hint">Pro porte atual: ${esc(recWater.label)}</div>` : ''}
         </div>
         <div class="field">
           <label>Altura planta (cm)</label>
-          <input type="number" id="e-height" inputmode="decimal" value="${ec.plantHeight ?? ''}" placeholder="ex: 42">
+          <input type="number" id="e-height" inputmode="decimal" value="${ec.plantHeight ?? ''}" placeholder="ex: 11">
         </div>
       </div>
 
       <div class="form-row">
         <div class="field">
           <label>Altura da luz (cm)</label>
-          <input type="number" id="e-light" inputmode="decimal" value="${ec.lightHeight ?? ''}" placeholder="${wk.lightCm}">
-          <div class="hint">Recomendado agora: ${wk.light}</div>
+          <input type="number" id="e-light" inputmode="decimal" value="${ec.lightHeight ?? ''}" placeholder="${wk.lightCm || 30}">
+          <div class="hint">Recomendado agora: ${esc(wk.light)}</div>
         </div>
         <div class="field">
           <label>Temp. (°C)</label>
@@ -476,9 +570,16 @@ function renderEntryForm() {
         </div>
       </div>
 
-      <div class="field">
-        <label>Umidade (%)</label>
-        <input type="number" id="e-hum" inputmode="numeric" value="${ec.humidity ?? ''}" placeholder="ex: 55">
+      <div class="form-row">
+        <div class="field">
+          <label>Umidade (%)</label>
+          <input type="number" id="e-hum" inputmode="numeric" value="${ec.humidity ?? ''}" placeholder="ex: 55">
+        </div>
+        <div class="field">
+          <label>Topos / sites</label>
+          <input type="number" id="e-sites" inputmode="numeric" value="${ec.sites ?? ''}" placeholder="ex: 5">
+          <div class="hint">Quantos pontos de bud dá pra contar.</div>
+        </div>
       </div>
 
       ${checks.length ? `
@@ -614,6 +715,7 @@ async function saveCurrentEntry() {
       lightHeight: num('e-light'),
       temp: num('e-temp'),
       humidity: num('e-hum'),
+      sites: num('e-sites'),
       notes: document.getElementById('e-notes').value.trim(),
       checks,
       trichomes,
@@ -712,6 +814,7 @@ function entryCard(e, day) {
   if (e.lightHeight != null) stats.push(`<span>💡 <b>${e.lightHeight}</b> cm</span>`);
   if (e.temp != null) stats.push(`<span>🌡 <b>${e.temp}</b>°C</span>`);
   if (e.humidity != null) stats.push(`<span>💦 <b>${e.humidity}</b>%</span>`);
+  if (e.sites != null) stats.push(`<span>🌸 <b>${e.sites}</b> topos</span>`);
   if (e.trichomes && (e.trichomes.milky || e.trichomes.amber || e.trichomes.clear))
     stats.push(`<span>🔬 ${e.trichomes.clear || 0}/${e.trichomes.milky || 0}/${e.trichomes.amber || 0}</span>`);
 
@@ -822,11 +925,37 @@ function mountCharts() {
 //  VIEW: CRONOGRAMA COMPLETO (guia semana-a-semana, semana atual destacada)
 // =============================================================================
 function viewSchedule() {
-  const status = computeStatus(S.config.plantingDate, new Date(), OFFSET());
+  const status = STATUS();
+  const f = status.flower;
+
+  // Com floração observada, ela vira o cronograma principal; o guia por
+  // calendário fica abaixo, como referência do plano original.
+  const flowerTrack = f ? `
+    <h3 style="margin:2px 0 4px">🌸 Floração (real)</h3>
+    <div class="section-sub">Desde ${fmtBR(f.startDate)} · colheita estimada ${fmtBR(f.harvestFrom)} – ${fmtBR(f.harvestTo)}</div>
+    ${FLOWER_SCHEDULE.map((w) => {
+      const cur = w.week === f.week;
+      return `<div class="timeline-week ${cur ? 'current' : ''}">
+        <div class="tw-head">
+          <span class="num stage-${w.stage}">${w.week}</span>
+          <span class="phase stage-${w.stage}">${esc(w.phase)}</span>
+          ${cur ? '<span class="now">AGORA</span>' : ''}
+          <span class="days">flor: dias ${(w.week - 1) * 7 + 1}–${w.week * 7}</span>
+        </div>
+        <div class="tw-row"><b>Fazer</b>${esc(w.do)}</div>
+        <div class="tw-row"><b>Observe</b>${esc(w.observe)}</div>
+        <div class="tw-row"><b>Luz</b>${esc(w.light)}</div>
+      </div>`;
+    }).join('')}
+    <h3 style="margin:24px 0 4px">📘 Guia original (referência)</h3>
+    <div class="section-sub">Plano por calendário — sua planta saiu dele ao florescer cedo</div>
+  ` : '';
+
   return `<h2 class="section-title">Cronograma</h2>
-    <div class="section-sub">Guia completo · semana atual destacada</div>
+    ${f ? '' : '<div class="section-sub">Guia completo · semana atual destacada</div>'}
+    ${flowerTrack}
     ${SCHEDULE.map((wk) => {
-      const cur = wk.week === status.week;
+      const cur = !f && wk.week === status.week;
       return `<div class="timeline-week ${cur ? 'current' : ''}">
         <div class="tw-head">
           <span class="num stage-${wk.stage}">${wk.week}</span>
@@ -846,7 +975,8 @@ function viewSchedule() {
 //  VIEW: REFERÊNCIAS
 // =============================================================================
 function viewRef() {
-  const status = computeStatus(S.config.plantingDate, new Date(), OFFSET());
+  const status = STATUS();
+  const curSize = waterForHeight(latestHeight());
   const wateringRow = (r, i) => {
     const cur = (status.week <= 2 && i === 0) || ((status.week === 3 || status.week === 4) && i === 1) || (status.week >= 5 && i === 2);
     return `<tr class="${cur ? 'current' : ''}"><td class="wk">${esc(r.phase)}</td><td>${esc(r.amount)}</td><td>${esc(r.when)}</td></tr>`;
@@ -867,6 +997,22 @@ function viewRef() {
       <tbody>${WATERING_REF.map(wateringRow).join('')}</tbody>
     </table></div>
     <div class="golden">${esc(WATERING_GOLDEN)}</div>
+
+    <h3 style="margin:6px 0 10px">📏 Rega pelo PORTE da planta</h3>
+    <p class="note-block" style="margin-bottom:10px">
+      A tabela acima assume uma planta que chega perto de 100 cm. Se a sua ficou
+      menor, use esta — num vaso de 12 L, planta pequena bebe pouco e o substrato
+      demora a secar.
+    </p>
+    <div class="tbl-wrap"><table class="ref">
+      <thead><tr><th>Altura</th><th>Volume</th><th>Onde molhar</th></tr></thead>
+      <tbody>${SIZE_WATERING.map((r, i) => {
+        const cur = curSize && curSize.maxHeight === r.maxHeight;
+        const prev = i === 0 ? 0 : SIZE_WATERING[i - 1].maxHeight;
+        const range = r.maxHeight >= 999 ? `acima de ${prev} cm` : `${prev + 1}–${r.maxHeight} cm`;
+        return `<tr class="${cur ? 'current' : ''}"><td class="wk">${range}</td><td>${esc(r.label)}</td><td>${esc(r.where)}</td></tr>`;
+      }).join('')}</tbody>
+    </table></div>
 
     <h3 style="margin:6px 0 10px">💡 Luz — altura e PPFD-alvo</h3>
     <div class="tbl-wrap"><table class="ref">
@@ -938,9 +1084,29 @@ function viewHarvest() {
   const w = ph.finalWeight;
   const pct = w ? Math.min(100, Math.round((w / goal) * 100)) : 0;
 
+  // Estimativa realista pelo porte atual — serve pra calibrar a meta, não é promessa.
+  const h = latestHeight();
+  const est = yieldForHeight(h);
+  const status = STATUS();
+  const estCard = est ? `
+    <div class="card">
+      <div class="card-label mature">📐 Expectativa pelo porte atual</div>
+      <p style="font-size:14px;line-height:1.6">
+        Com <b>${h} cm</b>, uma estimativa grosseira de peso seco fica em <b>${esc(est)}</b>
+        — bem abaixo da meta de ${goal} g, que pressupunha uma planta perto de 100 cm.
+        ${status.flower && status.flower.week <= 2
+          ? 'O stretch ainda pode mudar esse número pra cima.'
+          : 'Não é erro de manejo: essa planta engatou a floração antes de ganhar porte.'}
+      </p>
+      <p style="font-size:13px;color:var(--muted);margin-top:8px">
+        Vale ajustar a meta em Menu ⋯ → Editar cultivo pra ela virar uma régua útil.
+      </p>
+    </div>` : '';
+
   return `<h2 class="section-title">Colheita &amp; pós-colheita</h2>
     <div class="section-sub">colher → trim (wet) → secagem → cura</div>
 
+    ${estCard}
     <div class="step-flow">${stepFlow}</div>
     <p style="font-size:12px;color:var(--muted);margin-bottom:18px">Toque nas etapas para marcar o que já foi feito.</p>
 
@@ -1039,6 +1205,7 @@ function openMenu() {
 
 function openEditConfig() {
   const c = S.config;
+  const sugg = !c.floweringStart ? suggestFloweringStart() : null;
   openSheet(`
     <h3>Editar cultivo</h3>
     <div class="field"><label>Data de plantio</label><input type="date" id="c-date" value="${c.plantingDate}" max="${todayStr()}"></div>
@@ -1048,22 +1215,46 @@ function openEditConfig() {
       <label>Ajuste de dias</label>
       <input type="number" id="c-offset" value="${Number(c.dayOffset || 0)}" step="1">
       <div class="hint">Se o app mostra um dia diferente do real (ex.: houve germinação antes da semana 1), corrija aqui. Positivo adianta, negativo atrasa. <b>Não altera seus registros.</b></div>
+    </div>
+    <div class="field">
+      <label>🌸 Início da floração (primeiros pistilos)</label>
+      <input type="date" id="c-flower" value="${c.floweringStart || ''}" max="${todayStr()}">
+      <div class="hint">
+        Autoflorescente floresce quando quer. Com esta data, o app guia pela floração
+        REAL (semana de flor, janela de colheita) em vez das semanas fixas do guia.
+        ${sugg ? `<br>Sugestão pelas suas notas: <b>${fmtBR(sugg)}</b> — <button type="button" id="c-usesugg" style="background:none;border:none;color:var(--magenta);font-weight:700;padding:0">usar</button>` : ''}
+      </div>
       <div class="golden" id="c-preview" style="margin:10px 0 0"></div>
     </div>
     <button class="btn" id="c-save">Salvar</button>
     <button class="btn btn-ghost" id="c-cancel" style="margin-top:10px">Cancelar</button>`);
 
-  // Prévia ao vivo: mostra em que Dia/Semana/Fase o "hoje" cai com o ajuste.
+  // Prévia ao vivo: mostra em que Dia/Fase o "hoje" cai com o ajuste + floração.
   const updatePreview = () => {
     const pd = document.getElementById('c-date').value || c.plantingDate;
     const off = Number(document.getElementById('c-offset').value || 0);
+    const fl = document.getElementById('c-flower').value || null;
     const box = document.getElementById('c-preview');
     if (!pd) { box.textContent = '—'; return; }
-    const st = computeStatus(pd, new Date(), off);
-    box.innerHTML = `Com este ajuste, <b>hoje = Dia ${st.day}</b> · Semana ${st.week} · ${esc(st.phase)}`;
+    const st = computeStatus(pd, new Date(), off, fl);
+    let html = `Hoje = <b>Dia ${st.day}</b> · ${esc(st.phase)}`;
+    if (st.flower) {
+      html += `<br>Floração: <b>dia ${st.flower.flowerDay}</b> (semana ${st.flower.week})`
+        + `<br>Colheita estimada: <b>${fmtBR(st.flower.harvestFrom)} – ${fmtBR(st.flower.harvestTo)}</b>`
+        + ` <span style="opacity:.8">(o tricoma é quem decide)</span>`;
+    } else {
+      html += ` · Semana ${st.week} do guia`;
+    }
+    box.innerHTML = html;
   };
   document.getElementById('c-offset').oninput = updatePreview;
   document.getElementById('c-date').onchange = updatePreview;
+  document.getElementById('c-flower').onchange = updatePreview;
+  const useSugg = document.getElementById('c-usesugg');
+  if (useSugg) useSugg.onclick = () => {
+    document.getElementById('c-flower').value = sugg;
+    updatePreview();
+  };
   updatePreview();
 
   document.getElementById('c-cancel').onclick = closeSheet;
@@ -1073,6 +1264,7 @@ function openEditConfig() {
       name: document.getElementById('c-name').value.trim() || 'Cultivo',
       goalGrams: Number(document.getElementById('c-goal').value) || GROW.defaultGoal,
       dayOffset: Math.trunc(Number(document.getElementById('c-offset').value || 0)),
+      floweringStart: document.getElementById('c-flower').value || null,
     };
     try { await saveConfig(S.uid, upd); S.config = { ...S.config, ...upd }; closeSheet(); renderApp(); toast('Cultivo atualizado ✓', 'ok'); }
     catch { toast('Erro ao salvar', 'err'); }

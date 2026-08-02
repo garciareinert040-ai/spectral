@@ -157,6 +157,41 @@ Qualquer host de site estático serve. Aponte o diretório de publicação para 
 3. Pronto — o dashboard já mostra dia/semana/fase e o que fazer hoje.
 4. Faça login com **a mesma conta** em outro dispositivo: os dados aparecem sozinhos.
 
+### 🌸 Início da floração — a âncora real de uma autoflorescente
+Autoflorescente **floresce quando quer**, não quando o calendário do guia manda. Se a
+sua entrou em flor fora do previsto (cedo ou tarde), informe a data dos **primeiros
+pistilos** em **Menu ⋯ → Editar cultivo → Início da floração**.
+
+A partir daí o app para de guiar pelas semanas fixas e passa a usar a floração real:
+
+- **Fase, "Fazer hoje", "Observe" e luz** vêm da *semana de floração* (`FLOWER_SCHEDULE`).
+- **Janela de colheita** estimada = floração + 7 a 10 semanas (o tricoma decide).
+- **Lembretes de treino (LST/top-dress por calendário) somem** — não se treina em flor.
+- A aba **Guia** passa a mostrar o cronograma de floração no topo, e o guia original
+  logo abaixo, como referência.
+- O botão **"usar"** sugere a data varrendo as suas próprias notas (procura "pistilo",
+  "pré floração", "floração") — é só conferir e salvar.
+
+### 📏 Rega pelo porte (não só pela fase)
+O guia assume uma planta perto de 100 cm. Se a sua ficou menor, o volume do guia
+**encharca** — num vaso de 12 L, planta pequena bebe pouco e o substrato demora a secar.
+O card **Rega** e o placeholder do formulário passam a usar a **última altura registrada**:
+
+| Altura | Volume | Onde molhar |
+|---|---|---|
+| até 15 cm | ~200–350 ml | círculo próximo ao caule |
+| 16–30 cm | ~350–500 ml | círculo médio |
+| 31–50 cm | ~500–700 ml | mais área do vaso |
+| acima de 50 cm | ~700 ml–1 L | até pingar 10–20% pelo fundo |
+
+Há ainda um alerta se o volume registrado passar do dobro do recomendado pro porte.
+
+### 🌱 Planta anã / floração precoce
+Se a floração começou e a planta está com menos de 20 cm, o app mostra um card com o
+manejo que realmente se aplica (não treinar, não desfolhar, rega curta, luz no ponto) e
+uma estimativa realista de rendimento no módulo de colheita — pra a meta virar uma régua
+útil em vez de um número inalcançável.
+
 ### Ajuste de dias (ex.: germinação antes da semana 1)
 Se o cronograma do guia (Semana 1 = germinação) não bate com a sua realidade — por
 exemplo, a semente passou alguns dias germinando antes de virar "dia 1" — dá pra
