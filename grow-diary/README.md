@@ -1,9 +1,11 @@
-# 🌿 Diário de Cultivo — Auto Pineapple Express
+# 🌿 Diário de Cultivo
 
-Web app **mobile-first**, instalável como **PWA**, que funciona como um diário diário
-de cultivo. É a versão "viva" do guia em PDF: ancora tudo numa **data de plantio**,
-calcula sozinho o dia/semana/fase atual, mostra a orientação certa pra aquele momento
-e deixa você registrar dados + fotos todo dia — da germinação à colheita, secagem e cura.
+Web app **mobile-first**, instalável como **PWA**, pra acompanhar cultivos de
+**qualquer strain** dia a dia. Cada pessoa cria a própria conta, monta quantos
+cultivos quiser **dentro do app** (strain, autoflorescente ou fotoperíodo, tempo de
+ciclo, vaso, luz, treino, adubação) e o app **gera o cronograma** a partir disso:
+o que fazer e observar em cada fase, altura da luz, rega pelo porte, lembretes e
+janela de colheita. Registros + fotos todo dia — da germinação à secagem e cura.
 
 **Sincroniza entre dispositivos:** o que você registra no celular aparece sozinho no PC
 (e vice-versa), porque os dados ficam no **Firebase** (nuvem), não só no navegador.
@@ -21,9 +23,10 @@ e deixa você registrar dados + fotos todo dia — da germinação à colheita, 
 | `style.css` | Tema dark editorial |
 | `js/firebase-init.js` | **← cole aqui as chaves do Firebase** + inicialização (auth + Firestore offline) |
 | `js/store.js` | Toda a conversa com a nuvem (login, config, registros, fotos, export/import) |
-| `js/data.js` | Conteúdo fixo do guia (cronograma, tabelas, textos) — edite aqui pra ajustar |
-| `js/phase.js` | Cálculo de dia/semana/fase a partir da data de plantio (+ ajuste de dias) |
-| `js/reminders.js` | Motor de lembretes (datas-gatilho + alertas dos seus dados) |
+| `js/data.js` | Conteúdo genérico: padrões de um cultivo novo, atalhos de tempo de ciclo, tabelas, textos |
+| `js/plan.js` | **Gerador do cronograma** a partir da configuração de cada cultivo |
+| `js/phase.js` | Dia/fase/janela de colheita do cultivo numa data |
+| `js/reminders.js` | Lembretes derivados do plano + alertas dos seus registros |
 | `js/app.js` | Telas, navegação, formulários, gráficos |
 | `manifest.json` + `sw.js` | PWA (instalar no celular + app shell offline) |
 | `firestore.rules` | Regras de segurança prontas pra colar |
@@ -151,57 +154,63 @@ Qualquer host de site estático serve. Aponte o diretório de publicação para 
 
 ## Passo 5 — Primeiro uso
 
-1. Abra a URL, **crie a conta** (e-mail + senha) na tela de login.
-2. No **onboarding**, informe a **data de plantio** (âncora de todo o cronograma),
-   o nome do cultivo, a meta em gramas e — se precisar — o **ajuste de dias**.
-3. Pronto — o dashboard já mostra dia/semana/fase e o que fazer hoje.
-4. Faça login com **a mesma conta** em outro dispositivo: os dados aparecem sozinhos.
+1. Abra a URL e toque em **Criar conta** (e-mail + senha, com confirmação).
+   Esqueceu a senha? **Esqueci a senha** na tela de login manda um link por e-mail.
+2. No primeiro acesso aparece **Monte seu cultivo**:
+   - **Genética:** strain, banco (opcional), apelido (opcional), **Autoflorescente** ou **Fotoperíodo**.
+   - **Tempo de cultivo:** auto → dias da semente à colheita; foto → semanas de vegetativo.
+     Nos dois, as semanas de floração. Use o que o banco informa — ou toque num **atalho**
+     (Auto rápida/padrão/longa, Foto indica/híbrida/sativa).
+   - **Datas:** plantio (âncora) e, quando acontecer, o início da floração.
+   - **Estrutura e manejo:** vaso, luz e **distância mínima da luz**, treino, adubação, meta.
+   - Uma **prévia ao vivo** mostra floração prevista, janela de colheita e a fase de hoje.
+3. Pronto — o dashboard já mostra o dia, a fase e o que fazer hoje.
+4. Entre com **a mesma conta** em outro dispositivo: os dados aparecem sozinhos.
 
-### 🌸 Início da floração — a âncora real de uma autoflorescente
-Autoflorescente **floresce quando quer**, não quando o calendário do guia manda. Se a
-sua entrou em flor fora do previsto (cedo ou tarde), informe a data dos **primeiros
-pistilos** em **Menu ⋯ → Editar cultivo → Início da floração**.
+> **Qualquer pessoa com o link pode criar conta.** Cada conta só enxerga os próprios
+> cultivos (garantido pelas regras do Passo 3). Se quiser fechar o app só pra você, em
+> **Authentication → Settings → User actions** desmarque "Enable create (sign-up)".
 
-A partir daí o app para de guiar pelas semanas fixas e passa a usar a floração real:
+### Vários cultivos
+**Menu ⋯ → Meus cultivos** (ou toque no nome do cultivo no topo) lista todos: toque pra
+trocar, **+ Novo cultivo** pra começar outro do zero. Os anteriores ficam guardados com
+os registros e fotos. Excluir pede pra digitar EXCLUIR e apaga registros junto.
 
-- **Fase, "Fazer hoje", "Observe" e luz** vêm da *semana de floração* (`FLOWER_SCHEDULE`).
-- **Janela de colheita** estimada = floração + 7 a 10 semanas (o tricoma decide).
-- **Lembretes de treino (LST/top-dress por calendário) somem** — não se treina em flor.
-- A aba **Guia** passa a mostrar o cronograma de floração no topo, e o guia original
-  logo abaixo, como referência.
-- O botão **"usar"** sugere a data varrendo as suas próprias notas (procura "pistilo",
-  "pré floração", "floração") — é só conferir e salvar.
+### Como o cronograma é gerado
+- **Germinação** (dias 1–7) → **Muda** (8–14) → **Vegetativo** em semanas → **Floração**
+  pelo número de semanas configurado → **Janela de colheita**.
+- **Floração prevista:** auto = ciclo total − semanas de flor; foto = fim do vegetativo
+  (dia de virar 12/12).
+- Textos se adaptam ao **treino** (LST, topping, SCROG ou nenhum), à **adubação** (só água
+  ou nutrientes — com flush no fim) e ao **tipo** (aviso de virar 12/12 no foto).
+- Alturas de luz partem da **distância mínima** da sua luz (plântula +15 cm, veg +5–10,
+  flor no mínimo).
 
-### 📏 Rega pelo porte (não só pela fase)
-O guia assume uma planta perto de 100 cm. Se a sua ficou menor, o volume do guia
-**encharca** — num vaso de 12 L, planta pequena bebe pouco e o substrato demora a secar.
-O card **Rega** e o placeholder do formulário passam a usar a **última altura registrada**:
+### 🌸 Marque a floração real
+Autoflorescente floresce quando quer. Quando vir os **primeiros pistilos** (auto) ou
+**virar a luz pra 12/12** (foto), marque a data em **Configurar cultivo** — o dashboard
+avisa na hora certa. A partir daí a fase e a janela de colheita contam dessa data, e os
+lembretes de treino somem. O botão **"usar"** sugere a data lendo as suas notas.
+
+### 📏 Rega pelo porte
+O card **Rega** usa a **última altura registrada**: vaso grande com planta pequena bebe
+pouco e demora a secar. Há alerta se o volume passar do dobro do recomendado pro porte.
 
 | Altura | Volume | Onde molhar |
 |---|---|---|
 | até 15 cm | ~200–350 ml | círculo próximo ao caule |
 | 16–30 cm | ~350–500 ml | círculo médio |
 | 31–50 cm | ~500–700 ml | mais área do vaso |
-| acima de 50 cm | ~700 ml–1 L | até pingar 10–20% pelo fundo |
+| acima de 50 cm | ~700 ml–1 L+ | até pingar 10–20% pelo fundo |
 
-Há ainda um alerta se o volume registrado passar do dobro do recomendado pro porte.
+### Ajuste de dias
+Se a contagem não bate com a sua, use **Ajuste de dias** em Configurar cultivo
+(positivo adianta, negativo atrasa). Muda só o rótulo — registros são guardados por data.
 
-### 🌱 Planta anã / floração precoce
-Se a floração começou e a planta está com menos de 20 cm, o app mostra um card com o
-manejo que realmente se aplica (não treinar, não desfolhar, rega curta, luz no ponto) e
-uma estimativa realista de rendimento no módulo de colheita — pra a meta virar uma régua
-útil em vez de um número inalcançável.
-
-### Ajuste de dias (ex.: germinação antes da semana 1)
-Se o cronograma do guia (Semana 1 = germinação) não bate com a sua realidade — por
-exemplo, a semente passou alguns dias germinando antes de virar "dia 1" — dá pra
-corrigir sem mexer em nada do que você já registrou:
-
-- Menu ⋯ → **Editar cultivo** → campo **Ajuste de dias**.
-- Número **positivo adianta** a contagem, **negativo atrasa**. Uma prévia mostra na
-  hora em que Dia/Semana/Fase o "hoje" vai cair — é só deixar batendo com a realidade.
-- Isso muda **apenas o rótulo** de dia/semana/fase. Seus registros são guardados por
-  **data**, então **nenhum dado preenchido é alterado**.
+### Dados de antes da versão multi-cultivo
+Contas criadas na versão anterior (um cultivo só) continuam funcionando: a configuração
+antiga vira o cultivo **"principal"** automaticamente e os registros ficam onde estão.
+Nada precisa ser feito no console.
 
 ---
 
@@ -242,9 +251,10 @@ Além da nuvem, dá pra guardar uma cópia:
 
 ## Ajustar o conteúdo depois
 
-- **Textos / cronograma / tabelas:** `js/data.js`.
-- **Datas-gatilho dos lembretes:** `js/reminders.js` (constante `DATE_REMINDERS`).
-- **Regra de contagem de dia/fase:** `js/phase.js` (função `dayNumber`, com o `offset`).
+- **Textos do cronograma gerado:** `js/plan.js` (`vegPhases`, `flowerWeekGuide`).
+- **Atalhos de tempo de ciclo / padrões de um cultivo novo:** `js/data.js` (`PRESETS`, `GROW_DEFAULTS`).
+- **Lembretes:** `js/reminders.js`.
+- **Contagem de dia/fase e janela de colheita:** `js/phase.js` (`computeStatus`).
 - **Integração com Firebase:** `js/store.js` (login, Firestore, fotos) e
   `js/firebase-init.js` (config + offline).
 

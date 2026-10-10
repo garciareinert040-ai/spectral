@@ -1,7 +1,7 @@
 {
-  "name": "Diário de Cultivo · Auto Pineapple Express",
+  "name": "Diário de Cultivo",
   "short_name": "Cultivo",
-  "description": "Diário diário de cultivo, ancorado na data de plantio, com sincronização na nuvem.",
+  "description": "Diário de cultivo para qualquer strain, com cronograma gerado e sincronização na nuvem.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
@@ -9,10 +9,28 @@
   "background_color": "#0a0a0a",
   "theme_color": "#0a0a0a",
   "lang": "pt-BR",
-  "categories": ["lifestyle", "productivity"],
+  "categories": [
+    "lifestyle",
+    "productivity"
+  ],
   "icons": [
-    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "./icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }

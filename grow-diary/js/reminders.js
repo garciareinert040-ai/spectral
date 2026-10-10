@@ -1,162 +1,118 @@
 // =============================================================================
-// reminders.js — MOTOR DE LEMBRETES INTELIGENTES
+// reminders.js — MOTOR DE LEMBRETES (genérico, derivado do plano do cultivo)
 // -----------------------------------------------------------------------------
-// Dois tipos de lembrete:
-//   1) Por DIA/FASE  — disparam por número de dia (âncora = data de plantio).
-//   2) DERIVADOS      — vêm da análise dos dados que você registra.
-//
-// >>> Pra ajustar as datas-gatilho depois, edite DATE_REMINDERS abaixo. <<<
+// Três fontes:
+//   1) Marcos do plano (treino, pré-floração / virada 12/12)
+//   2) Semanas de floração (stretch, exaustão, tricomas, colheita)
+//   3) Alertas tirados dos SEUS registros (rega, luz, umidade, porte)
 // =============================================================================
 
 import { computeStatus } from './phase.js';
 import { waterForHeight, DWARF_MAX_HEIGHT } from './data.js';
 
-// --- 1) Lembretes por dia/fase -----------------------------------------------
-// `day` = dia do cultivo em que o lembrete começa a valer.
-// O lembrete fica "ativo" numa janela (`window` dias) em torno desse dia, pra
-// você não perder caso abra o app um ou dois dias depois.
-export const DATE_REMINDERS = [
-  { day: 15, window: 3, kind: 'lst',       icon: '🪢', text: 'Chegou a hora do LST — confira se já tem 4–6 nós e comece a tombar o topo.' },
-  { day: 29, window: 3, kind: 'topdress',  icon: '🌱', text: 'Top-dress de húmus + pare o LST agressivo + acerte a luz pensando na altura FINAL (estirão vem agora).' },
-  { day: 36, window: 3, kind: 'exhaust',   icon: '💨', text: 'Ligue exaustor + filtro 24/7 (cheiro forte agora) e baixe a umidade pra 40–50%.' },
-  { day: 50, window: 3, kind: 'trichomes', icon: '🔬', text: 'Comece a checar os tricomas com lupa.' },
-  { day: 57, window: 4, kind: 'flush',     icon: '💧', text: 'Últimos ~7–10 dias — só água. Cheque tricomas todo dia.' },
-  { day: 64, window: 7, kind: 'harvest',   icon: '✂️', text: 'Janela de colheita: quem manda é o tricoma (maioria leitoso + ~10–20% âmbar), não o calendário.' },
-];
-
-// Lembretes por data que deixam de fazer sentido quando a floração já começou
-// (treino/LST não se faz em flor; o resto passa a ser guiado pela floração).
-const OBSOLETE_WHEN_FLOWERING = ['lst', 'topdress'];
-
-// Retorna os lembretes por data ativos para o dia atual do cultivo.
-export function dateReminders(status) {
+// --- 1) Marcos do plano ------------------------------------------------------
+export function planReminders(status) {
+  const g = status.grow;
   const d = status.day;
+  const F = status.plan.flowerDay;
+  const out = [];
   const flowering = !!status.flower;
-  return DATE_REMINDERS
-    .filter((r) => d >= r.day && d <= r.day + r.window)
-    // Com floração observada, os gatilhos de calendário viram ruído: a
-    // orientação certa passa a vir da semana de floração.
-    .filter((r) => !(flowering && OBSOLETE_WHEN_FLOWERING.includes(r.kind)))
-    .map((r) => ({ level: 'info', icon: r.icon, text: r.text }));
+
+  if (!flowering && g.training !== 'none' && d >= 15 && d <= 18) {
+    out.push({ level: 'info', icon: '🪢', text: 'Hora de começar o treino — confira se já tem 4–6 nós.' });
+  }
+  // (O aviso de "marque a data da floração" fica no card do dashboard, com botão.)
+  if (!g.floweringStart && g.type === 'photo' && d >= F - 3 && d <= F + 7) {
+    out.push({ level: 'warn', icon: '🌗', text: 'Pelo plano, é hora de virar a luz pra 12/12 (escuro total nas 12 h de noite).' });
+  }
+  return out;
 }
 
-// --- 1b) Lembretes ancorados na FLORAÇÃO observada ---------------------------
-// `week` = semana de floração em que o aviso passa a valer (janela de 7 dias).
-export const FLOWER_REMINDERS = [
-  { week: 1, icon: '📏', text: 'Stretch: a altura pode dobrar agora. Confira a distância da luz a cada 2 dias e pare qualquer treino.' },
-  { week: 3, icon: '💨', text: 'Exaustor + filtro 24/7 (o cheiro aparece agora) e umidade em 40–50%.' },
-  { week: 5, icon: '🔬', text: 'Comece a olhar os tricomas com a lupa — mesmo que ainda estejam transparentes.' },
-  { week: 7, icon: '💧', text: 'Reta final: só água e tricoma todo dia.' },
-  { week: 8, icon: '✂️', text: 'Janela de colheita aberta: maioria leitoso + ~10–20% âmbar. Quem manda é o tricoma, não o calendário.' },
-];
-
+// --- 2) Semanas de floração --------------------------------------------------
 export function flowerReminders(status) {
   if (!status.flower) return [];
+  const g = status.grow;
   const w = status.flower.week;
-  return FLOWER_REMINDERS
-    .filter((r) => w === r.week)
-    .map((r) => ({ level: 'info', icon: r.icon, text: r.text }));
+  const fw = g.flowerWeeks;
+  const map = {
+    1: { icon: '📏', text: 'Stretch: a altura pode dobrar agora. Confira a distância da luz a cada 2 dias e pare treino pesado.' },
+    3: { icon: '💨', text: 'Exaustor + filtro 24/7 (o cheiro aparece agora) e umidade em 40–50%.' },
+  };
+  map[Math.max(4, fw - 2)] = { icon: '🔬', text: 'Comece a olhar os tricomas com a lupa a cada 1–2 dias.' };
+  map[fw - 1] = { icon: '💧', text: g.feeding === 'nutrientes' ? 'Reta final: flush (só água pura) e tricoma todo dia.' : 'Reta final: só água e tricoma todo dia.' };
+  map[fw] = { icon: '✂️', text: 'Janela de colheita: maioria leitoso + ~10–20% âmbar. Quem manda é o tricoma, não o calendário.' };
+  const r = map[Math.min(w, fw)];
+  return r ? [{ level: 'info', ...r }] : [];
 }
 
-// --- 2) Alertas derivados dos dados registrados ------------------------------
-// Recebe o status atual e o mapa de entradas { 'YYYY-MM-DD': entry }.
+// --- 3) Alertas derivados dos registros --------------------------------------
 export function derivedAlerts(status, entriesByDate) {
   const alerts = [];
+  const g = status.grow;
   const entries = Object.values(entriesByDate || {});
 
-  // (a) Rega em dias CONSECUTIVOS nas semanas 1–2 → risco de excesso de água.
-  if (status.week <= 2) {
-    const wateredDates = entries
-      .filter((e) => e.watered)
-      .map((e) => e.date)
-      .sort();
+  // (a) Regas em dias seguidos nas 2 primeiras semanas → excesso de água.
+  if (status.day <= 14) {
+    const wateredDates = entries.filter((e) => e.watered).map((e) => e.date).sort();
     for (let i = 1; i < wateredDates.length; i++) {
       if (isConsecutive(wateredDates[i - 1], wateredDates[i])) {
-        alerts.push({
-          level: 'warn', icon: '💧',
-          text: 'Você regou em dias seguidos nas primeiras semanas. Cuidado com o excesso de água (erro nº 1) — deixe o solo secar entre regas.',
-        });
+        alerts.push({ level: 'warn', icon: '💧', text: 'Você regou em dias seguidos nas primeiras semanas. Cuidado com o excesso de água (erro nº 1) — deixe o solo secar entre regas.' });
         break;
       }
     }
   }
 
-  // (b) Altura da luz registrada abaixo do mínimo (30 cm) → subir.
+  // (b) Luz abaixo da distância mínima configurada.
   const lastLight = latestNumeric(entries, 'lightHeight');
-  if (lastLight != null && lastLight < 30) {
-    alerts.push({
-      level: 'warn', icon: '💡',
-      text: `Luz a ${lastLight} cm está abaixo do mínimo dessa 65W (30 cm). Suba alguns cm pra evitar branqueamento do topo.`,
-    });
+  if (lastLight != null && lastLight < g.lightMinCm) {
+    alerts.push({ level: 'warn', icon: '💡', text: `Luz a ${lastLight} cm está abaixo do mínimo configurado (${g.lightMinCm} cm). Suba alguns cm pra evitar branqueamento do topo.` });
   }
 
-  // (c) Umidade > 55% durante a floração → risco de mofo.
-  // Agora ancorado na floração OBSERVADA (antes era semana 6 do calendário).
-  const isFlowering = !!status.flower || status.week >= 6;
-  if (isFlowering) {
+  // (c) Umidade alta na floração → risco de mofo.
+  if (status.flower) {
     const lastHum = latestNumeric(entries, 'humidity');
     if (lastHum != null && lastHum > 55) {
-      alerts.push({
-        level: 'danger', icon: '🍄',
-        text: `Umidade a ${lastHum}% na floração é alta — risco de mofo nos buds densos. Baixe pra 40–50% e reforce a circulação de ar.`,
-      });
+      alerts.push({ level: 'danger', icon: '🍄', text: `Umidade a ${lastHum}% na floração é alta — risco de mofo nos buds densos. Baixe pra 40–50% e reforce a circulação de ar.` });
     }
   }
 
-  // (d) Rega desproporcional ao PORTE da planta (não à fase do guia).
-  // Numa planta pequena em vaso de 12 L, o volume "de semana 5" encharca.
+  // (d) Rega desproporcional ao porte da planta.
   const lastHeight = latestNumeric(entries, 'plantHeight');
   const rec = waterForHeight(lastHeight);
   if (rec) {
     const lastWater = lastWateredVolume(entries);
     if (lastWater != null && lastWater > rec.mid * 2) {
-      alerts.push({
-        level: 'warn', icon: '🪣',
-        text: `Você regou ${lastWater} ml numa planta de ${lastHeight} cm. Pro porte atual, ${rec.label} já basta (${rec.where}). Excesso é o erro nº 1.`,
-      });
+      alerts.push({ level: 'warn', icon: '🪣', text: `Você regou ${lastWater} ml numa planta de ${lastHeight} cm. Pro porte atual, ${rec.label} já basta (${rec.where}). Excesso é o erro nº 1.` });
     }
   }
 
-  // (e) Planta anã em floração → expectativa e manejo mudam de figura.
-  if (status.flower && lastHeight != null && lastHeight < DWARF_MAX_HEIGHT) {
-    alerts.push({
-      level: 'info', icon: '🌱',
-      text: `Planta pequena (${lastHeight} cm) já em floração: a altura praticamente travou. Daqui pra frente é só stretch — nada de treino ou desfolha, e rega curta pelo peso.`,
-    });
+  // (e) Planta pequena já em floração (observada).
+  if (status.flower && status.flower.observed && lastHeight != null && lastHeight < DWARF_MAX_HEIGHT) {
+    alerts.push({ level: 'info', icon: '🌱', text: `Planta pequena (${lastHeight} cm) já em floração: a altura praticamente travou. Daqui pra frente é só stretch — nada de treino pesado ou desfolha, e rega curta pelo peso.` });
   }
 
   return alerts;
 }
 
-// Volume da rega mais recente em que houve rega de fato.
+// Tudo junto, na ordem: alertas dos dados → floração → marcos do plano.
+export function allReminders(cfg, entriesByDate, forDate = new Date()) {
+  const status = computeStatus(cfg, forDate);
+  return [...derivedAlerts(status, entriesByDate), ...flowerReminders(status), ...planReminders(status)];
+}
+
+// --- helpers -----------------------------------------------------------------
+function isConsecutive(a, b) {
+  return Math.round((new Date(b) - new Date(a)) / 86400000) === 1;
+}
+function latestNumeric(entries, field) {
+  const sorted = entries
+    .filter((e) => e[field] != null && e[field] !== '')
+    .sort((a, b) => (a.date < b.date ? 1 : -1));
+  return sorted.length ? Number(sorted[0][field]) : null;
+}
 function lastWateredVolume(entries) {
   const sorted = entries
     .filter((e) => e.watered && e.waterMl != null && e.waterMl !== '')
     .sort((a, b) => (a.date < b.date ? 1 : -1));
   return sorted.length ? Number(sorted[0].waterMl) : null;
-}
-
-// Junta alertas derivados + lembretes de floração + lembretes por data.
-// `offset` = ajuste de dias; `floweringStart` = data dos primeiros pistilos.
-export function allReminders(plantingDate, entriesByDate, forDate = new Date(), offset = 0, floweringStart = null) {
-  const status = computeStatus(plantingDate, forDate, offset, floweringStart);
-  return [
-    ...derivedAlerts(status, entriesByDate),
-    ...flowerReminders(status),
-    ...dateReminders(status),
-  ];
-}
-
-// --- helpers -----------------------------------------------------------------
-function isConsecutive(a, b) {
-  const da = new Date(a), db = new Date(b);
-  return Math.round((db - da) / 86400000) === 1;
-}
-
-// Pega o valor numérico mais recente de um campo entre as entradas registradas.
-function latestNumeric(entries, field) {
-  const sorted = entries
-    .filter((e) => e[field] != null && e[field] !== '')
-    .sort((a, b) => (a.date < b.date ? 1 : -1)); // mais recente primeiro
-  return sorted.length ? Number(sorted[0][field]) : null;
 }

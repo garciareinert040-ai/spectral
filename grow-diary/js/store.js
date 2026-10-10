@@ -1,30 +1,38 @@
 // =============================================================================
 // store.js — Camada de dados: Auth + Firestore
 // -----------------------------------------------------------------------------
-// Concentra TODA a conversa com o Firebase para o resto do app não precisar
-// conhecer os detalhes do SDK. Pontos de integração comentados:
-//   • LOGIN / CADASTRO / LOGOUT ............ Firebase Auth
-//   • CONFIG do grow ....................... Firestore  users/{uid}
-//   • REGISTROS diários .................... Firestore  users/{uid}/entries/{data}
-//   • FOTOS (comprimidas → data URL) ....... guardadas DENTRO do próprio registro
-//        no Firestore. Não usamos Firebase Storage (virou plano pago).
+// Concentra TODA a conversa com o Firebase. Pontos de integração:
+//   • LOGIN / CADASTRO / SENHA / LOGOUT .... Firebase Auth
+//   • PERFIL + CULTIVOS .................... Firestore  users/{uid}
+//        { activeGrowId, grows: { <id>: { strain, tipo, datas, ... } } }
+//   • REGISTROS diários .................... Firestore  users/{uid}/entries/{id}
+//        id = "<growId>__<data>"  (cultivo "principal" antigo: id = "<data>")
+//   • FOTOS (comprimidas → data URL) ....... dentro do próprio registro
+//
+// Tudo continua sob users/{uid}/... — as MESMAS regras de segurança de antes
+// valem pra qualquer número de cultivos e qualquer número de usuários.
 // =============================================================================
 
 import { auth, db } from './firebase-init.js';
 import {
   createUserWithEmailAndPassword, signInWithEmailAndPassword,
-  signOut, onAuthStateChanged,
+  signOut, onAuthStateChanged, sendPasswordResetEmail,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import {
-  doc, getDoc, setDoc, collection, getDocs, deleteDoc,
-  serverTimestamp, writeBatch, onSnapshot,
+  doc, getDoc, setDoc, updateDoc, collection, getDocs, deleteDoc,
+  serverTimestamp, writeBatch, onSnapshot, deleteField,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
+// Id do cultivo que existia antes do app suportar vários cultivos. Os registros
+// dele continuam com o id antigo (só a data) — nada é movido nem regravado.
+export const LEGACY_GROW_ID = 'principal';
+
 // ---------------------------------------------------------------------------
-// AUTENTICAÇÃO  (ponto de integração: login / cadastro / logout)
+// AUTENTICAÇÃO
 // ---------------------------------------------------------------------------
 export function watchAuth(cb) { return onAuthStateChanged(auth, cb); }
 export function currentUid() { return auth.currentUser ? auth.currentUser.uid : null; }
+export function currentEmail() { return auth.currentUser ? auth.currentUser.email : ''; }
 
 export function login(email, password) {
   return signInWithEmailAndPassword(auth, email, password);
@@ -32,12 +40,16 @@ export function login(email, password) {
 export function register(email, password) {
   return createUserWithEmailAndPassword(auth, email, password);
 }
+export function resetPassword(email) {
+  return sendPasswordResetEmail(auth, email);
+}
 export function logout() { return signOut(auth); }
 
 // Traduz códigos de erro do Firebase Auth pra mensagens em português.
 export function authErrorMessage(code) {
   const map = {
     'auth/invalid-email': 'E-mail inválido.',
+    'auth/missing-email': 'Digite seu e-mail.',
     'auth/user-disabled': 'Esta conta foi desativada.',
     'auth/user-not-found': 'Conta não encontrada. Você quis dizer criar conta?',
     'auth/wrong-password': 'Senha incorreta.',
@@ -51,34 +63,67 @@ export function authErrorMessage(code) {
 }
 
 // ---------------------------------------------------------------------------
-// Helpers de caminho no Firestore
+// Caminhos
 // ---------------------------------------------------------------------------
 function userDocRef(uid) { return doc(db, 'users', uid); }
 function entriesColRef(uid) { return collection(db, 'users', uid, 'entries'); }
-function entryDocRef(uid, date) { return doc(db, 'users', uid, 'entries', date); }
+export function entryDocId(growId, date) {
+  return growId === LEGACY_GROW_ID ? date : `${growId}__${date}`;
+}
+function entryRef(uid, id) { return doc(db, 'users', uid, 'entries', id); }
 
 // ---------------------------------------------------------------------------
-// CONFIG DO GROW  (documento users/{uid})  — data de plantio, nome, meta,
-// e o checklist de pós-colheita.
+// PERFIL / CULTIVOS  (documento users/{uid})
 // ---------------------------------------------------------------------------
 export async function loadConfig(uid) {
   const snap = await getDoc(userDocRef(uid));
   return snap.exists() ? snap.data() : null;
 }
 
-// Grava/atualiza a config sem apagar o resto do documento (merge).
+// Merge cru no documento do usuário (usado pelo import de backup).
 export async function saveConfig(uid, data) {
   await setDoc(userDocRef(uid), { ...data, updatedAt: serverTimestamp() }, { merge: true });
 }
 
+// Grava a configuração COMPLETA de um cultivo (sempre o objeto inteiro).
+export async function saveGrow(uid, growId, grow, extra = {}) {
+  const payload = { grows: { [growId]: grow }, updatedAt: serverTimestamp(), ...extra };
+  if (growId === LEGACY_GROW_ID) payload.legacyMigrated = true;
+  await setDoc(userDocRef(uid), payload, { merge: true });
+}
+
+// Cria um cultivo novo e já o deixa ativo.
+export async function createGrow(uid, grow) {
+  const id = 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  await saveGrow(uid, id, { ...grow, createdAt: new Date().toISOString() }, { activeGrowId: id });
+  return id;
+}
+
+export async function setActiveGrow(uid, growId) {
+  await setDoc(userDocRef(uid), { activeGrowId: growId }, { merge: true });
+}
+
+// Apaga um cultivo e TODOS os registros dele. Irreversível.
+export async function deleteGrow(uid, growId, entryIds, nextActiveId) {
+  for (let i = 0; i < entryIds.length; i += 400) {
+    const batch = writeBatch(db);
+    entryIds.slice(i, i + 400).forEach((id) => batch.delete(entryRef(uid, id)));
+    await batch.commit();
+  }
+  const upd = { [`grows.${growId}`]: deleteField(), activeGrowId: nextActiveId || null };
+  if (growId === LEGACY_GROW_ID) upd.legacyMigrated = true;
+  await updateDoc(userDocRef(uid), upd);
+}
+
 // ---------------------------------------------------------------------------
-// REGISTROS DIÁRIOS  (users/{uid}/entries/{YYYY-MM-DD})
+// REGISTROS DIÁRIOS
 // ---------------------------------------------------------------------------
-export async function saveEntry(uid, entry) {
-  const ref = entryDocRef(uid, entry.date);
+export async function saveEntry(uid, growId, entry) {
+  const ref = entryRef(uid, entryDocId(growId, entry.date));
   const existing = await getDoc(ref);
   const payload = {
     ...entry,
+    growId,
     updatedAt: serverTimestamp(),
     createdAt: existing.exists() ? existing.data().createdAt || serverTimestamp() : serverTimestamp(),
   };
@@ -86,36 +131,35 @@ export async function saveEntry(uid, entry) {
   return payload;
 }
 
+export async function deleteEntry(uid, growId, date) {
+  await deleteDoc(entryRef(uid, entryDocId(growId, date)));
+}
+
+function docToEntry(d) {
+  const data = d.data();
+  return { ...data, _id: d.id, date: data.date || d.id };
+}
+
 export async function loadEntries(uid) {
   const snap = await getDocs(entriesColRef(uid));
-  const map = {};
-  snap.forEach((d) => { map[d.id] = { date: d.id, ...d.data() }; });
-  return map;
+  const list = [];
+  snap.forEach((d) => list.push(docToEntry(d)));
+  return list;
 }
 
-export async function loadEntry(uid, date) {
-  const snap = await getDoc(entryDocRef(uid, date));
-  return snap.exists() ? { date, ...snap.data() } : null;
-}
-
-// --- Listeners em TEMPO REAL (o coração da sincronização multi-dispositivo) --
-// Um registro salvo no celular chega sozinho no PC via onSnapshot.
-// `meta` traz { fromCache, hasPendingWrites } — usado no indicador de sync.
+// --- Listeners em TEMPO REAL (sincronização multi-dispositivo) --------------
 export function watchConfig(uid, cb) {
   return onSnapshot(userDocRef(uid), (snap) =>
     cb(snap.exists() ? snap.data() : null, snap.metadata)
   );
 }
+// Entrega TODOS os registros da conta; o app filtra pelo cultivo ativo.
 export function watchEntries(uid, cb) {
   return onSnapshot(entriesColRef(uid), (snap) => {
-    const map = {};
-    snap.forEach((d) => { map[d.id] = { date: d.id, ...d.data() }; });
-    cb(map, snap.metadata);
+    const list = [];
+    snap.forEach((d) => list.push(docToEntry(d)));
+    cb(list, snap.metadata);
   });
-}
-
-export async function deleteEntry(uid, date) {
-  await deleteDoc(entryDocRef(uid, date));
 }
 
 // ---------------------------------------------------------------------------
@@ -170,26 +214,27 @@ export async function exportAll(uid) {
   const [config, entries] = await Promise.all([loadConfig(uid), loadEntries(uid)]);
   return {
     app: 'diario-de-cultivo',
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
-    note: 'Backup de dados. As fotos não vão embutidas (só a contagem por dia) — elas seguem guardadas no Firestore, na nuvem.',
-    config: config || null,
-    entries: Object.values(entries).map(stripPhotos),
+    note: 'Backup de dados de todos os cultivos. As fotos não vão embutidas (só a contagem por dia) — elas seguem guardadas no Firestore, na nuvem.',
+    config: config ? stripTimestamps(config) : null,
+    entries: entries.map(stripPhotos),
   };
 }
 
-// Restaura config + entradas de um objeto exportado. Usa batch pra escrever tudo.
+// Restaura perfil/cultivos + registros de um backup. Aceita backups antigos (v1).
 export async function importAll(uid, data) {
   if (!data || data.app !== 'diario-de-cultivo') throw new Error('Arquivo de backup inválido.');
   if (data.config) await saveConfig(uid, stripTimestamps(data.config));
 
   const entries = Array.isArray(data.entries) ? data.entries : [];
-  // Firestore aceita até 500 operações por batch; dividimos por segurança.
   for (let i = 0; i < entries.length; i += 400) {
     const batch = writeBatch(db);
     for (const e of entries.slice(i, i + 400)) {
       if (!e.date) continue;
-      batch.set(entryDocRef(uid, e.date), { ...stripTimestamps(e), updatedAt: serverTimestamp() }, { merge: true });
+      const id = e._id || entryDocId(e.growId || LEGACY_GROW_ID, e.date);
+      const { _id, ...rest } = stripTimestamps(e);
+      batch.set(entryRef(uid, id), { ...rest, updatedAt: serverTimestamp() }, { merge: true });
     }
     await batch.commit();
   }
